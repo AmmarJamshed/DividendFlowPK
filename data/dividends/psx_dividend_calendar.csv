@@ -1,0 +1,35 @@
+Company,Sector,Dividend_per_share,Payment_month,Dividend_yield,Price,Year
+OGDC,Oil & Gas Exploration,7.75,4,5.43,285.28,2026
+OGDC,Oil & Gas Exploration,6,10,4.2,285.28,2024
+PPL,Oil & Gas Exploration,12,10,5.5,218.4,2025
+PPL,Oil & Gas Exploration,10,4,4.6,218.4,2024
+PSO,Oil & Gas Marketing,25,10,6.35,393.46,2025
+PSO,Oil & Gas Marketing,22,4,5.6,393.46,2024
+HBL,Commercial Banks,12,4,4.26,281.53,2025
+HBL,Commercial Banks,10,10,3.55,281.53,2024
+MCB,Commercial Banks,24,4,6.42,373.87,2025
+MCB,Commercial Banks,22,10,5.89,373.87,2024
+UBL,Commercial Banks,18,4,4.33,416.07,2025
+UBL,Commercial Banks,16,10,3.84,416.07,2024
+FFC,Fertilizer,37,3,6.85,540.36,2025
+FFC,Fertilizer,35,9,6.48,540.36,2024
+EFERT,Fertilizer,12,4,5.55,216.28,2025
+EFERT,Fertilizer,10,10,4.62,216.28,2024
+LUCK,Cement,4,10,1.0,398.83,2025
+LUCK,Cement,3,10,0.75,398.83,2024
+DGKC,Cement,8,10,4.2,189.9,2025
+DGKC,Cement,6,4,3.16,189.9,2024
+HUBC,Power Generation,8,10,3.65,218.89,2025
+HUBC,Power Generation,6,4,2.74,218.89,2024
+KEL,Power Distribution,0.5,10,6.21,8.05,2025
+NESTLE,Food & Personal Care,150,4,1.92,7830.4,2025
+NESTLE,Food & Personal Care,120,10,1.53,7830.4,2024
+UNITY,Food & Personal Care,0.4,10,3.97,10.08,2025
+UNITY,Food & Personal Care,0.35,4,3.47,10.08,2024
+TRG,Technology,2,10,4.28,46.73,2025
+SYS,Technology,5,10,4.01,124.61,2025
+MARI,Oil & Gas Exploration,45,10,7.29,617.65,2025
+MARI,Oil & Gas Exploration,40,4,6.48,617.65,2024
+POL,Oil & Gas Marketing,55,10,8.49,647.5,2025
+NCPL,Power Generation,8,4,11.65,68.66,2025
+NESTLE,Food & Personal Care,140,10,1.79,7830.4,2024

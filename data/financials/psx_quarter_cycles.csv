@@ -1,0 +1,21 @@
+Company,Sector,Fiscal_Year_End,Quarter_End_Months,Dividend_Announcement_Period,Book_Closure_Month,Estimated_Payment_Month
+HBL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
+MCB,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
+UBL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
+OGDC,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+PPL,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+PSO,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+MARI,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+POL,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+FFC,Fertilizer,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,April
+EFERT,Fertilizer,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
+LUCK,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+DGKC,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+HUBC,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+KEL,Power Distribution,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+NCPL,Power Generation,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
+NESTLE,Food & Personal Care,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
+UNITY,Food & Personal Care,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+TRG,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+SYS,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+ENGRO,Investment Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April

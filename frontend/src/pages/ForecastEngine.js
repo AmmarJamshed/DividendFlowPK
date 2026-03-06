@@ -1,0 +1,90 @@
+import { useState, useEffect } from 'react';
+import { api } from '../api';
+import Disclaimer from '../components/Disclaimer';
+
+const companies = ['HBL', 'MCB', 'OGDC', 'PPL', 'PSO', 'ENGRO', 'FFC', 'LUCK', 'HUBC', 'TRG', 'UNITY'];
+
+export default function ForecastEngine() {
+  const [company, setCompany] = useState('HBL');
+  const [forecast, setForecast] = useState(null);
+  const [capitalGain, setCapitalGain] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      api.getForecast(company),
+      api.getCapitalGain(company)
+    ])
+      .then(([fRes, cRes]) => {
+        setForecast(fRes.data);
+        setCapitalGain(cRes.data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [company]);
+
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <h3 className="card-header text-lg">Probability-Based Price Range</h3>
+        <p className="card-subtitle mb-4">Technical indicators (RSI, MACD, volatility). Does not guarantee future prices.</p>
+        <select
+          value={company}
+          onChange={e => setCompany(e.target.value)}
+          className="input-field max-w-xs"
+        >
+          {companies.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-12 h-12 border-4 border-teal-500/30 border-t-teal-400 rounded-full animate-spin" />
+        </div>
+      )}
+
+      {!loading && forecast && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="card p-6 border-red-500/20">
+              <h4 className="text-slate-400 text-sm font-medium mb-2">Low Case</h4>
+              <p className="text-2xl font-bold text-red-400">Rs {forecast.lowCase?.toLocaleString()}</p>
+            </div>
+            <div className="card p-6 border-teal-500/40 shadow-glow">
+              <h4 className="text-slate-400 text-sm font-medium mb-2">Base Case</h4>
+              <p className="text-2xl font-bold text-teal-400">Rs {forecast.baseCase?.toLocaleString()}</p>
+            </div>
+            <div className="card p-6 border-green-500/20">
+              <h4 className="text-slate-400 text-sm font-medium mb-2">High Case</h4>
+              <p className="text-2xl font-bold text-green-400">Rs {forecast.highCase?.toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div className="card p-6">
+            <h3 className="card-header text-lg">Capital Gain Estimator – Blended Expected Return Band</h3>
+            <p className="card-subtitle mb-6">Projected Dividend Yield + Expected Price Appreciation Range</p>
+            {capitalGain && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/50">
+                  <h4 className="text-slate-400 text-sm font-medium mb-2">Conservative Scenario</h4>
+                  <p className="text-teal-400">Dividend: {capitalGain.conservative?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.conservative?.appreciation}% = <strong>{capitalGain.conservative?.blended?.toFixed(2)}%</strong></p>
+                </div>
+                <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/30">
+                  <h4 className="text-slate-400 text-sm font-medium mb-2">Base Scenario</h4>
+                  <p className="text-teal-400">Dividend: {capitalGain.base?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.base?.appreciation}% = <strong>{capitalGain.base?.blended?.toFixed(2)}%</strong></p>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/50">
+                  <h4 className="text-slate-400 text-sm font-medium mb-2">Optimistic Scenario</h4>
+                  <p className="text-teal-400">Dividend: {capitalGain.optimistic?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.optimistic?.appreciation}% = <strong>{capitalGain.optimistic?.blended?.toFixed(2)}%</strong></p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      <Disclaimer />
+    </div>
+  );
+}

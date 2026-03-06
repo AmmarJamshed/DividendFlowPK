@@ -1,0 +1,30 @@
+# DividendFlow PK - Render Blueprint
+# Deploy both backend and frontend from GitHub
+
+services:
+  # Backend API (Node.js + Express)
+  - type: web
+    runtime: node
+    name: dividendflow-backend
+    plan: starter
+    region: oregon
+    rootDir: .
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  # Frontend (React Static Site)
+  - type: web
+    runtime: static
+    name: dividendflow-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_URL
+        sync: false
