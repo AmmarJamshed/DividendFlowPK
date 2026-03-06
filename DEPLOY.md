@@ -5,15 +5,16 @@
 1. Create a new repository on [GitHub](https://github.com/new):
    - Name: `DividendFlowPK` (or your choice)
    - Visibility: Public or Private
-   - **Do not** initialize with README (you already have one)
+   - **Do not** initialize with README, .gitignore, or license (you already have them)
 
-2. Push your code (run in project root):
+2. Push your code. In PowerShell, run from `d:\DividendFlowPK`:
 
-```bash
+```powershell
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-git branch -M main
 git push -u origin main
 ```
+
+Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` with your GitHub username and repo name.
 
 ## Step 2: Connect to Render
 
