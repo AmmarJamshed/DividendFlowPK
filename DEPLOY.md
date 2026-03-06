@@ -49,7 +49,7 @@ Two cron jobs run automatically:
 
 | Job | Schedule | Purpose |
 |-----|----------|---------|
-| **dividendflow-scraper** | Daily 06:00 UTC | Scrapes PSX payout data, updates dividend CSVs, pushes to GitHub |
+| **dividendflow-scraper** | **Daily 4pm PKT** (11:00 UTC) | Scrapes after market close (3:30pm), updates CSVs, pushes to GitHub, emails you |
 | **dividendflow-health-check** | Every 6 hours | Pings backend to verify it's running |
 
 ### Scraper Setup
@@ -57,7 +57,16 @@ Two cron jobs run automatically:
 1. Create a GitHub token: https://github.com/settings/tokens (scope: `repo`)
 2. In Render Dashboard → **dividendflow-scraper** → **Environment**
 3. Add `GITHUB_TOKEN` = your token
-4. Optionally set `GITHUB_REPO` if different from `AmmarJamshed/DividendFlowPK`
+4. Add `SCRAPER_EMAIL_TO` = your email (for daily reports)
+5. Add `RESEND_API_KEY` from [resend.com](https://resend.com) **or** SMTP: `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`
+6. Optionally set `GITHUB_REPO` if different from `AmmarJamshed/DividendFlowPK`
+
+### Email report contents
+
+- Success/failure status
+- Price changes (company, old → new)
+- Dividend policy changes (amount, payment month)
+- New companies added
 
 ### Health Check
 

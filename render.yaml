@@ -6,7 +6,7 @@ services:
   - type: cron
     runtime: node
     name: dividendflow-scraper
-    schedule: "0 6 * * *"
+    schedule: "0 11 * * *"
     rootDir: .
     buildCommand: cd scripts && npm install
     startCommand: cd scripts && node run-all.js
@@ -15,6 +15,10 @@ services:
         sync: false
       - key: GITHUB_REPO
         value: AmmarJamshed/DividendFlowPK
+      - key: SCRAPER_EMAIL_TO
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
 
   # Cron: Health check - ping backend every 6 hours
   - type: cron

@@ -13,7 +13,7 @@ Automated cron jobs for PSX data updates.
 
 ## Cron Schedule (Render)
 
-- **dividendflow-scraper**: Daily at 06:00 UTC
+- **dividendflow-scraper**: Daily at **4pm PKT** (11:00 UTC) – after market close at 3:30pm
 - **dividendflow-health-check**: Every 6 hours
 
 ## Environment Variables
@@ -22,13 +22,24 @@ Automated cron jobs for PSX data updates.
 |----------|----------|-------------|
 | `GITHUB_TOKEN` | For scraper | GitHub Personal Access Token with `repo` scope |
 | `GITHUB_REPO` | Optional | Default: `AmmarJamshed/DividendFlowPK` |
+| `SCRAPER_EMAIL_TO` | For email | Your email to receive daily scraper reports |
+| `RESEND_API_KEY` | For email | Resend.com API key (or use SMTP below) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | Alternative | Use instead of Resend for email |
 | `BACKEND_URL` | For health check | Default: `https://dividendflow-backend.onrender.com` |
 
 ## Setup
 
 1. Create a GitHub token: https://github.com/settings/tokens (scope: `repo`)
-2. In Render Dashboard → dividendflow-scraper → Environment: Add `GITHUB_TOKEN`
+2. In Render Dashboard → dividendflow-scraper → Environment:
+   - Add `GITHUB_TOKEN`
+   - Add `SCRAPER_EMAIL_TO` (your email)
+   - Add `RESEND_API_KEY` from [resend.com](https://resend.com) **or** SMTP vars (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`)
 3. Update `BACKEND_URL` in dividendflow-health-check if your backend URL differs
+
+### Email options
+
+- **Resend**: Sign up at resend.com, create API key, add domain. Free: 100 emails/day.
+- **Gmail SMTP**: Enable 2FA, create App Password. Set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASS`.
 
 ## Local Test
 
