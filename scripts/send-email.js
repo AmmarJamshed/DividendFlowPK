@@ -4,7 +4,7 @@
  * SMTP: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SCRAPER_EMAIL_TO
  * Resend: RESEND_API_KEY, SCRAPER_EMAIL_TO
  */
-import axios from 'axios';
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 
 export async function sendScraperEmail({ success, changes, error }) {
@@ -60,14 +60,13 @@ function buildEmailHtml(success, changes, error, date) {
 }
 
 async function sendViaResend(to, subject, html) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const from = process.env.SCRAPER_EMAIL_FROM || 'DividendFlow <onboarding@resend.dev>';
-  await axios.post('https://api.resend.com/emails', {
+  await resend.emails.send({
     from,
-    to: [to],
+    to,
     subject,
     html,
-  }, {
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
   });
   console.log('[Email] Sent via Resend to', to);
 }
