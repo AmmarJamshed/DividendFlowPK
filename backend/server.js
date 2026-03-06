@@ -70,7 +70,7 @@ async function analyzeWithGroq(prompt) {
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 500,
         temperature: 0.3
@@ -93,7 +93,7 @@ async function analyzeWithGroq(prompt) {
     else riskCategory = 'High';
     return { riskScore, riskCategory, analysis: content };
   } catch (err) {
-    console.error('Groq API error:', err.message);
+    console.error('Groq API error:', err.response?.data || err.message);
     return {
       riskScore: 50,
       riskCategory: 'Moderate',
