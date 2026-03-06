@@ -1,0 +1,16 @@
+{
+  "name": "dividendflow-scraper",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "scrape": "node scrape-psx.js",
+    "update-github": "node update-github.js",
+    "run": "node run-all.js",
+    "health": "node health-check.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0"
+  }
+}

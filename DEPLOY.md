@@ -43,8 +43,29 @@ Click **Create Web Services**. Both services will deploy. Your app will be live 
 - **Frontend:** `https://dividendflow-frontend.onrender.com`
 - **Backend:** `https://dividendflow-backend.onrender.com`
 
+## Cron Jobs (Auto-Scraper & Health Check)
+
+Two cron jobs run automatically:
+
+| Job | Schedule | Purpose |
+|-----|----------|---------|
+| **dividendflow-scraper** | Daily 06:00 UTC | Scrapes PSX payout data, updates dividend CSVs, pushes to GitHub |
+| **dividendflow-health-check** | Every 6 hours | Pings backend to verify it's running |
+
+### Scraper Setup
+
+1. Create a GitHub token: https://github.com/settings/tokens (scope: `repo`)
+2. In Render Dashboard → **dividendflow-scraper** → **Environment**
+3. Add `GITHUB_TOKEN` = your token
+4. Optionally set `GITHUB_REPO` if different from `AmmarJamshed/DividendFlowPK`
+
+### Health Check
+
+If your backend URL differs (e.g. `dividendflow-backend-xxxx.onrender.com`), set `BACKEND_URL` in **dividendflow-health-check** environment.
+
 ## Troubleshooting
 
 - **Frontend shows API errors:** Ensure `REACT_APP_API_URL` points to your backend URL + `/api`, then redeploy the frontend.
 - **Backend 500 errors:** Check that `GROQ_API_KEY` is set correctly in the backend service.
 - **CORS errors:** The backend uses permissive CORS by default; if issues persist, you may need to restrict origins in `backend/server.js`.
+- **Scraper not pushing:** Verify `GITHUB_TOKEN` has `repo` scope and is set in the cron service.

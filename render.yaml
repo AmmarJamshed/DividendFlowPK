@@ -2,6 +2,32 @@
 # Deploy both backend and frontend from GitHub
 
 services:
+  # Cron: Scrape PSX payout data, update dividend CSVs, push to GitHub
+  - type: cron
+    runtime: node
+    name: dividendflow-scraper
+    schedule: "0 6 * * *"
+    rootDir: .
+    buildCommand: cd scripts && npm install
+    startCommand: cd scripts && node run-all.js
+    envVars:
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_REPO
+        value: AmmarJamshed/DividendFlowPK
+
+  # Cron: Health check - ping backend every 6 hours
+  - type: cron
+    runtime: node
+    name: dividendflow-health-check
+    schedule: "0 */6 * * *"
+    rootDir: .
+    buildCommand: cd scripts && npm install
+    startCommand: cd scripts && node health-check.js
+    envVars:
+      - key: BACKEND_URL
+        value: https://dividendflow-backend.onrender.com
+
   # Backend API (Node.js + Express)
   - type: web
     runtime: node
