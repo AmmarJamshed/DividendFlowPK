@@ -2,10 +2,21 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 
-const companies = ['HBL', 'MCB', 'OGDC', 'PPL', 'PSO', 'ENGRO', 'FFC', 'LUCK', 'HUBC', 'TRG', 'UNITY'];
-
 export default function ForecastEngine() {
+  const [companies, setCompanies] = useState(['HBL', 'MCB', 'OGDC', 'PPL', 'PSO']);
   const [company, setCompany] = useState('HBL');
+
+  useEffect(() => {
+    api.getDividends()
+      .then(res => {
+        const names = [...new Set((res.data || []).map(d => d.Company || d.company).filter(Boolean))].sort();
+        if (names.length) {
+          setCompanies(names);
+          setCompany(c => (names.includes(c) ? c : names[0]));
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [forecast, setForecast] = useState(null);
   const [capitalGain, setCapitalGain] = useState(null);
   const [loading, setLoading] = useState(false);

@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 
-const companies = ['HBL', 'MCB', 'OGDC', 'PPL', 'PSO', 'ENGRO', 'LUCK', 'NESTLE', 'FFC', 'HUBC', 'MARI', 'TRG'];
-
 export default function AIRiskDashboard() {
+  const [companies, setCompanies] = useState(['HBL', 'MCB', 'OGDC', 'PPL', 'PSO']);
   const [selected, setSelected] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    api.getDividends()
+      .then(res => {
+        const names = [...new Set((res.data || []).map(d => d.Company || d.company).filter(Boolean))].sort();
+        if (names.length) setCompanies(names);
+      })
+      .catch(() => {});
+  }, []);
 
   const analyze = () => {
     if (!selected) return;
