@@ -62,7 +62,7 @@ export default function AIRiskDashboard() {
       {result && (
         <div className="card p-6 border-teal-500/30">
           <h3 className="card-header text-lg mb-4">Results for {result.companyName || selected}</h3>
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div className="p-4 rounded-xl bg-slate-700/30">
               <span className="text-slate-400 text-sm">Risk Score</span>
               <p className={`font-bold text-2xl ${getRiskColor(result.riskCategory)}`}>{result.riskScore}/100</p>

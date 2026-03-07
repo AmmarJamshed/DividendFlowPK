@@ -19,7 +19,7 @@ export default function SalarySimulator() {
 
   return (
     <div className="space-y-8">
-      <div className="card p-8 max-w-xl">
+      <div className="card p-4 sm:p-6 lg:p-8 max-w-xl">
         <h3 className="card-header text-lg">Salary Replacement Simulator</h3>
         <p className="card-subtitle mb-6">Estimate the portfolio value needed to replace your salary with dividend income</p>
         <div className="space-y-5">
@@ -49,7 +49,7 @@ export default function SalarySimulator() {
       </div>
 
       {result && !result.error && (
-        <div className="card p-8 max-w-xl border-teal-500/30">
+        <div className="card p-4 sm:p-6 lg:p-8 max-w-xl border-teal-500/30">
           <h3 className="card-header text-lg mb-4">Results</h3>
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/30">

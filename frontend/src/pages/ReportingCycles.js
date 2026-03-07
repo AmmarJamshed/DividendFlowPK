@@ -31,8 +31,8 @@ export default function ReportingCycles() {
         <p className="card-subtitle">Fiscal year ends, quarter cycles, and estimated dividend payment timing</p>
       </div>
       <div className="card overflow-hidden rounded-t-none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="table-responsive">
+          <table className="w-full">
             <thead>
               <tr className="bg-slate-800/80">
                 <th className="text-left p-4 font-semibold text-slate-300">Company</th>

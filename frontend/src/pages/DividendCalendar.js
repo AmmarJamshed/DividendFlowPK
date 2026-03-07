@@ -33,8 +33,8 @@ export default function DividendCalendar() {
           <h3 className="card-header text-lg">Dividend Calendar by Payment Month</h3>
           <p className="card-subtitle">PSX companies and their dividend payment schedules</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="table-responsive">
+          <table className="w-full">
             <thead>
               <tr className="bg-slate-800/80">
                 <th className="text-left p-4 font-semibold text-slate-300">Company</th>
