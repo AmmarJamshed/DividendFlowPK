@@ -1,53 +1,60 @@
-# Deploy DividendFlow PK to Render via CLI
-# First-time setup:
-#   1. .\render-cli\cli_v2.12.0.exe login   (complete in browser)
-#   2. .\render-cli\cli_v2.12.0.exe workspace set   (select your workspace)
-# For CI: set RENDER_API_KEY env var (create at https://dashboard.render.com/u/settings#api-keys)
+# Deploy DividendFlow PK to Render
+# Option A: Set RENDER_API_KEY (create at https://dashboard.render.com/u/settings#api-keys)
+# Option B: Run render-cli login + workspace set, then use CLI
 
 $ErrorActionPreference = "Stop"
-$RenderExe = Join-Path $PSScriptRoot "render-cli\cli_v2.12.0.exe"
-
-if (-not (Test-Path $RenderExe)) {
-    Write-Host "Downloading Render CLI..." -ForegroundColor Yellow
-    $url = "https://github.com/render-oss/cli/releases/download/v2.12.0/cli_2.12.0_windows_amd64.zip"
-    $zip = Join-Path $env:TEMP "render-cli.zip"
-    Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
-    New-Item -ItemType Directory -Path (Join-Path $PSScriptRoot "render-cli") -Force | Out-Null
-    Expand-Archive -Path $zip -DestinationPath (Join-Path $PSScriptRoot "render-cli") -Force
-}
-
-Write-Host "=== Validating render.yaml ===" -ForegroundColor Cyan
-& $RenderExe blueprints validate render.yaml
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-Write-Host "`n=== Listing Render services ===" -ForegroundColor Cyan
-$servicesJson = & $RenderExe services -o json --confirm 2>&1
-if ($LASTEXITCODE -ne 0) {
-    if ($servicesJson -match "login") {
-        Write-Host "`nPlease run: .\render-cli\cli_v2.12.0.exe login" -ForegroundColor Yellow
-        Write-Host "Complete auth in browser, then run this script again." -ForegroundColor Yellow
-    } elseif ($servicesJson -match "workspace") {
-        Write-Host "`nPlease run: .\render-cli\cli_v2.12.0.exe workspace set" -ForegroundColor Yellow
-        Write-Host "Select your workspace, then run this script again." -ForegroundColor Yellow
-    }
-    exit 1
-}
-
-$services = $servicesJson | ConvertFrom-Json
-if ($services -isnot [array]) { $services = @($services) }
 $toDeploy = @("dividendflow-frontend", "dividendflow-backend", "dividendflow-news")
 $deployed = 0
 
-foreach ($name in $toDeploy) {
-    $svc = $services | Where-Object { $_.name -eq $name }
-    if ($svc) {
-        Write-Host "`nDeploying $name ($($svc.id))..." -ForegroundColor Green
-        & $RenderExe deploys create $svc.id -o text --confirm
-        if ($LASTEXITCODE -eq 0) { $deployed++ }
-    } else {
-        Write-Host "`n$name not found. Sync Blueprint: Dashboard > Blueprint > Sync" -ForegroundColor Yellow
+if ($env:RENDER_API_KEY) {
+    Write-Host "=== Deploying via Render API ===" -ForegroundColor Cyan
+    $headers = @{
+        "Authorization" = "Bearer $env:RENDER_API_KEY"
+        "Accept"        = "application/json"
+        "Content-Type"  = "application/json"
+    }
+    try {
+        $resp = Invoke-RestMethod -Uri "https://api.render.com/v1/services?limit=100" -Headers $headers -Method Get
+        $services = if ($resp -is [array]) { $resp } else { @($resp) }
+        foreach ($name in $toDeploy) {
+            $svc = $services | Where-Object { ($_.name -eq $name) -or ($_.service.name -eq $name) } | Select-Object -First 1
+            $id = if ($svc.service) { $svc.service.id } else { $svc.id }
+            if ($id) {
+                Write-Host "Deploying $name ($id)..." -ForegroundColor Green
+                Invoke-RestMethod -Uri "https://api.render.com/v1/services/$id/deploys" -Headers $headers -Method Post -Body "{}" | Out-Null
+                $deployed++
+            } else {
+                Write-Host "$name not found" -ForegroundColor Yellow
+            }
+        }
+    } catch {
+        Write-Host "API error: $_" -ForegroundColor Red
+        exit 1
+    }
+} else {
+    $RenderExe = Join-Path $PSScriptRoot "render-cli\cli_v2.12.0.exe"
+    if (-not (Test-Path $RenderExe)) {
+        Write-Host "Downloading Render CLI..." -ForegroundColor Yellow
+        Invoke-WebRequest -Uri "https://github.com/render-oss/cli/releases/download/v2.12.0/cli_2.12.0_windows_amd64.zip" -OutFile "$env:TEMP\render-cli.zip" -UseBasicParsing
+        New-Item -ItemType Directory -Path (Join-Path $PSScriptRoot "render-cli") -Force | Out-Null
+        Expand-Archive -Path "$env:TEMP\render-cli.zip" -DestinationPath (Join-Path $PSScriptRoot "render-cli") -Force
+    }
+    $servicesJson = & $RenderExe services -o json --confirm 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "`nSet RENDER_API_KEY, or run: .\render-cli\cli_v2.12.0.exe login" -ForegroundColor Yellow
+        Write-Host "Then: .\render-cli\cli_v2.12.0.exe workspace set" -ForegroundColor Yellow
+        exit 1
+    }
+    $services = $servicesJson | ConvertFrom-Json
+    if ($services -isnot [array]) { $services = @($services) }
+    foreach ($name in $toDeploy) {
+        $svc = $services | Where-Object { $_.name -eq $name }
+        if ($svc) {
+            Write-Host "Deploying $name..." -ForegroundColor Green
+            & $RenderExe deploys create $svc.id -o text --confirm
+            if ($LASTEXITCODE -eq 0) { $deployed++ }
+        }
     }
 }
 
-Write-Host "`n=== Done. Deployed $deployed service(s). ===" -ForegroundColor Cyan
-Write-Host "Set env vars for dividendflow-news: GROQ_API_KEY, GITHUB_TOKEN (Dashboard > dividendflow-news > Environment)" -ForegroundColor Yellow
+Write-Host "`n=== Done. Triggered $deployed deploy(s). ===" -ForegroundColor Cyan

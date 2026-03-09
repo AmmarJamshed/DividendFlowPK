@@ -2,6 +2,7 @@ node_modules/
 render-cli/
 .env
 .env.local
+.env.render
 .env.*.local
 **/.env
 *.log
