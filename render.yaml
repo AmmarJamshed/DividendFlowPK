@@ -20,6 +20,24 @@ services:
       - key: RESEND_API_KEY
         sync: false
 
+  # Cron: Daily news scraper + Groq AI commentary (7am PKT)
+  - type: cron
+    runtime: node
+    name: dividendflow-news
+    schedule: "0 2 * * *"
+    rootDir: .
+    buildCommand: cd scripts && npm install
+    startCommand: cd scripts && node run-news.js
+    envVars:
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_REPO
+        value: AmmarJamshed/DividendFlowPK
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GNEWS_API_KEY
+        sync: false
+
   # Cron: Health check - ping backend every 6 hours
   - type: cron
     runtime: node

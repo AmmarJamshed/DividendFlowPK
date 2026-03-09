@@ -7,6 +7,7 @@ export default function AIRiskDashboard() {
   const [selected, setSelected] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [dailyNews, setDailyNews] = useState({ news: [], commentary: [] });
 
   useEffect(() => {
     api.getDividends()
@@ -14,6 +15,12 @@ export default function AIRiskDashboard() {
         const names = [...new Set((res.data || []).map(d => d.Company || d.company).filter(Boolean))].sort();
         if (names.length) setCompanies(names);
       })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    api.getDailyNews()
+      .then(res => setDailyNews(res.data || { news: [], commentary: [] }))
       .catch(() => {});
   }, []);
 
@@ -34,8 +41,49 @@ export default function AIRiskDashboard() {
     return 'text-red-400';
   };
 
+  const byCompany = (arr, key) => {
+    const m = {};
+    (arr || []).forEach(item => {
+      const c = item.Company || item.company;
+      if (!c) return;
+      if (!m[c]) m[c] = [];
+      m[c].push(item);
+    });
+    return m;
+  };
+  const newsByCo = byCompany(dailyNews.news, 'Company');
+  const commentaryByCo = (dailyNews.commentary || []).reduce((acc, c) => {
+    acc[c.Company || c.company] = c; return acc;
+  }, {});
+
   return (
     <div className="space-y-6">
+      {(dailyNews.news?.length > 0 || dailyNews.commentary?.length > 0) && (
+        <div className="card p-6 border-teal-500/20">
+          <h3 className="card-header text-lg">Daily News & AI Commentary</h3>
+          <p className="card-subtitle mb-4">Latest news and Groq-powered commentary on adverse events</p>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto">
+            {Object.keys(newsByCo).length > 0 ? Object.entries(newsByCo).slice(0, 12).map(([co, items]) => (
+              <div key={co} className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/50">
+                <div className="font-semibold text-teal-400 mb-2">{co}</div>
+                <ul className="space-y-1 text-sm text-slate-300 mb-2">
+                  {items.slice(0, 3).map((n, i) => (
+                    <li key={i}>{n.Headline || n.headline}</li>
+                  ))}
+                </ul>
+                {commentaryByCo[co]?.Commentary && (
+                  <div className="text-sm text-slate-400 italic border-t border-slate-600/50 pt-2 mt-2">
+                    {commentaryByCo[co].Commentary}
+                  </div>
+                )}
+              </div>
+            )) : (
+              <p className="text-slate-400 text-sm">No news yet. Run the daily news scraper to populate.</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="card p-6">
         <h3 className="card-header text-lg">AI Adverse Media Analysis</h3>
         <p className="card-subtitle mb-6">Groq-powered analysis of governance risk, regulatory issues, and sentiment. Risk level elevated based on sentiment and volatility indicators when applicable.</p>

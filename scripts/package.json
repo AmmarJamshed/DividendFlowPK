@@ -7,12 +7,15 @@
     "scrape": "node scrape-psx.js",
     "update-github": "node update-github.js",
     "run": "node run-all.js",
-    "health": "node health-check.js"
+    "health": "node health-check.js",
+    "news": "node scrape-news.js",
+    "run-news": "node run-news.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
     "cheerio": "^1.0.0",
     "nodemailer": "^6.9.0",
-    "resend": "^4.0.0"
+    "resend": "^4.0.0",
+    "rss-parser": "^3.13.0"
   }
 }

@@ -295,6 +295,24 @@ app.get('/api/capital-gain', async (req, res) => {
   }
 });
 
+// GET /api/daily-news - Scraped news + AI commentary for PSX companies
+app.get('/api/daily-news', async (req, res) => {
+  try {
+    const newsPath = path.join(DATA_PATH, 'news');
+    let news = [];
+    let commentary = [];
+    if (fs.existsSync(path.join(newsPath, 'daily_news.csv'))) {
+      news = await readCSV(path.join(newsPath, 'daily_news.csv'));
+    }
+    if (fs.existsSync(path.join(newsPath, 'ai_commentary.csv'))) {
+      commentary = await readCSV(path.join(newsPath, 'ai_commentary.csv'));
+    }
+    res.json({ news, commentary });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/data-status - Last updated timestamp for PSX data
 app.get('/api/data-status', (req, res) => {
   try {

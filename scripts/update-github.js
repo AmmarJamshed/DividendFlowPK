@@ -74,3 +74,25 @@ export async function pushToGitHub(dividends, reportingCycles) {
   console.log('Pushed to GitHub:', msg);
   return true;
 }
+
+export async function pushNewsToGitHub() {
+  if (!TOKEN) {
+    console.error('GITHUB_TOKEN required');
+    return false;
+  }
+  const { readFileSync, existsSync } = await import('fs');
+  const { join } = await import('path');
+  const newsPath = join(__dirname, '..', 'data', 'news');
+  if (!existsSync(join(newsPath, 'daily_news.csv'))) {
+    console.log('No news file to push');
+    return false;
+  }
+  const ts = new Date().toISOString().slice(0, 19);
+  const msg = `Daily news + AI commentary: ${ts}`;
+  await updateFile('data/news/daily_news.csv', readFileSync(join(newsPath, 'daily_news.csv'), 'utf-8'), msg);
+  if (existsSync(join(newsPath, 'ai_commentary.csv'))) {
+    await updateFile('data/news/ai_commentary.csv', readFileSync(join(newsPath, 'ai_commentary.csv'), 'utf-8'), msg);
+  }
+  console.log('Pushed news to GitHub:', msg);
+  return true;
+}

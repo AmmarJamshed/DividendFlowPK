@@ -69,7 +69,20 @@ Data is updated periodically. For latest figures, visit PSX directly.
 - **Quarter Cycles**: Edit `data/financials/psx_quarter_cycles.csv`
   - Columns: Company, Sector, Fiscal_Year_End, Quarter_End_Months, Dividend_Announcement_Period, Book_Closure_Month, Estimated_Payment_Month
 
-## Adding News Files
+## Daily News Scraper
+
+A cron job runs daily (7am PKT) to:
+
+1. **Scrape news** from Dawn Business RSS (and optionally GNews API if `GNEWS_API_KEY` is set)
+2. **Filter** by PSX companies in the dividend calendar
+3. **Send to Groq** for AI commentary on adverse events
+4. **Push** to `data/news/daily_news.csv` and `data/news/ai_commentary.csv`
+
+Run manually: `cd scripts && node run-news.js`
+
+Required env: `GROQ_API_KEY`, `GITHUB_TOKEN` (to push). Optional: `GNEWS_API_KEY` for broader news coverage.
+
+## Adding News Files (Manual)
 
 Place files in `data/news/`:
 
@@ -120,6 +133,7 @@ This platform provides analytical insights based on historical and probabilistic
 | /api/dividends | GET | Dividend calendar data |
 | /api/month-coverage | GET | Monthly coverage for optimizer |
 | /api/risk-score | POST | AI risk analysis (body: { companyName }) |
+| /api/daily-news | GET | Scraped news + Groq AI commentary |
 | /api/forecast | GET | Price forecast (?company=HBL) |
 | /api/salary-simulator | POST | Portfolio calculator |
 | /api/reporting-cycles | GET | PSX quarter cycles |
