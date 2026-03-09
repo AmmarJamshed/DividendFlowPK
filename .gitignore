@@ -1,4 +1,5 @@
 node_modules/
+render-cli/
 .env
 .env.local
 .env.*.local

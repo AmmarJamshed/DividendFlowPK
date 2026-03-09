@@ -111,6 +111,19 @@ This platform provides analytical insights based on historical and probabilistic
 
 **Never generates**: Buy now, Sell tomorrow, Guaranteed returns
 
+## Deploy to Render via CLI
+
+```powershell
+# First-time: login and set workspace
+.\render-cli\cli_v2.12.0.exe login      # Complete in browser
+.\render-cli\cli_v2.12.0.exe workspace set   # Select workspace
+
+# Deploy all services (frontend, backend, news cron)
+.\deploy-render.ps1
+```
+
+The script downloads the Render CLI if missing, validates `render.yaml`, and triggers deploys. Set `GROQ_API_KEY` and `GITHUB_TOKEN` for the `dividendflow-news` cron in the Render Dashboard.
+
 ## Future Deployment
 
 ### Frontend (Hostinger)
