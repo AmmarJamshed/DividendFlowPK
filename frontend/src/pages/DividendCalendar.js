@@ -32,6 +32,10 @@ export default function DividendCalendar() {
         <div className="p-6 border-b border-slate-700/50 bg-gradient-to-r from-slate-800/50 to-transparent">
           <h3 className="card-header text-lg">Dividend Calendar by Payment Month</h3>
           <p className="card-subtitle">PSX companies and their dividend payment schedules. Each row is a separate dividend payment (interim or final); the same company appears multiple times for different payment periods.</p>
+          <div className="mt-4 p-4 rounded-xl bg-slate-700/30 border border-slate-600/50 text-sm text-slate-300 space-y-2">
+            <p><span className="font-semibold text-amber-400">Final dividend</span> — Declared and paid after the fiscal year ends, typically with annual results. Reflects the full-year performance.</p>
+            <p><span className="font-semibold text-slate-300">Interim dividend</span> — Declared and paid during the fiscal year (e.g. after Q1, Q2, or Q3). Companies may pay one or more interim dividends before the final.</p>
+          </div>
         </div>
         <div className="table-responsive">
           <table className="w-full">
