@@ -370,6 +370,72 @@ app.get('/api/capital-gain', async (req, res) => {
   }
 });
 
+// Compute latest vs previous price changes from daily_prices.csv (uses two most recent dates)
+async function computePriceChangesFromDailyPrices() {
+  const dailyPath = path.join(DATA_PATH, 'prices', 'daily_prices.csv');
+  if (!fs.existsSync(dailyPath)) return [];
+  const rows = await readCSV(dailyPath);
+  const byCompanyDate = new Map(); // "Company|Date" -> price
+  const dates = new Set();
+  for (const r of rows) {
+    const company = (r.Company || r.company || '').trim();
+    const date = (r.Date || r.date || '').trim();
+    const price = parseFloat(r.Price || r.price || 0);
+    if (company && date && price > 0) {
+      byCompanyDate.set(`${company}|${date}`, price);
+      dates.add(date);
+    }
+  }
+  const sortedDates = [...dates].sort().reverse();
+  if (sortedDates.length < 1) return [];
+  const latestDate = sortedDates[0];
+  const prevDate = sortedDates.length >= 2 ? sortedDates[1] : null;
+  let prevPrices = new Map();
+  if (prevDate) {
+    for (const r of rows) {
+      const company = (r.Company || r.company || '').trim();
+      const price = parseFloat(r.Price || r.price || 0);
+      if (company && (r.Date || r.date) === prevDate && price > 0) prevPrices.set(company, price);
+    }
+  }
+  if (prevPrices.size === 0 && prevDate === null) {
+    const divPath = path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv');
+    if (fs.existsSync(divPath)) {
+      const divRows = await readCSV(divPath);
+      const seen = new Set();
+      for (const d of divRows) {
+        const c = (d.Company || d.company || '').trim();
+        const p = parseFloat(d.Price || d.price || 0);
+        if (c && p > 0 && !seen.has(c)) {
+          prevPrices.set(c, p);
+          seen.add(c);
+        }
+      }
+    }
+  }
+  const changes = [];
+  const seen = new Set();
+  for (const r of rows) {
+    const company = (r.Company || r.company || '').trim();
+    if (!company || seen.has(company)) continue;
+    const priceLatest = byCompanyDate.get(`${company}|${latestDate}`);
+    const pricePrev = prevPrices.get(company);
+    if (!priceLatest || !pricePrev || pricePrev <= 0) continue;
+    seen.add(company);
+    const change = priceLatest - pricePrev;
+    const changePct = (change / pricePrev) * 100;
+    changes.push({
+      Company: company,
+      Price: Math.round(priceLatest * 100) / 100,
+      PreviousPrice: Math.round(pricePrev * 100) / 100,
+      Change: Math.round(change * 100) / 100,
+      ChangePct: Math.round(changePct * 100) / 100,
+      Date: latestDate,
+    });
+  }
+  return changes.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
+}
+
 // GET /api/daily-news - Scraped news + prices + AI commentary for PSX companies
 app.get('/api/daily-news', async (req, res) => {
   try {
@@ -385,7 +451,8 @@ app.get('/api/daily-news', async (req, res) => {
     if (fs.existsSync(path.join(newsPath, 'ai_commentary.csv'))) {
       commentary = await readCSV(path.join(newsPath, 'ai_commentary.csv'));
     }
-    if (fs.existsSync(path.join(pricesPath, 'price_changes.csv'))) {
+    priceChanges = await computePriceChangesFromDailyPrices();
+    if (priceChanges.length === 0 && fs.existsSync(path.join(pricesPath, 'price_changes.csv'))) {
       priceChanges = await readCSV(path.join(pricesPath, 'price_changes.csv'));
     }
     if (fs.existsSync(path.join(newsPath, 'price_commentary.csv'))) {
