@@ -40,6 +40,7 @@ export default function DividendCalendar() {
                 <th className="text-left p-4 font-semibold text-slate-300">Company</th>
                 <th className="text-left p-4 font-semibold text-slate-300">Sector</th>
                 <th className="text-left p-4 font-semibold text-slate-300">Dividend/Share</th>
+                <th className="text-left p-4 font-semibold text-slate-300">Interim/Final</th>
                 <th className="text-left p-4 font-semibold text-slate-300">Payment Period</th>
                 <th className="text-left p-4 font-semibold text-slate-300">Yield %</th>
               </tr>
@@ -49,13 +50,20 @@ export default function DividendCalendar() {
                 const pm = d.Payment_month || d.payment_month;
                 const yr = d.Year || d.year;
                 const period = `${monthNames[pm] || pm} ${yr}`;
+                const type = d.Type || d.dividendType || 'Interim';
+                const isFinal = type === 'Final';
                 return (
                   <tr key={i} className="border-t border-slate-700/50 hover:bg-slate-700/20 transition-colors">
                     <td className="p-4 font-medium text-slate-200">{d.Company || d.company}</td>
                     <td className="p-4 text-slate-400">{d.Sector || d.sector}</td>
                     <td className="p-4">{d.Dividend_per_share || d.dividend_per_share}</td>
                     <td className="p-4">
-                      <span className="px-2 py-1 rounded-lg bg-slate-600/40 text-slate-300 font-medium" title="Each row = one dividend payment (interim or final)">
+                      <span className={`px-2 py-1 rounded-lg font-medium text-xs ${isFinal ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-600/40 text-slate-300'}`} title={isFinal ? 'Final dividend (announced with annual results)' : 'Interim dividend (paid during the year)'}>
+                        {type}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className="px-2 py-1 rounded-lg bg-slate-600/40 text-slate-300 font-medium">
                         {period}
                       </span>
                     </td>

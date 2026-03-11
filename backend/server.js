@@ -130,10 +130,36 @@ async function getLatestPrices() {
   return latest;
 }
 
-// Enrich dividends with latest prices and recalculated yields (yield = div_per_share / price * 100)
+// Infer Interim vs Final from Fiscal_Year_End and Payment_month
+function inferDividendType(company, paymentMonth, cyclesMap) {
+  const cycle = cyclesMap.get(company);
+  const fyEnd = (cycle?.Fiscal_Year_End || cycle?.fiscal_year_end || '').toLowerCase();
+  const pm = parseInt(paymentMonth || 0);
+  if (!pm) return 'Interim';
+  if (fyEnd.includes('december')) {
+    if (pm === 4) return 'Final';
+    if (pm === 10) return 'Interim';
+    if (pm >= 1 && pm <= 4) return 'Final';
+    return 'Interim';
+  }
+  if (fyEnd.includes('june')) {
+    if (pm === 10) return 'Final';
+    if (pm === 4) return 'Interim';
+    if (pm >= 7 && pm <= 10) return 'Final';
+    return 'Interim';
+  }
+  return pm === 10 ? 'Final' : pm === 4 ? 'Interim' : 'Interim';
+}
+
+// Enrich dividends with latest prices, recalculated yields, and Interim/Final type
 async function getEnrichedDividends() {
   const data = await readCSV(path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv'));
   const latestPrices = await getLatestPrices();
+  let cyclesMap = new Map();
+  try {
+    const cycles = await readCSV(path.join(DATA_PATH, 'financials', 'psx_quarter_cycles.csv'));
+    cycles.forEach(c => cyclesMap.set((c.Company || c.company || '').trim(), c));
+  } catch (_) {}
   return data.map(d => {
     const company = (d.Company || d.company || '').trim();
     const divPerShare = parseFloat(d.Dividend_per_share || d.dividend_per_share || 0);
@@ -144,7 +170,8 @@ async function getEnrichedDividends() {
     const yieldVal = price > 0 && divPerShare > 0
       ? Math.round((divPerShare / price) * 10000) / 100
       : csvYield;
-    return { ...d, Price: price, Dividend_yield: yieldVal, dividend_yield: yieldVal };
+    const type = inferDividendType(company, d.Payment_month || d.payment_month, cyclesMap);
+    return { ...d, Price: price, Dividend_yield: yieldVal, dividend_yield: yieldVal, Type: type, dividendType: type };
   });
 }
 
