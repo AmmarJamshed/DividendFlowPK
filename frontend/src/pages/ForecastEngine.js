@@ -84,12 +84,15 @@ export default function ForecastEngine() {
 
       {!loading && forecast && (
         <>
-          {forecast.asOfDate && (
+          {(forecast.asOfDate || forecast.lastPrice) && (
             <div className="card p-4 bg-slate-700/30 border border-slate-600/50">
               <p className="text-slate-300 text-sm">
                 <span className="text-slate-400">Last closing price:</span> Rs {forecast.lastPrice?.toLocaleString()}
-                <span className="text-slate-500 ml-2">• As of {forecast.asOfDate}</span>
+                <span className="text-slate-500 ml-2">• As of {forecast.asOfDate || 'latest'}</span>
               </p>
+              {forecast.message && (
+                <p className="text-amber-400/80 text-xs mt-1">{forecast.message}</p>
+              )}
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

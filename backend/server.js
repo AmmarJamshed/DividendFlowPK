@@ -201,23 +201,30 @@ app.get('/api/forecast', async (req, res) => {
     const today = new Date().toISOString().slice(0, 10);
     if (fs.existsSync(dividendsPath)) {
       const divData = await readCSV(dividendsPath);
+      const seenDiv = new Set();
       divData.forEach(d => {
         const c = (d.Company || d.company || '').trim();
         const p = parseFloat(d.Price || d.price || 0);
-        if (c && p > 0) priceData.push({ _company: c, _price: p, _date: today });
+        if (c && p > 0 && !seenDiv.has(c)) {
+          seenDiv.add(c);
+          priceData.push({ _company: c, _price: p, _date: today });
+        }
       });
     }
 
     const search = (company || '').toLowerCase();
     let filtered = search ? priceData.filter(d => d._company.toLowerCase().includes(search)) : priceData;
+    let filteredByDate = filtered;
     if (asOf) {
-      filtered = filtered.filter(d => (d._date || '') <= asOf);
+      filteredByDate = filtered.filter(d => (d._date || '') <= asOf);
     }
     const byDate = new Map();
-    filtered.filter(d => d._price > 0).forEach(d => {
-      const dt = d._date || '';
-      byDate.set(dt, d);
-    });
+    (filteredByDate.length > 0 ? filteredByDate : filtered)
+      .filter(d => d._price > 0)
+      .forEach(d => {
+        const dt = d._date || '';
+        byDate.set(dt, d);
+      });
     const sorted = [...byDate.values()].sort((a, b) => (a._date || '').localeCompare(b._date || ''));
 
     if (sorted.length === 0) {
@@ -225,7 +232,7 @@ app.get('/api/forecast', async (req, res) => {
         company: company || 'Sample',
         lowCase: 0, baseCase: 0, highCase: 0,
         rsi: 50, macd: 0, volatility: 0, lastPrice: 0, asOfDate: null,
-        message: 'Insufficient price data. Add CSV files to data/prices/'
+        message: 'Insufficient price data for this company. Add CSV files to data/prices/ or ensure dividend calendar has Price.'
       });
     }
 
