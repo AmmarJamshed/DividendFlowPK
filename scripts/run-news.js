@@ -5,13 +5,25 @@
  */
 import { scrapePsxNews, getGroqPriceCommentary } from './scrape-news.js';
 import { scrapeCurrentPrices, computePriceChanges, loadPreviousPrices } from './scrape-prices.js';
-import { pushNewsToGitHub } from './update-github.js';
-import { writeFileSync, mkdirSync } from 'fs';
+import { pushNewsToGitHub, toDividendCsv } from './update-github.js';
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA = join(__dirname, '..', 'data');
+
+function loadDividendCsv(path) {
+  if (!existsSync(path)) return [];
+  const lines = readFileSync(path, 'utf-8').split('\n').filter(Boolean);
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.replace(/^"|"$/g, '').trim());
+    const row = {};
+    headers.forEach((h, i) => row[h] = vals[i]);
+    return row;
+  });
+}
 
 function csvEscape(val) {
   const s = String(val ?? '');
@@ -62,6 +74,23 @@ async function main() {
     join(DATA, 'prices', 'daily_prices.csv'),
     toCsv(dailyPrices, ['Company', 'Date', 'Price'])
   );
+
+  // Refresh dividend calendar with latest prices and recalculated yields
+  const divPath = join(DATA, 'dividends', 'psx_dividend_calendar.csv');
+  if (existsSync(divPath) && currentPrices.size > 0) {
+    const dividends = loadDividendCsv(divPath);
+    const updated = dividends.map(d => {
+      const company = (d.Company || d.company || '').trim();
+      const price = currentPrices.get(company);
+      if (!price || price <= 0) return d;
+      const divPerShare = parseFloat(d.Dividend_per_share || d.dividend_per_share || 0);
+      const yieldVal = divPerShare > 0 ? Math.round((divPerShare / price) * 10000) / 100 : (parseFloat(d.Dividend_yield || d.dividend_yield) || 0);
+      return { ...d, Price: price, Dividend_yield: yieldVal, dividend_yield: yieldVal };
+    });
+    mkdirSync(join(DATA, 'dividends'), { recursive: true });
+    writeFileSync(divPath, toDividendCsv(updated));
+    console.log('[Prices] Updated dividend calendar with', currentPrices.size, 'prices');
+  }
 
   const priceCommentary = [];
   const topGainers = priceChanges.filter(c => c.ChangePct > 0).slice(0, 5);

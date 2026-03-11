@@ -108,6 +108,10 @@ export async function pushNewsToGitHub() {
   if (existsSync(join(pricesPath, 'price_changes.csv'))) {
     await updateFile('data/prices/price_changes.csv', readFileSync(join(pricesPath, 'price_changes.csv'), 'utf-8'), msg);
   }
+  const divPath = join(dataDir, 'dividends', 'psx_dividend_calendar.csv');
+  if (existsSync(divPath)) {
+    await updateFile('data/dividends/psx_dividend_calendar.csv', readFileSync(divPath, 'utf-8'), msg);
+  }
   console.log('Pushed news + prices to GitHub:', msg);
   return true;
 }

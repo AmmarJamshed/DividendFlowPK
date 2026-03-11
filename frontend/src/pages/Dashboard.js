@@ -145,6 +145,9 @@ export default function Dashboard() {
                   </li>
                 ))}
               </ul>
+              {(dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) > 0).length === 0 && (
+                <p className="text-slate-500 text-sm py-2">No gainers today — all tracked stocks declined.</p>
+              )}
             </div>
             <div>
               <h4 className="text-sm font-semibold text-red-400 mb-2">Worst Stock Price Plunges</h4>
@@ -156,6 +159,9 @@ export default function Dashboard() {
                   </li>
                 ))}
               </ul>
+              {(dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) < 0).length === 0 && (
+                <p className="text-slate-500 text-sm py-2">No decliners today — all tracked stocks gained.</p>
+              )}
             </div>
           </div>
         </div>

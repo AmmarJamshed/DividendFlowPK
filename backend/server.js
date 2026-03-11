@@ -104,10 +104,54 @@ async function analyzeWithGroq(prompt) {
 
 // ============ API ROUTES ============
 
-// GET /api/dividends - Dividend calendar data
+// Load latest price per company from daily_prices (and other price CSVs)
+async function getLatestPrices() {
+  const pricesPath = path.join(DATA_PATH, 'prices');
+  const latest = new Map();
+  if (!fs.existsSync(pricesPath)) return latest;
+  const files = fs.readdirSync(pricesPath).filter(f => f.endsWith('.csv'));
+  for (const file of files) {
+    const rows = await readCSV(path.join(pricesPath, file));
+    const dateIdx = rows[0] ? Object.keys(rows[0]).find(k => /date/i.test(k)) : null;
+    const companyIdx = rows[0] ? Object.keys(rows[0]).find(k => /company/i.test(k)) : null;
+    const priceIdx = rows[0] ? Object.keys(rows[0]).find(k => /price/i.test(k)) : null;
+    if (!companyIdx || !priceIdx) continue;
+    for (const r of rows) {
+      const company = (r.Company || r.company || r[companyIdx] || '').trim();
+      const price = parseFloat(r.Price || r.price || r[priceIdx] || 0);
+      const date = r.Date || r.date || r[dateIdx] || '';
+      if (!company || price <= 0) continue;
+      const existing = latest.get(company);
+      if (!existing || (date && (!existing.date || date > existing.date))) {
+        latest.set(company, { price, date });
+      }
+    }
+  }
+  return latest;
+}
+
+// Enrich dividends with latest prices and recalculated yields (yield = div_per_share / price * 100)
+async function getEnrichedDividends() {
+  const data = await readCSV(path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv'));
+  const latestPrices = await getLatestPrices();
+  return data.map(d => {
+    const company = (d.Company || d.company || '').trim();
+    const divPerShare = parseFloat(d.Dividend_per_share || d.dividend_per_share || 0);
+    const csvPrice = parseFloat(d.Price || d.price || 0);
+    const csvYield = parseFloat(d.Dividend_yield || d.dividend_yield || 0);
+    const lp = latestPrices.get(company);
+    const price = lp?.price > 0 ? lp.price : csvPrice;
+    const yieldVal = price > 0 && divPerShare > 0
+      ? Math.round((divPerShare / price) * 10000) / 100
+      : csvYield;
+    return { ...d, Price: price, Dividend_yield: yieldVal, dividend_yield: yieldVal };
+  });
+}
+
+// GET /api/dividends - Dividend calendar data (yields recalculated from latest prices)
 app.get('/api/dividends', async (req, res) => {
   try {
-    const data = await readCSV(path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv'));
+    const data = await getEnrichedDividends();
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -117,7 +161,7 @@ app.get('/api/dividends', async (req, res) => {
 // GET /api/month-coverage - Monthly dividend coverage for Weak Month Optimizer
 app.get('/api/month-coverage', async (req, res) => {
   try {
-    const dividends = await readCSV(path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv'));
+    const dividends = await getEnrichedDividends();
     const monthCoverage = {};
     for (let m = 1; m <= 12; m++) monthCoverage[m] = { companies: [], totalYield: 0, count: 0 };
     
