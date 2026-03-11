@@ -21,14 +21,16 @@ export default function Dashboard() {
   const [dividends, setDividends] = useState([]);
   const [monthCoverage, setMonthCoverage] = useState(null);
   const [riskAlerts, setRiskAlerts] = useState([]);
+  const [dailyNews, setDailyNews] = useState({ priceChanges: [], priceCommentary: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const [divRes, covRes] = await Promise.all([
+        const [divRes, covRes, newsRes] = await Promise.all([
           api.getDividends(),
-          api.getMonthCoverage()
+          api.getMonthCoverage(),
+          api.getDailyNews().catch(() => ({ data: {} }))
         ]);
         setDividends(divRes.data);
         setMonthCoverage(covRes.data);
@@ -36,6 +38,7 @@ export default function Dashboard() {
           { company: 'OGDC', level: 'Moderate', message: 'Regulatory scrutiny data-driven signal' },
           { company: 'PSO', level: 'Elevated', message: 'Volatility indicators suggest caution' }
         ]);
+        setDailyNews(newsRes.data || {});
       } catch (err) {
         console.error(err);
       } finally {
@@ -121,6 +124,43 @@ export default function Dashboard() {
           <Link to="/salary-simulator" className="mt-4 btn-primary inline-block text-center">Try it →</Link>
         </div>
       </div>
+
+      {(dailyNews.priceChanges?.length > 0) && (
+        <div className="card p-6 animate-slide-up">
+          <h3 className="card-header">Today vs Yesterday</h3>
+          <p className="card-subtitle">
+            Today vs yesterday. Updated daily after market close (5pm PKT).
+            {dailyNews.priceChanges?.[0]?.Date && (
+              <span className="block text-slate-500 text-xs mt-1">As of {dailyNews.priceChanges[0].Date}</span>
+            )}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div>
+              <h4 className="text-sm font-semibold text-green-400 mb-2">Top Stock Appreciations</h4>
+              <ul className="space-y-2">
+                {(dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) > 0).slice(0, 5).map((c, i) => (
+                  <li key={i} className="flex justify-between items-center py-2 border-b border-slate-700/50">
+                    <span className="text-slate-200">{c.Company}</span>
+                    <span className="text-green-400 font-semibold">+{c.ChangePct}%</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-red-400 mb-2">Worst Stock Price Plunges</h4>
+              <ul className="space-y-2">
+                {(dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) < 0).slice(0, 5).map((c, i) => (
+                  <li key={i} className="flex justify-between items-center py-2 border-b border-slate-700/50">
+                    <span className="text-slate-200">{c.Company}</span>
+                    <span className="text-red-400 font-semibold">{c.ChangePct}%</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Disclaimer />
     </div>
   );

@@ -20,11 +20,11 @@ services:
       - key: RESEND_API_KEY
         sync: false
 
-  # Cron: Daily news scraper + Groq AI commentary (7am PKT)
+  # Cron: Daily news + price scraper + Groq AI commentary (5pm PKT, after market close)
   - type: cron
     runtime: node
     name: dividendflow-news
-    schedule: "0 2 * * *"
+    schedule: "0 12 * * *"
     rootDir: .
     buildCommand: cd scripts && npm install
     startCommand: cd scripts && node run-news.js

@@ -1,8 +1,12 @@
 # Deploy DividendFlow PK to Render
-# Option A: Set RENDER_API_KEY (create at https://dashboard.render.com/u/settings#api-keys)
-# Option B: Run render-cli login + workspace set, then use CLI
+# Loads RENDER_API_KEY from api-keys.txt if not set. Or set env var directly.
 
 $ErrorActionPreference = "Stop"
+if (-not $env:RENDER_API_KEY -and (Test-Path (Join-Path $PSScriptRoot "api-keys.txt"))) {
+    Get-Content (Join-Path $PSScriptRoot "api-keys.txt") | ForEach-Object {
+        if ($_ -match '^\s*RENDER_API_KEY=(.+)$') { $env:RENDER_API_KEY = $matches[1].Trim() }
+    }
+}
 $toDeploy = @("dividendflow-frontend", "dividendflow-backend", "dividendflow-news")
 $deployed = 0
 

@@ -158,6 +158,41 @@ Reply with your analysis only.`;
   }
 }
 
+export async function getGroqPriceCommentary(company, direction, changePct, headlines) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey || apiKey === 'your_api_key_here') return null;
+  const text = headlines.length > 0 ? headlines.slice(0, 6).join('\n- ') : 'No specific news found.';
+  const prompt = `You are a financial analyst for the Pakistan Stock Exchange. ${company} stock ${direction} ${Math.abs(changePct).toFixed(1)}% today.
+
+Relevant news:
+- ${text}
+
+In 2-3 sentences, explain why this stock likely ${direction === 'gained' ? 'gained' : 'declined'} based on the news. Be factual. Do NOT give buy/sell advice.`;
+
+  try {
+    const { data } = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 150,
+        temperature: 0.3,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000,
+      }
+    );
+    return (data.choices?.[0]?.message?.content || '').trim();
+  } catch (err) {
+    console.error('[News] Groq price commentary error for', company, err.message);
+    return null;
+  }
+}
+
 function csvEscape(val) {
   const s = String(val ?? '');
   return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;

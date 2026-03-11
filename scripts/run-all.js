@@ -86,18 +86,29 @@ async function main() {
   const changes = detectChanges(fallbackDiv, dividends);
   console.log('[Scraper] Dividends:', dividends.length, 'Reporting cycles:', cycles.length, '|', changes.summary);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const byCompany = new Map();
+  dividends.forEach(d => {
+    const c = d.Company || d.company;
+    const p = parseFloat(d.Price || d.price || 0);
+    if (c && p > 0) byCompany.set(c, p);
+  });
+  const { writeFileSync, mkdirSync } = await import('fs');
+  const { toDividendCsv, toCyclesCsv } = await import('./update-github.js');
+  mkdirSync(join(DATA, 'dividends'), { recursive: true });
+  mkdirSync(join(DATA, 'financials'), { recursive: true });
+  mkdirSync(join(DATA, 'prices'), { recursive: true });
+  writeFileSync(join(DATA, 'dividends', 'psx_dividend_calendar.csv'), toDividendCsv(dividends));
+  writeFileSync(join(DATA, 'financials', 'psx_quarter_cycles.csv'), toCyclesCsv(cycles));
+  const priceLines = ['Company,Date,Price', ...[...byCompany].map(([c, p]) => `${c},${today},${p}`)];
+  writeFileSync(join(DATA, 'prices', 'daily_prices.csv'), priceLines.join('\n'));
+
   let pushed = false;
   if (process.env.GITHUB_TOKEN) {
     await pushToGitHub(dividends, cycles);
     pushed = true;
   } else {
-    console.log('[Scraper] No GITHUB_TOKEN - skipping push. Writing locally.');
-    const { writeFileSync, mkdirSync } = await import('fs');
-    const { toDividendCsv, toCyclesCsv } = await import('./update-github.js');
-    mkdirSync(join(DATA, 'dividends'), { recursive: true });
-    mkdirSync(join(DATA, 'financials'), { recursive: true });
-    writeFileSync(join(DATA, 'dividends', 'psx_dividend_calendar.csv'), toDividendCsv(dividends));
-    writeFileSync(join(DATA, 'financials', 'psx_quarter_cycles.csv'), toCyclesCsv(cycles));
+    console.log('[Scraper] No GITHUB_TOKEN - skipping push.');
   }
 
   if (process.env.SCRAPER_EMAIL_TO) {

@@ -176,42 +176,65 @@ Format: Start with "Risk Score: X" then provide brief analysis.`;
   }
 });
 
-// GET /api/forecast - Price forecast with technical indicators
+// GET /api/forecast - Price forecast with technical indicators (uses latest closing price)
+// ?company=HBL&asOf=2026-03-10 (optional: forecast as of specific date)
 app.get('/api/forecast', async (req, res) => {
   try {
-    const { company } = req.query;
+    const { company, asOf } = req.query;
     const pricesPath = path.join(DATA_PATH, 'prices');
+    const dividendsPath = path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv');
     let priceData = [];
-    
+
     if (fs.existsSync(pricesPath)) {
       const files = fs.readdirSync(pricesPath).filter(f => f.endsWith('.csv'));
       for (const file of files) {
         const data = await readCSV(path.join(pricesPath, file));
-        const filtered = company ? data.filter(d => 
-          (d.Company || d.company || '').toLowerCase().includes(company.toLowerCase())
-        ) : data;
-        priceData = priceData.concat(filtered);
+        priceData = priceData.concat(data.map(d => ({
+          ...d,
+          _date: d.Date || d.date || d.Date || '',
+          _price: parseFloat(d.Price || d.price || d.Close || d.close || 0),
+          _company: (d.Company || d.company || '').trim()
+        })));
       }
     }
 
-    if (priceData.length === 0) {
+    const today = new Date().toISOString().slice(0, 10);
+    if (fs.existsSync(dividendsPath)) {
+      const divData = await readCSV(dividendsPath);
+      divData.forEach(d => {
+        const c = (d.Company || d.company || '').trim();
+        const p = parseFloat(d.Price || d.price || 0);
+        if (c && p > 0) priceData.push({ _company: c, _price: p, _date: today });
+      });
+    }
+
+    const search = (company || '').toLowerCase();
+    let filtered = search ? priceData.filter(d => d._company.toLowerCase().includes(search)) : priceData;
+    if (asOf) {
+      filtered = filtered.filter(d => (d._date || '') <= asOf);
+    }
+    const byDate = new Map();
+    filtered.filter(d => d._price > 0).forEach(d => {
+      const dt = d._date || '';
+      byDate.set(dt, d);
+    });
+    const sorted = [...byDate.values()].sort((a, b) => (a._date || '').localeCompare(b._date || ''));
+
+    if (sorted.length === 0) {
       return res.json({
         company: company || 'Sample',
         lowCase: 0, baseCase: 0, highCase: 0,
-        rsi: 50, macd: 0, volatility: 0,
+        rsi: 50, macd: 0, volatility: 0, lastPrice: 0, asOfDate: null,
         message: 'Insufficient price data. Add CSV files to data/prices/'
       });
     }
 
-    const prices = priceData
-      .map(d => parseFloat(d.Price || d.price || d.Close || d.close || 0))
-      .filter(p => p > 0)
-      .slice(-50);
-
+    const prices = sorted.map(d => d._price).slice(-50);
     const lastPrice = prices[prices.length - 1] || 100;
+    const asOfDate = sorted[sorted.length - 1]._date || today;
     const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length || lastPrice;
-    const volatility = prices.length > 1 
-      ? Math.sqrt(prices.reduce((s, p) => s + Math.pow(p - avgPrice, 2), 0) / prices.length) / avgPrice * 100 
+    const volatility = prices.length > 1
+      ? Math.sqrt(prices.reduce((s, p) => s + Math.pow(p - avgPrice, 2), 0) / prices.length) / avgPrice * 100
       : 10;
 
     const lowCase = lastPrice * (1 - volatility / 100);
@@ -226,7 +249,8 @@ app.get('/api/forecast', async (req, res) => {
       rsi: 50,
       macd: 0,
       volatility: Math.round(volatility * 100) / 100,
-      lastPrice
+      lastPrice: Math.round(lastPrice * 100) / 100,
+      asOfDate
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -295,19 +319,28 @@ app.get('/api/capital-gain', async (req, res) => {
   }
 });
 
-// GET /api/daily-news - Scraped news + AI commentary for PSX companies
+// GET /api/daily-news - Scraped news + prices + AI commentary for PSX companies
 app.get('/api/daily-news', async (req, res) => {
   try {
     const newsPath = path.join(DATA_PATH, 'news');
+    const pricesPath = path.join(DATA_PATH, 'prices');
     let news = [];
     let commentary = [];
+    let priceChanges = [];
+    let priceCommentary = [];
     if (fs.existsSync(path.join(newsPath, 'daily_news.csv'))) {
       news = await readCSV(path.join(newsPath, 'daily_news.csv'));
     }
     if (fs.existsSync(path.join(newsPath, 'ai_commentary.csv'))) {
       commentary = await readCSV(path.join(newsPath, 'ai_commentary.csv'));
     }
-    res.json({ news, commentary });
+    if (fs.existsSync(path.join(pricesPath, 'price_changes.csv'))) {
+      priceChanges = await readCSV(path.join(pricesPath, 'price_changes.csv'));
+    }
+    if (fs.existsSync(path.join(newsPath, 'price_commentary.csv'))) {
+      priceCommentary = await readCSV(path.join(newsPath, 'price_commentary.csv'));
+    }
+    res.json({ news, commentary, priceChanges, priceCommentary });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -6,7 +6,7 @@ export const api = {
   getDividends: () => axios.get(`${API_BASE}/dividends`),
   getMonthCoverage: () => axios.get(`${API_BASE}/month-coverage`),
   getRiskScore: (companyName) => axios.post(`${API_BASE}/risk-score`, { companyName }),
-  getForecast: (company) => axios.get(`${API_BASE}/forecast`, { params: { company } }),
+  getForecast: (company, asOf) => axios.get(`${API_BASE}/forecast`, { params: { company, asOf } }),
   getSalarySimulator: (targetMonthlyIncome, expectedDividendYield) =>
     axios.post(`${API_BASE}/salary-simulator`, { targetMonthlyIncome, expectedDividendYield }),
   getReportingCycles: () => axios.get(`${API_BASE}/reporting-cycles`),

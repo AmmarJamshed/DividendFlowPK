@@ -3,6 +3,7 @@ render-cli/
 .env
 .env.local
 .env.render
+api-keys.txt
 .env.*.local
 **/.env
 *.log

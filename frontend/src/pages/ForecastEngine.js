@@ -2,9 +2,17 @@ import { useState, useEffect } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 
+const today = () => new Date().toISOString().slice(0, 10);
+const yesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+};
+
 export default function ForecastEngine() {
   const [companies, setCompanies] = useState(['HBL', 'MCB', 'OGDC', 'PPL', 'PSO']);
   const [company, setCompany] = useState('HBL');
+  const [asOfDate, setAsOfDate] = useState(today());
 
   useEffect(() => {
     api.getDividends()
@@ -24,7 +32,7 @@ export default function ForecastEngine() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      api.getForecast(company),
+      api.getForecast(company, asOfDate || undefined),
       api.getCapitalGain(company)
     ])
       .then(([fRes, cRes]) => {
@@ -33,20 +41,39 @@ export default function ForecastEngine() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [company]);
+  }, [company, asOfDate]);
 
   return (
     <div className="space-y-6">
       <div className="card p-6">
         <h3 className="card-header text-lg">Probability-Based Price Range</h3>
-        <p className="card-subtitle mb-4">Technical indicators (RSI, MACD, volatility). Does not guarantee future prices.</p>
-        <select
-          value={company}
-          onChange={e => setCompany(e.target.value)}
-          className="input-field max-w-xs"
-        >
-          {companies.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <p className="card-subtitle mb-4">Uses latest closing price. Updated daily after market close (3:30pm PKT).</p>
+        <div className="flex flex-wrap gap-4 items-center">
+          <select
+            value={company}
+            onChange={e => setCompany(e.target.value)}
+            className="input-field max-w-[180px]"
+          >
+            {companies.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400 text-sm">Forecast as of:</span>
+            <select
+              value={asOfDate}
+              onChange={e => setAsOfDate(e.target.value)}
+              className="input-field max-w-[160px]"
+            >
+              <option value={today()}>Today</option>
+              <option value={yesterday()}>Yesterday</option>
+              {[...Array(5)].map((_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (i + 2));
+                const v = d.toISOString().slice(0, 10);
+                return <option key={v} value={v}>{d.toLocaleDateString('en-PK', { weekday: 'short', month: 'short', day: 'numeric' })}</option>;
+              })}
+            </select>
+          </div>
+        </div>
       </div>
 
       {loading && (
@@ -57,6 +84,14 @@ export default function ForecastEngine() {
 
       {!loading && forecast && (
         <>
+          {forecast.asOfDate && (
+            <div className="card p-4 bg-slate-700/30 border border-slate-600/50">
+              <p className="text-slate-300 text-sm">
+                <span className="text-slate-400">Last closing price:</span> Rs {forecast.lastPrice?.toLocaleString()}
+                <span className="text-slate-500 ml-2">• As of {forecast.asOfDate}</span>
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="card p-6 border-red-500/20">
               <h4 className="text-slate-400 text-sm font-medium mb-2">Low Case</h4>

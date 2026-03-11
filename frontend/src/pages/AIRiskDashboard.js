@@ -7,7 +7,7 @@ export default function AIRiskDashboard() {
   const [selected, setSelected] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [dailyNews, setDailyNews] = useState({ news: [], commentary: [] });
+  const [dailyNews, setDailyNews] = useState({ news: [], commentary: [], priceChanges: [], priceCommentary: [] });
 
   useEffect(() => {
     api.getDividends()
@@ -20,7 +20,7 @@ export default function AIRiskDashboard() {
 
   useEffect(() => {
     api.getDailyNews()
-      .then(res => setDailyNews(res.data || { news: [], commentary: [] }))
+      .then(res => setDailyNews(res.data || { news: [], commentary: [], priceChanges: [], priceCommentary: [] }))
       .catch(() => {});
   }, []);
 
@@ -80,6 +80,55 @@ export default function AIRiskDashboard() {
             )) : (
               <p className="text-slate-400 text-sm">No news yet. Run the daily news scraper to populate.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {(dailyNews.priceChanges?.length > 0 || dailyNews.priceCommentary?.length > 0) && (
+        <div className="card p-6 border-teal-500/20">
+          <h3 className="card-header text-lg">Today vs Yesterday — Price Movers</h3>
+          <p className="card-subtitle mb-4">Daily stock appreciations and plunges with Groq-powered analysis based on news</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="text-sm font-semibold text-green-400 mb-2">Top Stock Appreciations</h4>
+              <ul className="space-y-2">
+                {(dailyNews.priceChanges || [])
+                  .filter(c => (parseFloat(c.ChangePct) || 0) > 0)
+                  .slice(0, 5)
+                  .map((c, i) => (
+                    <li key={i} className="p-3 rounded-lg bg-slate-700/30 border border-slate-600/50">
+                      <span className="font-medium text-slate-200">{c.Company}</span>
+                      <span className="mx-2 text-green-400">+{c.ChangePct}%</span>
+                      <span className="text-slate-400 text-sm">(Rs {c.Price})</span>
+                      {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'gain')?.Commentary && (
+                        <p className="text-xs text-slate-400 mt-1 italic">
+                          {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'gain').Commentary}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold text-red-400 mb-2">Worst Stock Price Plunges</h4>
+              <ul className="space-y-2">
+                {(dailyNews.priceChanges || [])
+                  .filter(c => (parseFloat(c.ChangePct) || 0) < 0)
+                  .slice(0, 5)
+                  .map((c, i) => (
+                    <li key={i} className="p-3 rounded-lg bg-slate-700/30 border border-slate-600/50">
+                      <span className="font-medium text-slate-200">{c.Company}</span>
+                      <span className="mx-2 text-red-400">{c.ChangePct}%</span>
+                      <span className="text-slate-400 text-sm">(Rs {c.Price})</span>
+                      {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'decline')?.Commentary && (
+                        <p className="text-xs text-slate-400 mt-1 italic">
+                          {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'decline').Commentary}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            </div>
           </div>
         </div>
       )}
