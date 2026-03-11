@@ -41,6 +41,12 @@ Automated cron jobs for PSX data updates.
 - **Resend**: Sign up at resend.com, create API key, add domain. Free: 100 emails/day.
 - **Gmail SMTP**: Enable 2FA, create App Password. Set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASS`.
 
+## Today vs Yesterday (Gainers / Decliners)
+
+- **run-news.js** (5pm PKT) scrapes prices and compares today vs yesterday from `daily_prices.csv`
+- **Backend** computes gainers/decliners on-the-fly from the two most recent dates in `daily_prices.csv`
+- **Important:** When seeding or updating price data, include both gainers and decliners—the market has both. Avoid data where all stocks are gainers or all flat.
+
 ## Local Test
 
 ```bash

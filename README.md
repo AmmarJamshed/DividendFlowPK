@@ -93,6 +93,8 @@ Place files in `data/news/`:
 
 Place CSV files in `data/prices/` with columns: Company, Date, Price (or Close)
 
+**Today vs Yesterday:** The dashboard shows gainers and decliners from `daily_prices.csv`. When seeding or updating price data, ensure a realistic mix—the market has both gainers and decliners. Avoid data where all stocks show as gainers or all flat.
+
 ## Features
 
 | Module | Description |

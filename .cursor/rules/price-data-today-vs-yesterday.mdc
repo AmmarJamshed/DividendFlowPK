@@ -1,0 +1,27 @@
+---
+description: Price data and Today vs Yesterday dashboard - must show both gainers and decliners
+globs: data/prices/**/*, scripts/scrape-prices.js, scripts/run-news.js, backend/server.js
+alwaysApply: false
+---
+
+# Today vs Yesterday / Price Data Conventions
+
+## Critical: Both Gainers and Decliners
+
+When updating price data or the "Today vs Yesterday" dashboard:
+
+- **The market has both gainers and decliners.** Do not seed or display data where all stocks are gainers or all are flat.
+- **Seeded/demo data** must include a realistic mix: some stocks up, some down (e.g. 1–2 gainers, 3–4 decliners for a negative market day).
+- **Backend** computes changes from `daily_prices.csv` by comparing the two most recent dates. Ensure `daily_prices.csv` has at least 2 dates with varied price movements.
+
+## Data Flow
+
+1. `daily_prices.csv` – Company, Date, Price (append history, keep last 14 days)
+2. Backend `/api/daily-news` – computes gainers/decliners on-the-fly from `daily_prices`
+3. Scraper `run-news.js` – compares today's scrape vs yesterday (date < today) from `daily_prices`
+
+## When Seeding or Updating
+
+- Use different yesterday vs today prices so ChangePct is non-zero for some stocks
+- Include both positive and negative ChangePct values
+- Avoid all-zero or all-positive scenarios
