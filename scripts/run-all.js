@@ -93,15 +93,38 @@ async function main() {
     const p = parseFloat(d.Price || d.price || 0);
     if (c && p > 0) byCompany.set(c, p);
   });
-  const { writeFileSync, mkdirSync } = await import('fs');
+  const { writeFileSync, mkdirSync, readFileSync, existsSync } = await import('fs');
   const { toDividendCsv, toCyclesCsv } = await import('./update-github.js');
   mkdirSync(join(DATA, 'dividends'), { recursive: true });
   mkdirSync(join(DATA, 'financials'), { recursive: true });
   mkdirSync(join(DATA, 'prices'), { recursive: true });
   writeFileSync(join(DATA, 'dividends', 'psx_dividend_calendar.csv'), toDividendCsv(dividends));
   writeFileSync(join(DATA, 'financials', 'psx_quarter_cycles.csv'), toCyclesCsv(cycles));
-  const priceLines = ['Company,Date,Price', ...[...byCompany].map(([c, p]) => `${c},${today},${p}`)];
-  writeFileSync(join(DATA, 'prices', 'daily_prices.csv'), priceLines.join('\n'));
+  // Merge today's prices into daily_prices history (keep last 14 days for run-news comparison)
+  const dailyPath = join(DATA, 'prices', 'daily_prices.csv');
+  let existing = [];
+  if (existsSync(dailyPath)) {
+    const raw = readFileSync(dailyPath, 'utf-8').split('\n').filter(Boolean);
+    const hdrs = raw[0]?.split(',').map(h => h.trim()) || [];
+    const dateIdx = hdrs.findIndex(h => /date/i.test(h));
+    const companyIdx = hdrs.findIndex(h => /company/i.test(h));
+    const priceIdx = hdrs.findIndex(h => /price/i.test(h));
+    if (dateIdx >= 0 && companyIdx >= 0 && priceIdx >= 0) {
+      const cutoff = new Date(today);
+      cutoff.setDate(cutoff.getDate() - 14);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+      for (let i = 1; i < raw.length; i++) {
+        const vals = raw[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
+        const rowDate = vals[dateIdx];
+        if (rowDate && rowDate !== today && rowDate >= cutoffStr) {
+          existing.push({ Company: vals[companyIdx], Date: rowDate, Price: vals[priceIdx] });
+        }
+      }
+    }
+  }
+  const todayRows = [...byCompany].map(([c, p]) => ({ Company: c, Date: today, Price: p }));
+  const merged = [...existing, ...todayRows].sort((a, b) => a.Date.localeCompare(b.Date) || (a.Company || '').localeCompare(b.Company || ''));
+  writeFileSync(dailyPath, ['Company,Date,Price', ...merged.map(r => `${r.Company},${r.Date},${r.Price}`)].join('\n'));
 
   let pushed = false;
   if (process.env.GITHUB_TOKEN) {

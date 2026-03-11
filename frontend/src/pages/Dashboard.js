@@ -54,7 +54,14 @@ export default function Dashboard() {
     count: monthCoverage.monthCoverage?.[i + 1]?.count || 0
   })) : [];
 
-  const topYield = [...(dividends || [])]
+  const byCompany = new Map();
+  (dividends || []).forEach(d => {
+    const c = (d.Company || d.company || '').trim();
+    const y = parseFloat(d.Dividend_yield || d.dividend_yield) || 0;
+    const existing = byCompany.get(c);
+    if (!existing || (parseFloat(existing.Dividend_yield || existing.dividend_yield) || 0) < y) byCompany.set(c, d);
+  });
+  const topYield = [...byCompany.values()]
     .sort((a, b) => (parseFloat(b.Dividend_yield || b.dividend_yield) || 0) - (parseFloat(a.Dividend_yield || a.dividend_yield) || 0))
     .slice(0, 5);
 
@@ -145,9 +152,15 @@ export default function Dashboard() {
                   </li>
                 ))}
               </ul>
-              {(dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) > 0).length === 0 && (
-                <p className="text-slate-500 text-sm py-2">No gainers today — all tracked stocks declined.</p>
-              )}
+              {(() => {
+                const gainers = (dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) > 0);
+                const decliners = (dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) < 0);
+                if (gainers.length === 0 && decliners.length === 0) {
+                  return <p className="text-slate-500 text-sm py-2">No significant price changes today — all tracked stocks flat.</p>;
+                }
+                if (gainers.length === 0) return <p className="text-slate-500 text-sm py-2">No gainers today — all tracked stocks declined.</p>;
+                return null;
+              })()}
             </div>
             <div>
               <h4 className="text-sm font-semibold text-red-400 mb-2">Worst Stock Price Plunges</h4>
@@ -159,9 +172,13 @@ export default function Dashboard() {
                   </li>
                 ))}
               </ul>
-              {(dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) < 0).length === 0 && (
-                <p className="text-slate-500 text-sm py-2">No decliners today — all tracked stocks gained.</p>
-              )}
+              {(() => {
+                const gainers = (dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) > 0);
+                const decliners = (dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) < 0);
+                if (gainers.length === 0 && decliners.length === 0) return null;
+                if (decliners.length === 0) return <p className="text-slate-500 text-sm py-2">No decliners today — all tracked stocks gained.</p>;
+                return null;
+              })()}
             </div>
           </div>
         </div>

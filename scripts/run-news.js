@@ -65,15 +65,35 @@ async function main() {
   }, {});
 
   const currentPrices = await scrapeCurrentPrices();
-  const previousPrices = loadPreviousPrices();
+  const previousPrices = loadPreviousPrices(today);
   const priceChanges = computePriceChanges([...currentPrices], previousPrices);
-  console.log('[Prices] Scraped', currentPrices.size, 'prices,', priceChanges.length, 'with day-over-day change');
+  console.log('[Prices] Scraped', currentPrices.size, 'prices,', priceChanges.length, 'with day-over-day change (vs yesterday)');
 
-  const dailyPrices = [...currentPrices].map(([Company, Price]) => ({ Company, Date: today, Price }));
-  writeFileSync(
-    join(DATA, 'prices', 'daily_prices.csv'),
-    toCsv(dailyPrices, ['Company', 'Date', 'Price'])
-  );
+  // Merge today's prices into history (keep last 14 days for yesterday comparison)
+  const dailyPath = join(DATA, 'prices', 'daily_prices.csv');
+  let existing = [];
+  if (existsSync(dailyPath)) {
+    const raw = readFileSync(dailyPath, 'utf-8').split('\n').filter(Boolean);
+    const hdrs = raw[0]?.split(',').map(h => h.trim()) || [];
+    const dateIdx = hdrs.findIndex(h => /date/i.test(h));
+    const companyIdx = hdrs.findIndex(h => /company/i.test(h));
+    const priceIdx = hdrs.findIndex(h => /price/i.test(h));
+    if (dateIdx >= 0 && companyIdx >= 0 && priceIdx >= 0) {
+      const cutoff = new Date(today);
+      cutoff.setDate(cutoff.getDate() - 14);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+      for (let i = 1; i < raw.length; i++) {
+        const vals = raw[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
+        const rowDate = vals[dateIdx];
+        if (rowDate && rowDate !== today && rowDate >= cutoffStr) {
+          existing.push({ Company: vals[companyIdx], Date: rowDate, Price: vals[priceIdx] });
+        }
+      }
+    }
+  }
+  const todayRows = [...currentPrices].map(([Company, Price]) => ({ Company, Date: today, Price }));
+  const merged = [...existing, ...todayRows].sort((a, b) => a.Date.localeCompare(b.Date) || (a.Company || '').localeCompare(b.Company || ''));
+  writeFileSync(dailyPath, toCsv(merged, ['Company', 'Date', 'Price']));
 
   // Refresh dividend calendar with latest prices and recalculated yields
   const divPath = join(DATA, 'dividends', 'psx_dividend_calendar.csv');

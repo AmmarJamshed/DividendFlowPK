@@ -29,7 +29,13 @@ function loadCompanies() {
   return [...new Set(rows.map(r => r.Company || r.company).filter(Boolean))];
 }
 
-export function loadPreviousPrices() {
+/**
+ * Load previous trading day's prices for comparison.
+ * Uses rows from daily_prices.csv where date < today (most recent per company).
+ * Falls back to dividend calendar if no history.
+ */
+export function loadPreviousPrices(today) {
+  const todayStr = (today || new Date().toISOString().slice(0, 10));
   let path = join(DATA, 'prices', 'daily_prices.csv');
   if (!existsSync(path)) {
     path = join(DATA, 'dividends', 'psx_dividend_calendar.csv');
@@ -39,16 +45,58 @@ export function loadPreviousPrices() {
   const headers = lines[0].split(',').map(h => h.trim());
   const companyIdx = headers.findIndex(h => /company/i.test(h));
   const priceIdx = headers.findIndex(h => /price/i.test(h));
+  const dateIdx = headers.findIndex(h => /date/i.test(h));
   if (companyIdx < 0 || priceIdx < 0) return new Map();
-  const map = new Map();
-  const seen = new Set();
+
+  // If no date column (e.g. dividend calendar), use first row per company
+  if (dateIdx < 0) {
+    const map = new Map();
+    const seen = new Set();
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
+      const company = vals[companyIdx];
+      const price = parseFloat(vals[priceIdx]);
+      if (company && price > 0 && !seen.has(company)) {
+        map.set(company, price);
+        seen.add(company);
+      }
+    }
+    return map;
+  }
+
+  // Use only rows with date < today; per company, take most recent
+  const byCompany = new Map(); // company -> { date, price }
   for (let i = 1; i < lines.length; i++) {
     const vals = lines[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
     const company = vals[companyIdx];
     const price = parseFloat(vals[priceIdx]);
-    if (company && price > 0 && !seen.has(company)) {
-      map.set(company, price);
-      seen.add(company);
+    const date = vals[dateIdx] || '';
+    if (!company || price <= 0 || !date || date >= todayStr) continue;
+    const existing = byCompany.get(company);
+    if (!existing || date > existing.date) byCompany.set(company, { date, price });
+  }
+  let map = new Map();
+  for (const [company, { price }] of byCompany) map.set(company, price);
+  // Fallback: if no yesterday data, use dividend calendar for comparison
+  if (map.size === 0) {
+    const divPath = join(DATA, 'dividends', 'psx_dividend_calendar.csv');
+    if (existsSync(divPath)) {
+      const divLines = readFileSync(divPath, 'utf-8').split('\n').filter(Boolean);
+      const divHdrs = divLines[0]?.split(',').map(h => h.trim()) || [];
+      const dcIdx = divHdrs.findIndex(h => /company/i.test(h));
+      const dpIdx = divHdrs.findIndex(h => /price/i.test(h));
+      if (dcIdx >= 0 && dpIdx >= 0) {
+        const seen = new Set();
+        for (let i = 1; i < divLines.length; i++) {
+          const v = divLines[i].split(',').map(x => x.replace(/^"|"$/g, '').trim());
+          const c = v[dcIdx];
+          const p = parseFloat(v[dpIdx]);
+          if (c && p > 0 && !seen.has(c)) {
+            map.set(c, p);
+            seen.add(c);
+          }
+        }
+      }
     }
   }
   return map;
