@@ -96,6 +96,7 @@ def scrape_psx():
             return 0.0
 
     today = datetime.today().strftime("%Y-%m-%d")
+    yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
     daily_prices = []
     price_changes = []
 
@@ -107,6 +108,8 @@ def scrape_psx():
         chg_pct = clean_num(r["change_pct"])
         if close > 0:
             daily_prices.append({"Company": sym, "Date": today, "Price": close})
+        if prev > 0:
+            daily_prices.append({"Company": sym, "Date": yesterday, "Price": prev})
         if prev > 0 and close > 0:
             price_changes.append({
                 "Company": sym,
