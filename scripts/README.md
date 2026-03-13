@@ -13,7 +13,8 @@ Automated cron jobs for PSX data updates.
 
 ## Cron Schedule (Render)
 
-- **dividendflow-scraper**: Daily at **4pm PKT** (11:00 UTC) – after market close at 3:30pm
+- **dividendflow-scraper**: Daily at **4pm PKT** (11:00 UTC) – dividend data from psxterminal.com
+- **dividendflow-news**: Daily at **5pm PKT** (12:00 UTC) – price data from dps.psx.com.pk via `psx.py`
 - **dividendflow-health-check**: Every 6 hours
 
 ## Environment Variables

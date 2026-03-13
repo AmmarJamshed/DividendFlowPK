@@ -20,23 +20,19 @@ services:
       - key: RESEND_API_KEY
         sync: false
 
-  # Cron: Daily news + price scraper + Groq AI commentary (5pm PKT, after market close)
+  # Cron: Daily PSX price scraper from dps.psx.com.pk (5pm PKT, after market close)
   - type: cron
-    runtime: node
+    runtime: python
     name: dividendflow-news
     schedule: "0 12 * * *"
     rootDir: .
-    buildCommand: cd scripts && npm install
-    startCommand: cd scripts && node run-news.js
+    buildCommand: pip install -r requirements.txt && playwright install chromium
+    startCommand: python psx.py
     envVars:
       - key: GITHUB_TOKEN
         sync: false
       - key: GITHUB_REPO
         value: AmmarJamshed/DividendFlowPK
-      - key: GROQ_API_KEY
-        sync: false
-      - key: GNEWS_API_KEY
-        sync: false
 
   # Cron: Health check - ping backend every 6 hours
   - type: cron
