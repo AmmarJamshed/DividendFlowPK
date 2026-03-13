@@ -20,19 +20,23 @@ services:
       - key: RESEND_API_KEY
         sync: false
 
-  # Cron: Daily PSX price scraper from dps.psx.com.pk (5pm PKT, after market close)
+  # Cron: Daily news + price scraper (5pm PKT). Use run-news.js (Node) - psx.py requires Playwright which fails on Render native build
   - type: cron
-    runtime: python
+    runtime: node
     name: dividendflow-news
     schedule: "0 12 * * *"
     rootDir: .
-    buildCommand: pip install -r requirements.txt && playwright install chromium
-    startCommand: python psx.py
+    buildCommand: cd scripts && npm install
+    startCommand: cd scripts && node run-news.js
     envVars:
       - key: GITHUB_TOKEN
         sync: false
       - key: GITHUB_REPO
         value: AmmarJamshed/DividendFlowPK
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GNEWS_API_KEY
+        sync: false
 
   # Cron: Health check - ping backend every 6 hours
   - type: cron
