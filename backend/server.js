@@ -491,6 +491,45 @@ app.get('/api/daily-news', async (req, res) => {
   }
 });
 
+// GET /api/market-closing-prices - Full PSX dataset from psx_full_dataset.csv
+app.get('/api/market-closing-prices', async (req, res) => {
+  try {
+    const fp = path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv');
+    if (!fs.existsSync(fp)) {
+      return res.json({ rows: [], date: null, summary: null });
+    }
+    const rows = await readCSV(fp);
+    const date = rows[0]?.date || rows[0]?.Date || null;
+    const parseNum = (s) => {
+      if (!s) return 0;
+      const v = String(s).replace(/,/g, '').replace('%', '').trim();
+      return parseFloat(v) || 0;
+    };
+    const parsed = rows.map(r => ({
+      symbol: r.symbol || r.Symbol || '',
+      company: r.symbol || r.Symbol || '',
+      close: parseNum(r.close || r.Close),
+      change: parseNum(r.change || r.Change),
+      changePct: parseNum(r.change_pct || r.ChangePct || r['change_pct']),
+      volume: parseInt((r.volume || r.Volume || '0').toString().replace(/,/g, ''), 10) || 0,
+      open: parseNum(r.open || r.Open),
+      high: parseNum(r.high || r.High),
+      low: parseNum(r.low || r.Low),
+    })).filter(x => x.symbol && x.close > 0);
+    const topGainer = parsed.filter(p => p.changePct > 0).sort((a, b) => b.changePct - a.changePct)[0];
+    const topLoser = parsed.filter(p => p.changePct < 0).sort((a, b) => a.changePct - b.changePct)[0];
+    const summary = {
+      totalCompanies: parsed.length,
+      topGainer: topGainer ? { symbol: topGainer.symbol, changePct: topGainer.changePct } : null,
+      topLoser: topLoser ? { symbol: topLoser.symbol, changePct: topLoser.changePct } : null,
+      date,
+    };
+    res.json({ rows: parsed, date, summary });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/data-status - Last updated timestamp for PSX data
 app.get('/api/data-status', (req, res) => {
   try {

@@ -7,6 +7,7 @@ import AIRiskDashboard from './pages/AIRiskDashboard';
 import ForecastEngine from './pages/ForecastEngine';
 import SalarySimulator from './pages/SalarySimulator';
 import ReportingCycles from './pages/ReportingCycles';
+import MarketClosingPrices from './pages/MarketClosingPrices';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dividend-calendar" element={<DividendCalendar />} />
+          <Route path="/market-closing-prices" element={<MarketClosingPrices />} />
           <Route path="/weak-month-optimizer" element={<WeakMonthOptimizer />} />
           <Route path="/ai-risk-dashboard" element={<AIRiskDashboard />} />
           <Route path="/forecast-engine" element={<ForecastEngine />} />

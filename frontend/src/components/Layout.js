@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api';
+import RobotCursor from './RobotCursor';
+import AIGuidance from './AIGuidance';
 
 const navItems = [
   { path: '/', label: 'Dashboard' },
   { path: '/dividend-calendar', label: 'Dividend Calendar' },
+  { path: '/market-closing-prices', label: 'Market Closing Prices' },
   { path: '/weak-month-optimizer', label: 'Weak Month Optimizer' },
   { path: '/ai-risk-dashboard', label: 'AI Risk Dashboard' },
   { path: '/forecast-engine', label: 'Forecast Engine' },
@@ -112,6 +115,8 @@ export default function Layout({ children }) {
           </div>
         </div>
       </main>
+      <RobotCursor />
+      <AIGuidance />
     </div>
   );
 }

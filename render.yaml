@@ -20,7 +20,7 @@ services:
       - key: RESEND_API_KEY
         sync: false
 
-  # Cron: Daily news + price scraper (5pm PKT). Use run-news.js (Node) - psx.py requires Playwright which fails on Render native build
+  # Cron: Daily news + price scraper (5pm PKT). Use run-news.js (Node) - psx.py runs via GitHub Actions (see .github/workflows/psx-market-prices.yml)
   - type: cron
     runtime: node
     name: dividendflow-news

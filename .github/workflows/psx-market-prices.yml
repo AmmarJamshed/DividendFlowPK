@@ -1,0 +1,35 @@
+# Market Closing Prices scraper - runs psx.py daily after PSX market close
+# Schedule: 12:00 UTC (5pm PKT) - same as dividendflow-news
+# Outputs: psx_full_dataset.csv, daily_prices.csv, price_changes.csv → pushed to GitHub
+
+name: PSX Market Closing Prices
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Run PSX scraper
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: python psx.py
