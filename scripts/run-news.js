@@ -64,9 +64,26 @@ async function main() {
     return acc;
   }, {});
 
-  const currentPrices = await scrapeCurrentPrices();
+  let currentPrices = await scrapeCurrentPrices();
   const previousPrices = loadPreviousPrices(today);
-  const priceChanges = computePriceChanges([...currentPrices], previousPrices);
+  let priceChanges = computePriceChanges([...currentPrices], previousPrices);
+
+  // Fallback: if our scrape produced no price changes, preserve from psx.py output (price_changes.csv) for AI Risk Dashboard
+  const priceChangesPath = join(DATA, 'prices', 'price_changes.csv');
+  if (priceChanges.length === 0 && existsSync(priceChangesPath)) {
+    const existing = loadDividendCsv(priceChangesPath);
+    const pcRows = existing.filter(r => (r.Company || r.company) && (r.ChangePct || r.Change));
+    if (pcRows.length > 0) {
+      priceChanges = pcRows.map(r => ({
+        Company: r.Company || r.company,
+        Price: parseFloat(r.Price) || 0,
+        PreviousPrice: parseFloat(r.PreviousPrice) || 0,
+        Change: parseFloat(r.Change) || 0,
+        ChangePct: parseFloat(r.ChangePct) || 0,
+      })).filter(x => x.Company && (x.ChangePct !== 0 || x.Change !== 0));
+      console.log('[Prices] Using', priceChanges.length, 'price changes from existing file (psx.py)');
+    }
+  }
   console.log('[Prices] Scraped', currentPrices.size, 'prices,', priceChanges.length, 'with day-over-day change (vs yesterday)');
 
   // Merge today's prices into history (keep last 14 days for yesterday comparison)
@@ -93,7 +110,12 @@ async function main() {
   }
   const todayRows = [...currentPrices].map(([Company, Price]) => ({ Company, Date: today, Price }));
   const merged = [...existing, ...todayRows].sort((a, b) => a.Date.localeCompare(b.Date) || (a.Company || '').localeCompare(b.Company || ''));
-  writeFileSync(dailyPath, toCsv(merged, ['Company', 'Date', 'Price']));
+  // Only overwrite daily_prices if we have new data; otherwise preserve psx.py output for AI Risk Dashboard
+  if (todayRows.length > 0 || priceChanges.length > 0) {
+    writeFileSync(dailyPath, toCsv(merged, ['Company', 'Date', 'Price']));
+  } else {
+    console.log('[Prices] Keeping existing daily_prices (no new scrape data)');
+  }
 
   // Refresh dividend calendar with latest prices and recalculated yields
   const divPath = join(DATA, 'dividends', 'psx_dividend_calendar.csv');

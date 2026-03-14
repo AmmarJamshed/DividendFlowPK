@@ -34,11 +34,11 @@ export default function AIRiskDashboard() {
       .finally(() => setLoading(false));
   };
 
-  const getRiskColor = (cat) => {
-    if (cat === 'Low') return 'text-green-400';
-    if (cat === 'Moderate') return 'text-amber-400';
-    if (cat === 'Elevated') return 'text-orange-400';
-    return 'text-red-400';
+  const getRiskStyles = (cat) => {
+    if (cat === 'Low') return { text: 'text-emerald-700', bg: 'from-emerald-400 to-teal-500', badge: 'bg-emerald-100 text-emerald-800 border-2 border-emerald-300', icon: '🛡️' };
+    if (cat === 'Moderate') return { text: 'text-amber-700', bg: 'from-amber-400 to-orange-500', badge: 'bg-amber-100 text-amber-800 border-2 border-amber-300', icon: '⚖️' };
+    if (cat === 'Elevated') return { text: 'text-orange-700', bg: 'from-orange-400 to-rose-500', badge: 'bg-orange-100 text-orange-800 border-2 border-orange-300', icon: '⚠️' };
+    return { text: 'text-red-700', bg: 'from-rose-500 to-red-600', badge: 'bg-rose-100 text-rose-800 border-2 border-rose-300', icon: '🚨' };
   };
 
   const byCompany = (arr, key) => {
@@ -56,84 +56,83 @@ export default function AIRiskDashboard() {
     acc[c.Company || c.company] = c; return acc;
   }, {});
 
+  const hasNews = dailyNews.news?.length > 0 || dailyNews.commentary?.length > 0;
+  const hasPriceChanges = dailyNews.priceChanges?.length > 0 || dailyNews.priceCommentary?.length > 0;
+  const gainers = (dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) > 0).slice(0, 5);
+  const decliners = (dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) < 0).slice(0, 5);
+
   return (
     <div className="space-y-6">
-      {(dailyNews.news?.length > 0 || dailyNews.commentary?.length > 0) && (
-        <div className="card p-6 border-teal-500/20">
-          <h3 className="card-header text-lg">Daily News & AI Commentary</h3>
-          <p className="card-subtitle mb-4">Latest news and Groq-powered commentary on adverse events</p>
-          <div className="space-y-4 max-h-[400px] overflow-y-auto">
-            {Object.keys(newsByCo).length > 0 ? Object.entries(newsByCo).slice(0, 12).map(([co, items]) => (
-              <div key={co} className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/50">
-                <div className="font-semibold text-teal-400 mb-2">{co}</div>
-                <ul className="space-y-1 text-sm text-slate-300 mb-2">
-                  {items.slice(0, 3).map((n, i) => (
-                    <li key={i}>{n.Headline || n.headline}</li>
-                  ))}
-                </ul>
-                {commentaryByCo[co]?.Commentary && (
-                  <div className="text-sm text-slate-400 italic border-t border-slate-600/50 pt-2 mt-2">
-                    {commentaryByCo[co].Commentary}
-                  </div>
-                )}
-              </div>
-            )) : (
-              <p className="text-slate-400 text-sm">No news yet. Run the daily news scraper to populate.</p>
-            )}
+      <div className="card p-6 border-l-4 border-l-teal-500">
+        <h3 className="card-header text-lg">Daily News & AI Commentary</h3>
+        <p className="card-subtitle mb-4">Latest news and Groq-powered commentary on adverse events</p>
+        <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          {hasNews && Object.keys(newsByCo).length > 0 ? Object.entries(newsByCo).slice(0, 12).map(([co, items]) => (
+            <div key={co} className="p-4 rounded-xl bg-teal-50 border border-teal-200">
+              <div className="font-semibold text-teal-700 mb-2">{co}</div>
+              <ul className="space-y-1 text-sm text-slate-600 mb-2">
+                {items.slice(0, 3).map((n, i) => (
+                  <li key={i}>{n.Headline || n.headline}</li>
+                ))}
+              </ul>
+              {commentaryByCo[co]?.Commentary && (
+                <div className="text-sm text-slate-500 italic border-t border-teal-200 pt-2 mt-2">
+                  {commentaryByCo[co].Commentary}
+                </div>
+              )}
+            </div>
+          )) : (
+            <p className="text-slate-500 text-sm py-4">No news yet. Run the daily news scraper to populate. Data updates after each scrape (5pm PKT).</p>
+          )}
+        </div>
+      </div>
+
+      <div className="card p-6 border-l-4 border-l-emerald-500">
+        <h3 className="card-header text-lg">Today vs Yesterday — Price Movers</h3>
+        <p className="card-subtitle mb-4">Daily stock appreciations and plunges with Groq-powered analysis based on news</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+            <h4 className="text-sm font-bold text-emerald-700 mb-2">Top Stock Appreciations</h4>
+            <ul className="space-y-2">
+              {gainers.length > 0 ? gainers.map((c, i) => (
+                <li key={i} className="p-3 rounded-xl bg-white/80 border border-emerald-100">
+                  <span className="font-medium text-slate-700">{c.Company}</span>
+                  <span className="mx-2 text-emerald-600 font-bold">+{c.ChangePct}%</span>
+                  <span className="text-slate-500 text-sm">(Rs {c.Price})</span>
+                  {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'gain')?.Commentary && (
+                    <p className="text-xs text-slate-500 mt-1 italic">
+                      {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'gain').Commentary}
+                    </p>
+                  )}
+                </li>
+              )) : (
+                <p className="text-slate-500 text-sm py-2">No gainers today. Data updates after each scrape.</p>
+              )}
+            </ul>
+          </div>
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200">
+            <h4 className="text-sm font-bold text-rose-700 mb-2">Worst Stock Price Plunges</h4>
+            <ul className="space-y-2">
+              {decliners.length > 0 ? decliners.map((c, i) => (
+                <li key={i} className="p-3 rounded-xl bg-white/80 border border-rose-100">
+                  <span className="font-medium text-slate-700">{c.Company}</span>
+                  <span className="mx-2 text-rose-600 font-bold">{c.ChangePct}%</span>
+                  <span className="text-slate-500 text-sm">(Rs {c.Price})</span>
+                  {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'decline')?.Commentary && (
+                    <p className="text-xs text-slate-500 mt-1 italic">
+                      {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'decline').Commentary}
+                    </p>
+                  )}
+                </li>
+              )) : (
+                <p className="text-slate-500 text-sm py-2">No decliners today. Data updates after each scrape.</p>
+              )}
+            </ul>
           </div>
         </div>
-      )}
+      </div>
 
-      {(dailyNews.priceChanges?.length > 0 || dailyNews.priceCommentary?.length > 0) && (
-        <div className="card p-6 border-teal-500/20">
-          <h3 className="card-header text-lg">Today vs Yesterday — Price Movers</h3>
-          <p className="card-subtitle mb-4">Daily stock appreciations and plunges with Groq-powered analysis based on news</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h4 className="text-sm font-semibold text-green-400 mb-2">Top Stock Appreciations</h4>
-              <ul className="space-y-2">
-                {(dailyNews.priceChanges || [])
-                  .filter(c => (parseFloat(c.ChangePct) || 0) > 0)
-                  .slice(0, 5)
-                  .map((c, i) => (
-                    <li key={i} className="p-3 rounded-lg bg-slate-700/30 border border-slate-600/50">
-                      <span className="font-medium text-slate-200">{c.Company}</span>
-                      <span className="mx-2 text-green-400">+{c.ChangePct}%</span>
-                      <span className="text-slate-400 text-sm">(Rs {c.Price})</span>
-                      {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'gain')?.Commentary && (
-                        <p className="text-xs text-slate-400 mt-1 italic">
-                          {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'gain').Commentary}
-                        </p>
-                      )}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-red-400 mb-2">Worst Stock Price Plunges</h4>
-              <ul className="space-y-2">
-                {(dailyNews.priceChanges || [])
-                  .filter(c => (parseFloat(c.ChangePct) || 0) < 0)
-                  .slice(0, 5)
-                  .map((c, i) => (
-                    <li key={i} className="p-3 rounded-lg bg-slate-700/30 border border-slate-600/50">
-                      <span className="font-medium text-slate-200">{c.Company}</span>
-                      <span className="mx-2 text-red-400">{c.ChangePct}%</span>
-                      <span className="text-slate-400 text-sm">(Rs {c.Price})</span>
-                      {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'decline')?.Commentary && (
-                        <p className="text-xs text-slate-400 mt-1 italic">
-                          {(dailyNews.priceCommentary || []).find(p => p.Company === c.Company && p.Direction === 'decline').Commentary}
-                        </p>
-                      )}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="card p-6">
+      <div className="card p-6 border-l-4 border-l-violet-500">
         <h3 className="card-header text-lg">AI Adverse Media Analysis</h3>
         <p className="card-subtitle mb-6">Groq-powered analysis of governance risk, regulatory issues, and sentiment. Risk level elevated based on sentiment and volatility indicators when applicable.</p>
         <div className="flex flex-wrap gap-2 mb-6">
@@ -141,10 +140,10 @@ export default function AIRiskDashboard() {
             <button
               key={c}
               onClick={() => { setSelected(c); setResult(null); }}
-              className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                 selected === c
-                  ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-glow'
-                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:text-white border border-slate-600/50'
+                  ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-300/40'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 border border-slate-200'
               }`}
             >
               {c}
@@ -156,22 +155,39 @@ export default function AIRiskDashboard() {
         </button>
       </div>
 
-      {result && (
-        <div className="card p-6 border-teal-500/30">
-          <h3 className="card-header text-lg mb-4">Results for {result.companyName || selected}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div className="p-4 rounded-xl bg-slate-700/30">
-              <span className="text-slate-400 text-sm">Risk Score</span>
-              <p className={`font-bold text-2xl ${getRiskColor(result.riskCategory)}`}>{result.riskScore}/100</p>
-            </div>
-            <div className="p-4 rounded-xl bg-slate-700/30">
-              <span className="text-slate-400 text-sm">Category</span>
-              <p className={`font-bold text-xl ${getRiskColor(result.riskCategory)}`}>{result.riskCategory}</p>
+      {result && (() => {
+        const styles = getRiskStyles(result.riskCategory || 'Moderate');
+        return (
+          <div className="card p-6 overflow-hidden relative">
+            <div className={`absolute inset-0 opacity-5 bg-gradient-to-br ${styles.bg}`} aria-hidden />
+            <div className="relative">
+              <h3 className="card-header text-xl mb-6 flex items-center gap-2">
+                <span className="text-2xl">{styles.icon}</span>
+                Results for {result.companyName || selected}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div className={`p-5 rounded-2xl bg-gradient-to-br ${styles.bg} text-white shadow-lg transition-transform hover:scale-[1.02]`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white/90 text-sm font-semibold">Risk Score</span>
+                    <span className="text-lg">📊</span>
+                  </div>
+                  <p className="font-bold text-3xl">{result.riskScore}/100</p>
+                </div>
+                <div className={`p-5 rounded-2xl ${styles.badge} shadow-md transition-transform hover:scale-[1.02]`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-slate-600 text-sm font-semibold">Category</span>
+                    <span className="text-lg">{styles.icon}</span>
+                  </div>
+                  <p className={`font-bold text-2xl ${styles.text}`}>{result.riskCategory}</p>
+                </div>
+              </div>
+              <div className="p-5 rounded-2xl bg-white/80 border border-slate-200 text-sm leading-relaxed whitespace-pre-wrap text-slate-700 shadow-sm">
+                {result.analysis}
+              </div>
             </div>
           </div>
-          <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/50 text-sm whitespace-pre-wrap text-slate-300">{result.analysis}</div>
-        </div>
-      )}
+        );
+      })()}
 
       <Disclaimer />
     </div>
