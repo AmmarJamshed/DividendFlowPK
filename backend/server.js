@@ -482,6 +482,28 @@ app.get('/api/daily-news', async (req, res) => {
     if (priceChanges.length === 0 && fs.existsSync(path.join(pricesPath, 'price_changes.csv'))) {
       priceChanges = await readCSV(path.join(pricesPath, 'price_changes.csv'));
     }
+    // Fallback: use psx_full_dataset.csv from last scrape (psx.py) for top gainers/decliners
+    if (priceChanges.length === 0) {
+      const fullPath = path.join(pricesPath, 'psx_full_dataset.csv');
+      if (fs.existsSync(fullPath)) {
+        const fullRows = await readCSV(fullPath);
+        const parseNum = (s) => {
+          if (!s) return 0;
+          const v = String(s).replace(/,/g, '').replace('%', '').trim();
+          return parseFloat(v) || 0;
+        };
+        const withChange = fullRows
+          .map(r => ({
+            Company: r.symbol || r.Symbol || '',
+            Price: parseNum(r.close || r.Close),
+            Change: parseNum(r.change || r.Change),
+            ChangePct: parseNum(r.change_pct || r['change_pct']),
+            Date: r.date || r.Date,
+          }))
+          .filter(x => x.Company && x.Price > 0 && x.ChangePct !== 0);
+        priceChanges = withChange.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
+      }
+    }
     if (fs.existsSync(path.join(newsPath, 'price_commentary.csv'))) {
       priceCommentary = await readCSV(path.join(newsPath, 'price_commentary.csv'));
     }

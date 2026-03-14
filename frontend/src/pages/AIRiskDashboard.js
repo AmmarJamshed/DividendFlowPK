@@ -89,7 +89,12 @@ export default function AIRiskDashboard() {
 
       <div className="card p-6 border-l-4 border-l-emerald-500">
         <h3 className="card-header text-lg">Today vs Yesterday — Price Movers</h3>
-        <p className="card-subtitle mb-4">Daily stock appreciations and plunges with Groq-powered analysis based on news</p>
+        <p className="card-subtitle mb-4">
+          Daily stock appreciations and plunges with Groq-powered analysis based on news.
+          {(dailyNews.priceChanges?.length > 0 && dailyNews.priceChanges[0]?.Date) && (
+            <span className="block text-teal-600 font-medium mt-1">From last scrape: {dailyNews.priceChanges[0].Date}</span>
+          )}
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
             <h4 className="text-sm font-bold text-emerald-700 mb-2">Top Stock Appreciations</h4>
