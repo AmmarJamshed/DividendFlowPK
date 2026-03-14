@@ -482,8 +482,13 @@ app.get('/api/daily-news', async (req, res) => {
     if (priceChanges.length === 0 && fs.existsSync(path.join(pricesPath, 'price_changes.csv'))) {
       priceChanges = await readCSV(path.join(pricesPath, 'price_changes.csv'));
     }
-    // Fallback: use psx_full_dataset.csv from last scrape (psx.py) for top gainers/decliners
-    if (priceChanges.length === 0) {
+    // Check if we have meaningful changes (non-zero); if all flat, try other sources
+    const hasMeaningfulChanges = priceChanges.some(p => {
+      const pct = parseFloat(p.ChangePct || p.changePct || p.Change_pct) || 0;
+      return pct !== 0;
+    });
+    // Fallback: use psx_full_dataset.csv when no data or all changes are zero
+    if (!hasMeaningfulChanges) {
       const fullPath = path.join(pricesPath, 'psx_full_dataset.csv');
       if (fs.existsSync(fullPath)) {
         const fullRows = await readCSV(fullPath);
@@ -501,7 +506,9 @@ app.get('/api/daily-news', async (req, res) => {
             Date: r.date || r.Date,
           }))
           .filter(x => x.Company && x.Price > 0 && x.ChangePct !== 0);
-        priceChanges = withChange.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
+        if (withChange.length > 0) {
+          priceChanges = withChange.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
+        }
       }
     }
     if (fs.existsSync(path.join(newsPath, 'price_commentary.csv'))) {
