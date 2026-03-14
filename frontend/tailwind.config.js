@@ -15,6 +15,10 @@ module.exports = {
         accent: '#2dd4bf',
         surface: '#1e293b',
         surfaceLight: '#334155',
+        cream: '#faf8f5',
+        coral: '#f97316',
+        violet: '#8b5cf6',
+        lime: '#84cc16',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

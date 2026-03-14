@@ -94,7 +94,7 @@ export default function AIGuidance() {
   return (
     <div className="fixed bottom-6 right-6 z-[9998] flex flex-col items-end gap-2">
       {open && (
-        <div className="w-80 sm:w-96 rounded-2xl bg-white backdrop-blur-xl border border-slate-200 shadow-xl shadow-slate-300/50 overflow-hidden animate-fade-in">
+        <div className="w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200 shadow-xl shadow-slate-300/30 overflow-hidden animate-fade-in">
           <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-teal-50">
             <RobotIcon className="w-8 h-8" />
             <span className="font-semibold text-teal-700">AI Assistant</span>

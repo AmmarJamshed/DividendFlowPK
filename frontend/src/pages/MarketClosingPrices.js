@@ -21,7 +21,7 @@ function AICommentary({ summary }) {
   const sectorNote = topGainer?.changePct > 2 ? ' with strong activity in select sectors.' : '.';
 
   return (
-    <div className="rounded-2xl bg-white border border-slate-200 shadow-lg shadow-slate-200/50 p-4 sm:p-6 mb-6">
+    <div className="rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 shadow-lg shadow-teal-200/30 p-4 sm:p-6 mb-6">
       <h3 className="text-lg font-semibold text-teal-700 mb-3 flex items-center gap-2">
         <span className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">🤖</span>
         AI Market Summary
@@ -90,7 +90,7 @@ export default function MarketClosingPrices() {
   return (
     <div>
       <AICommentary summary={data.summary} />
-      <div className="rounded-2xl bg-white border border-slate-200 shadow-lg shadow-slate-200/50 overflow-hidden">
+      <div className="rounded-2xl bg-white/90 border border-slate-200 shadow-lg shadow-slate-300/20 overflow-hidden backdrop-blur-sm">
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
           <input
             type="search"

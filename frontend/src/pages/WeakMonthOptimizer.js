@@ -19,13 +19,13 @@ export default function WeakMonthOptimizer() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-teal-500/30 border-t-teal-400 rounded-full animate-spin" />
-          <p className="text-slate-400">Loading...</p>
+          <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
+          <p className="text-slate-600">Loading...</p>
         </div>
       </div>
     );
   }
-  if (!data) return <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">Failed to load data</div>;
+  if (!data) return <div className="p-4 rounded-2xl bg-orange-100 border border-orange-300 text-orange-700 font-medium">Failed to load data</div>;
 
   const { monthCoverage, weakMonths, dividends } = data;
   const allCompanies = [...new Set((dividends || []).map(d => d.Company || d.company))];
@@ -39,11 +39,20 @@ export default function WeakMonthOptimizer() {
           {monthNames.map((m, i) => {
             const cov = monthCoverage?.[i + 1] || { count: 0, companies: [] };
             const isWeak = weakMonths?.some(w => w.month === i + 1);
+            const count = cov.count || 0;
+            const strongColor = count >= 20 ? 'bg-emerald-500' : count >= 10 ? 'bg-teal-500' : count >= 5 ? 'bg-violet-500' : 'bg-sky-500';
             return (
-              <div key={m} className={`p-4 rounded-xl transition-all ${isWeak ? 'bg-amber-500/10 border border-amber-500/40 shadow-glow' : 'bg-slate-700/30 border border-slate-600/50 hover:border-slate-500'}`}>
-                <div className="font-semibold text-slate-200">{m}</div>
-                <div className="text-teal-400 font-medium">{cov.count} companies</div>
-                {isWeak && <span className="text-xs text-amber-400 font-medium mt-1 block">Weak month</span>}
+              <div
+                key={m}
+                className={`p-4 rounded-2xl transition-all duration-300 hover:scale-[1.03] hover:shadow-lg ${
+                  isWeak
+                    ? 'bg-gradient-to-br from-orange-400 to-amber-500 text-white shadow-lg shadow-orange-300/50'
+                    : `${strongColor} text-white shadow-lg`
+                }`}
+              >
+                <div className="font-bold text-lg">{m}</div>
+                <div className="font-semibold opacity-95">{cov.count} companies</div>
+                {isWeak && <span className="text-xs font-bold mt-1 block opacity-90">Weak month</span>}
               </div>
             );
           })}
@@ -55,9 +64,16 @@ export default function WeakMonthOptimizer() {
           <h3 className="card-header text-lg">Weak Months Identified</h3>
           <p className="card-subtitle mb-6">Data-driven signal: Companies that historically pay in other months could help fill gaps. Not a buy recommendation.</p>
           <ul className="space-y-4">
-            {weakMonths.map(w => (
-              <li key={w.month} className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/50">
-                <strong className="text-teal-400">{w.monthName}</strong>: {w.count} dividend payers. Consider companies from: {allCompanies.slice(0, 5).join(', ')} (sample)
+            {weakMonths.map((w, idx) => (
+              <li
+                key={w.month}
+                className={`p-5 rounded-2xl text-white font-medium shadow-lg transition-all duration-300 hover:scale-[1.01] hover:shadow-xl ${
+                  idx % 3 === 0 ? 'bg-gradient-to-r from-orange-400 to-amber-500 shadow-orange-300/40' :
+                  idx % 3 === 1 ? 'bg-gradient-to-r from-violet-500 to-purple-600 shadow-violet-300/40' :
+                  'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-300/40'
+                }`}
+              >
+                <strong className="font-bold">{w.monthName}</strong>: {w.count} dividend payers. Consider companies from: {allCompanies.slice(0, 5).join(', ')} (sample)
               </li>
             ))}
           </ul>

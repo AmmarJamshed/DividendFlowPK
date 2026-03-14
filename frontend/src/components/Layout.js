@@ -16,7 +16,7 @@ const navItems = [
 ];
 
 const Disclaimer = () => (
-  <footer className="mt-auto border-t border-slate-200 px-4 py-3 text-xs text-slate-500 bg-slate-50">
+  <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-xs text-slate-600 bg-[#f0eeea]/80">
     This platform provides analytical insights based on historical and probabilistic models. It does not constitute investment advice. Users should conduct further research before making financial decisions.
   </footer>
 );
@@ -37,24 +37,24 @@ export default function Layout({ children }) {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-sky-50 via-white to-teal-50/40 text-slate-700">
+    <div className="min-h-screen flex text-slate-700 relative">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/30 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-slate-900/20 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar - hidden on mobile unless open */}
+      {/* Sidebar - Pokémon-style light grey nav */}
       <aside
-        className={`fixed lg:relative inset-y-0 left-0 z-50 w-72 flex flex-col bg-white/95 backdrop-blur-xl border-r border-slate-200 shadow-xl transform transition-transform duration-300 ease-out
+        className={`fixed lg:relative inset-y-0 left-0 z-50 w-72 flex flex-col bg-[#f0eeea]/98 backdrop-blur-xl border-r border-slate-200/80 shadow-xl transform transition-transform duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="p-4 lg:p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-4 lg:p-6 border-b border-slate-200/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-teal-200 shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 via-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-teal-400/40 shrink-0">
               D
             </div>
             <div className="min-w-0">
@@ -75,10 +75,10 @@ export default function Layout({ children }) {
             <Link
               key={path}
               to={path}
-              className={`block px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-200 ${
+              className={`block px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
                 location.pathname === path
-                  ? 'bg-gradient-to-r from-teal-50 to-cyan-50 text-teal-700 border border-teal-200 shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-800 border border-transparent'
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-400/30'
+                  : 'text-slate-600 hover:bg-white/80 hover:text-slate-800 border border-transparent'
               }`}
             >
               {label}
@@ -90,7 +90,7 @@ export default function Layout({ children }) {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <header className="h-14 lg:h-16 border-b border-slate-200 flex items-center justify-between gap-3 px-4 lg:px-8 bg-white/80 backdrop-blur-sm shrink-0">
+        <header className="h-14 lg:h-16 border-b border-slate-200/80 flex items-center justify-between gap-3 px-4 lg:px-8 bg-[#e8e6e2]/90 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -104,12 +104,12 @@ export default function Layout({ children }) {
             </h2>
           </div>
           {dataUpdated && (
-            <span className="hidden sm:inline text-xs lg:text-sm text-teal-600 font-medium px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl bg-teal-50 border border-teal-200 shrink-0">
+            <span className="hidden sm:inline text-xs lg:text-sm text-white font-semibold px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 shadow-md shrink-0">
               {dataUpdated}
             </span>
           )}
         </header>
-        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50">
+        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-transparent">
           <div className="animate-fade-in max-w-7xl mx-auto">
             {children}
           </div>
