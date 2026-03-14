@@ -48,13 +48,13 @@ const DEFAULT_TIPS = [
 function RobotIcon({ className }) {
   return (
     <svg viewBox="0 0 64 64" className={className}>
-      <rect x="12" y="20" width="40" height="36" rx="6" fill="#1e293b" stroke="#2dd4bf" strokeWidth="2" />
-      <text x="32" y="42" textAnchor="middle" fill="#2dd4bf" fontSize="14" fontWeight="bold" fontFamily="system-ui">₨</text>
-      <rect x="18" y="8" width="28" height="16" rx="4" fill="#0f172a" stroke="#2dd4bf" strokeWidth="1.5" />
-      <circle cx="24" cy="16" r="2.5" fill="#2dd4bf" />
-      <circle cx="40" cy="16" r="2.5" fill="#2dd4bf" />
-      <line x1="32" y1="8" x2="32" y2="2" stroke="#2dd4bf" strokeWidth="1.5" />
-      <circle cx="32" cy="2" r="2" fill="#2dd4bf" />
+      <rect x="12" y="20" width="40" height="36" rx="6" fill="#0d9488" stroke="#14b8a6" strokeWidth="2" />
+      <text x="32" y="42" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="system-ui">₨</text>
+      <rect x="18" y="8" width="28" height="16" rx="4" fill="#0f766e" stroke="#14b8a6" strokeWidth="1.5" />
+      <circle cx="24" cy="16" r="2.5" fill="white" />
+      <circle cx="40" cy="16" r="2.5" fill="white" />
+      <line x1="32" y1="8" x2="32" y2="2" stroke="#14b8a6" strokeWidth="1.5" />
+      <circle cx="32" cy="2" r="2" fill="#14b8a6" />
     </svg>
   );
 }
@@ -94,22 +94,22 @@ export default function AIGuidance() {
   return (
     <div className="fixed bottom-6 right-6 z-[9998] flex flex-col items-end gap-2">
       {open && (
-        <div className="w-80 sm:w-96 rounded-2xl bg-slate-900/98 backdrop-blur-xl border border-slate-700/50 shadow-2xl overflow-hidden animate-fade-in">
-          <div className="px-4 py-3 border-b border-slate-700/50 flex items-center gap-2 bg-slate-800/50">
+        <div className="w-80 sm:w-96 rounded-2xl bg-white backdrop-blur-xl border border-slate-200 shadow-xl shadow-slate-300/50 overflow-hidden animate-fade-in">
+          <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-teal-50">
             <RobotIcon className="w-8 h-8" />
-            <span className="font-semibold text-teal-300">AI Assistant</span>
+            <span className="font-semibold text-teal-700">AI Assistant</span>
           </div>
           <div className="p-4 max-h-48 overflow-y-auto">
-            <p className="text-sm text-slate-300">{message || tips[0]}</p>
+            <p className="text-sm text-slate-600">{message || tips[0]}</p>
           </div>
-          <div className="p-3 border-t border-slate-700/50 flex gap-2">
+          <div className="p-3 border-t border-slate-200 flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask something..."
-              className="flex-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+              className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50"
             />
             <button
               onClick={handleSend}
@@ -122,7 +122,7 @@ export default function AIGuidance() {
       )}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg hover:shadow-teal-500/30 hover:scale-105 transition-all flex items-center justify-center"
+        className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg shadow-teal-300/50 hover:shadow-teal-400/40 hover:scale-105 transition-all flex items-center justify-center"
         aria-label="Toggle AI Assistant"
       >
         <RobotIcon className="w-8 h-8" />

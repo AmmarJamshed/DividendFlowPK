@@ -12,8 +12,8 @@ const chartOptions = {
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
   scales: {
-    y: { grid: { color: 'rgba(148, 163, 184, 0.1)' }, ticks: { color: '#94a3b8' } },
-    x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+    y: { grid: { color: 'rgba(148, 163, 184, 0.3)' }, ticks: { color: '#64748b' } },
+    x: { grid: { display: false }, ticks: { color: '#64748b' } },
   },
 };
 
@@ -81,8 +81,8 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-teal-500/30 border-t-teal-400 rounded-full animate-spin" />
-          <p className="text-slate-400">Loading dashboard...</p>
+          <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
+          <p className="text-slate-500">Loading dashboard...</p>
         </div>
       </div>
     );

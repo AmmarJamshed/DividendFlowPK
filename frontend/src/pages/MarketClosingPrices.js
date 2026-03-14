@@ -21,22 +21,22 @@ function AICommentary({ summary }) {
   const sectorNote = topGainer?.changePct > 2 ? ' with strong activity in select sectors.' : '.';
 
   return (
-    <div className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-4 sm:p-6 mb-6">
-      <h3 className="text-lg font-semibold text-teal-300 mb-3 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">🤖</span>
+    <div className="rounded-2xl bg-white border border-slate-200 shadow-lg shadow-slate-200/50 p-4 sm:p-6 mb-6">
+      <h3 className="text-lg font-semibold text-teal-700 mb-3 flex items-center gap-2">
+        <span className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">🤖</span>
         AI Market Summary
       </h3>
-      <p className="text-slate-300 text-sm leading-relaxed">
+      <p className="text-slate-600 text-sm leading-relaxed">
         {date ? `As of ${date}: ` : ''}
         Today&apos;s Pakistan Stock Exchange session closed {sentiment.toLowerCase()}{sectorNote}
-        {' '}Total companies traded: <strong className="text-slate-200">{formatNum(totalCompanies)}</strong>.
+        {' '}Total companies traded: <strong className="text-slate-700">{formatNum(totalCompanies)}</strong>.
         {topGainer && (
-          <> Top performer: <strong className="text-emerald-400">{topGainer.symbol} +{topGainer.changePct.toFixed(1)}%</strong>.</>
+          <> Top performer: <strong className="text-emerald-600">{topGainer.symbol} +{topGainer.changePct.toFixed(1)}%</strong>.</>
         )}
         {topLoser && (
           <> Worst performer: <strong className="text-red-400">{topLoser.symbol} {topLoser.changePct.toFixed(1)}%</strong>.</>
         )}
-        {' '}Overall market sentiment: <strong className="text-slate-200">{sentiment}</strong>.
+        {' '}Overall market sentiment: <strong className="text-slate-700">{sentiment}</strong>.
       </p>
     </div>
   );
@@ -82,7 +82,7 @@ export default function MarketClosingPrices() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <div className="animate-spin w-10 h-10 border-2 border-teal-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-10 h-10 border-2 border-teal-400 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -90,16 +90,16 @@ export default function MarketClosingPrices() {
   return (
     <div>
       <AICommentary summary={data.summary} />
-      <div className="rounded-xl bg-slate-800/60 border border-slate-700/50 overflow-hidden">
-        <div className="p-4 border-b border-slate-700/50 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+      <div className="rounded-2xl bg-white border border-slate-200 shadow-lg shadow-slate-200/50 overflow-hidden">
+        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
           <input
             type="search"
             placeholder="Search by stock or symbol..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-600 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 w-full sm:w-64"
+            className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300 w-full sm:w-64"
           />
-          <span className="text-sm text-slate-400 self-center">
+          <span className="text-sm text-slate-500 self-center">
             {filtered.length} stocks
             {data.date && ` • ${data.date}`}
           </span>
@@ -107,12 +107,12 @@ export default function MarketClosingPrices() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-800/80 text-slate-400">
-                <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-teal-400" onClick={() => toggleSort('symbol')}>Stock</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-400" onClick={() => toggleSort('close')}>Close</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-400" onClick={() => toggleSort('change')}>Change</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-400" onClick={() => toggleSort('changePct')}>Daily %</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-400" onClick={() => toggleSort('volume')}>Shares Traded</th>
+              <tr className="bg-slate-50 text-slate-600">
+                <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-teal-600 rounded-tl-2xl" onClick={() => toggleSort('symbol')}>Stock</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('close')}>Close</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('change')}>Change</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('changePct')}>Daily %</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600 rounded-tr-2xl" onClick={() => toggleSort('volume')}>Shares Traded</th>
               </tr>
             </thead>
             <tbody>
@@ -120,16 +120,16 @@ export default function MarketClosingPrices() {
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">No data available</td></tr>
               ) : (
                 pageRows.map((r, i) => (
-                  <tr key={`${r.symbol}-${i}`} className="border-t border-slate-700/50 hover:bg-slate-800/40">
-                    <td className="px-4 py-3 font-medium text-slate-200">{r.symbol || r.company}</td>
-                    <td className="px-4 py-3 text-right text-slate-300">{formatNum(r.close)}</td>
-                    <td className={`px-4 py-3 text-right font-medium ${(r.change || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
+                    <td className="px-4 py-3 font-medium text-slate-700">{r.symbol || r.company}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">{formatNum(r.close)}</td>
+                    <td className={`px-4 py-3 text-right font-medium ${(r.change || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                       {(r.change || 0) >= 0 ? '+' : ''}{formatNum(r.change)}
                     </td>
-                    <td className={`px-4 py-3 text-right font-medium ${(r.changePct || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <td className={`px-4 py-3 text-right font-medium ${(r.changePct || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                       {(r.changePct || 0) >= 0 ? '+' : ''}{formatNum(r.changePct)}%
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-400">{formatNum(r.volume)}</td>
+                    <td className="px-4 py-3 text-right text-slate-500">{formatNum(r.volume)}</td>
                   </tr>
                 ))
               )}
@@ -137,19 +137,19 @@ export default function MarketClosingPrices() {
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-slate-700/50 flex items-center justify-between">
+          <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50/50">
             <button
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-3 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700"
+              className="px-3 py-2 rounded-xl bg-teal-50 text-teal-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-teal-100 border border-teal-200"
             >
               Previous
             </button>
-            <span className="text-slate-400 text-sm">Page {page + 1} of {totalPages}</span>
+            <span className="text-slate-600 text-sm">Page {page + 1} of {totalPages}</span>
             <button
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="px-3 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-700"
+              className="px-3 py-2 rounded-xl bg-teal-50 text-teal-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-teal-100 border border-teal-200"
             >
               Next
             </button>

@@ -17,8 +17,8 @@ export default function ReportingCycles() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-teal-500/30 border-t-teal-400 rounded-full animate-spin" />
-          <p className="text-slate-400">Loading reporting cycles...</p>
+          <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
+          <p className="text-slate-500">Loading reporting cycles...</p>
         </div>
       </div>
     );
@@ -34,26 +34,26 @@ export default function ReportingCycles() {
         <div className="table-responsive">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-800/80">
-                <th className="text-left p-4 font-semibold text-slate-300">Company</th>
-                <th className="text-left p-4 font-semibold text-slate-300">Sector</th>
-                <th className="text-left p-4 font-semibold text-slate-300">Fiscal Year End</th>
-                <th className="text-left p-4 font-semibold text-slate-300">Quarter End Months</th>
-                <th className="text-left p-4 font-semibold text-slate-300">Dividend Announcement Period</th>
-                <th className="text-left p-4 font-semibold text-slate-300">Book Closure Month</th>
-                <th className="text-left p-4 font-semibold text-slate-300">Estimated Payment Month</th>
+              <tr className="bg-slate-50">
+                <th className="text-left p-4 font-semibold text-slate-600">Company</th>
+                <th className="text-left p-4 font-semibold text-slate-600">Sector</th>
+                <th className="text-left p-4 font-semibold text-slate-600">Fiscal Year End</th>
+                <th className="text-left p-4 font-semibold text-slate-600">Quarter End Months</th>
+                <th className="text-left p-4 font-semibold text-slate-600">Dividend Announcement Period</th>
+                <th className="text-left p-4 font-semibold text-slate-600">Book Closure Month</th>
+                <th className="text-left p-4 font-semibold text-slate-600">Estimated Payment Month</th>
               </tr>
             </thead>
             <tbody>
               {data.map((d, i) => (
-                <tr key={i} className="border-t border-slate-700/50 hover:bg-slate-700/20 transition-colors">
-                  <td className="p-4 font-medium text-slate-200">{d.Company || d.company}</td>
-                  <td className="p-4 text-slate-400">{d.Sector || d.sector}</td>
+                <tr key={i} className="border-t border-slate-100 hover:bg-teal-50/50 transition-colors">
+                  <td className="p-4 font-medium text-slate-700">{d.Company || d.company}</td>
+                  <td className="p-4 text-slate-500">{d.Sector || d.sector}</td>
                   <td className="p-4">{d.Fiscal_Year_End || d.fiscal_year_end}</td>
                   <td className="p-4">{d.Quarter_End_Months || d.quarter_end_months}</td>
                   <td className="p-4">{d.Dividend_Announcement_Period || d.dividend_announcement_period}</td>
                   <td className="p-4">{d.Book_Closure_Month || d.book_closure_month}</td>
-                  <td className="p-4"><span className="px-2 py-1 rounded-lg bg-teal-500/20 text-teal-400 font-medium">{d.Estimated_Payment_Month || d.estimated_payment_month}</span></td>
+                  <td className="p-4"><span className="px-2 py-1 rounded-lg bg-teal-100 text-teal-700 font-medium">{d.Estimated_Payment_Month || d.estimated_payment_month}</span></td>
                 </tr>
               ))}
             </tbody>

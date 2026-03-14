@@ -73,17 +73,17 @@ export default function RobotCursor() {
         >
           <svg viewBox="0 0 64 64" className="w-8 h-8 overflow-visible">
             {/* Robot body */}
-            <rect x="12" y="20" width="40" height="36" rx="6" fill={click ? '#22c55e' : '#0f172a'} stroke="#2dd4bf" strokeWidth="2" />
+            <rect x="12" y="20" width="40" height="36" rx="6" fill={click ? '#22c55e' : '#0d9488'} stroke="#14b8a6" strokeWidth="2" />
             {/* PKR symbol on chest */}
-            <text x="32" y="42" textAnchor="middle" fill="#2dd4bf" fontSize="14" fontWeight="bold" fontFamily="system-ui">₨</text>
+            <text x="32" y="42" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="system-ui">₨</text>
             {/* Head */}
-            <rect x="18" y="8" width="28" height="16" rx="4" fill="#1e293b" stroke="#2dd4bf" strokeWidth="1.5" />
+            <rect x="18" y="8" width="28" height="16" rx="4" fill="#0f766e" stroke="#14b8a6" strokeWidth="1.5" />
             {/* Eyes */}
-            <circle cx="24" cy="16" r="2.5" fill="#2dd4bf" className={hover ? 'animate-pulse' : ''} />
-            <circle cx="40" cy="16" r="2.5" fill="#2dd4bf" className={hover ? 'animate-pulse' : ''} />
+            <circle cx="24" cy="16" r="2.5" fill="white" className={hover ? 'animate-pulse' : ''} />
+            <circle cx="40" cy="16" r="2.5" fill="white" className={hover ? 'animate-pulse' : ''} />
             {/* Antenna */}
-            <line x1="32" y1="8" x2="32" y2="2" stroke="#2dd4bf" strokeWidth="1.5" />
-            <circle cx="32" cy="2" r="2" fill="#2dd4bf" />
+            <line x1="32" y1="8" x2="32" y2="2" stroke="#14b8a6" strokeWidth="1.5" />
+            <circle cx="32" cy="2" r="2" fill="#14b8a6" />
           </svg>
         </div>
       </div>
