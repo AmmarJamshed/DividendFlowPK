@@ -34,7 +34,8 @@ export default function WeakMonthOptimizer() {
     <div className="space-y-6">
       <div className="card p-6">
         <h3 className="card-header text-lg">Monthly Dividend Coverage Matrix</h3>
-        <p className="card-subtitle mb-6">Data-driven signal: months with fewer dividend payers may benefit from diversification</p>
+        <p className="card-subtitle mb-6">Data-driven signal: months with fewer dividend payers may benefit from diversification.</p>
+        <p className="text-xs text-slate-500 mb-4 -mt-2">Source: Payment months from <strong>dps.psx.com.pk/payouts</strong> (current) when available, else psxterminal.com. Prices from dps.psx.com.pk (psx.py). Verify at <a href="https://dps.psx.com.pk/payouts" target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline">dps.psx.com.pk/payouts</a>.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {monthNames.map((m, i) => {
             const cov = monthCoverage?.[i + 1] || { count: 0, companies: [] };
@@ -63,6 +64,7 @@ export default function WeakMonthOptimizer() {
         <div className="card p-6">
           <h3 className="card-header text-lg">Weak Months Identified</h3>
           <p className="card-subtitle mb-6">Data-driven signal: Companies that historically pay in other months could help fill gaps. Not a buy recommendation.</p>
+          <p className="text-xs text-slate-500 mb-4 -mt-2">Weak = fewer than half the average payers per month.</p>
           <ul className="space-y-4">
             {weakMonths.map((w, idx) => (
               <li
@@ -73,7 +75,7 @@ export default function WeakMonthOptimizer() {
                   'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-300/40'
                 }`}
               >
-                <strong className="font-bold">{w.monthName}</strong>: {w.count} dividend payers. Consider companies from: {allCompanies.slice(0, 5).join(', ')} (sample)
+                <strong className="font-bold">{w.monthName}</strong>: {w.count} dividend payers. Consider: {((w.suggestCompanies || w.companies || []).slice(0, 8).join(', ')) || allCompanies.slice(0, 5).join(', ')}
               </li>
             ))}
           </ul>

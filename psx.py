@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Daily PSX price scraper - fetches from dps.psx.com.pk/historical
+Payouts scraper - fetches current dividend dates from dps.psx.com.pk/payouts
 Outputs: data/prices/psx_full_dataset.csv, daily_prices.csv, price_changes.csv
+        data/dividends/psx_payouts.csv (current payout dates from PSX)
 """
 from playwright.sync_api import sync_playwright
 import pandas as pd
@@ -11,11 +13,58 @@ import csv
 import json
 import base64
 import urllib.request
+import re
 from datetime import datetime, timedelta
 
 URL = "https://dps.psx.com.pk/historical"
+PAYOUTS_URL = "https://dps.psx.com.pk/payouts"
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "prices")
-DIVIDEND_CSV = os.path.join(os.path.dirname(__file__), "data", "dividends", "psx_dividend_calendar.csv")
+DIVIDEND_DIR = os.path.join(os.path.dirname(__file__), "data", "dividends")
+DIVIDEND_CSV = os.path.join(DIVIDEND_DIR, "psx_dividend_calendar.csv")
+PAYOUTS_CSV = os.path.join(DIVIDEND_DIR, "psx_payouts.csv")
+
+
+def scrape_psx_payouts():
+    """Scrape current dividend payout dates from dps.psx.com.pk/payouts.
+    Book closure date format: DD/MM/YYYY - DD/MM/YYYY. Payment typically ~1 month after.
+    We use the end date month + 1 as Payment_month (e.g. book 30/03 -> payment April = 4).
+    """
+    payouts = []
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto(PAYOUTS_URL, timeout=60000)
+        page.wait_for_load_state("networkidle")
+        time.sleep(4)
+
+        rows = page.query_selector_all("table tbody tr")
+        for row in rows:
+            cols = row.query_selector_all("td")
+            if len(cols) < 6:
+                continue
+            symbol = cols[0].inner_text().strip()
+            company = cols[1].inner_text().strip()
+            book_closure = cols[5].inner_text().strip()
+            # Parse "DD/MM/YYYY - DD/MM/YYYY" or "DD/MM/YYYY" - use end date
+            matches = re.findall(r"(\d{1,2})/(\d{1,2})/(\d{4})", book_closure)
+            if matches:
+                d, m, y = int(matches[-1][0]), int(matches[-1][1]), int(matches[-1][2])
+                # Payment typically 1 month after book closure
+                pay_month = m + 1 if m < 12 else 1
+                payouts.append({
+                    "Company": symbol,
+                    "CompanyName": company,
+                    "BookClosureEnd": f"{y}-{m:02d}-{d:02d}",
+                    "Payment_month": pay_month,
+                })
+        browser.close()
+
+    os.makedirs(DIVIDEND_DIR, exist_ok=True)
+    if payouts:
+        df = pd.DataFrame(payouts)
+        df.to_csv(PAYOUTS_CSV, index=False)
+        print(f"Saved {len(payouts)} payouts to {PAYOUTS_CSV}")
+    return payouts
 
 
 def load_tracked_companies():
@@ -190,7 +239,7 @@ def push_to_github(token, repo):
             )
             urllib.request.urlopen(req, timeout=30)
 
-        for path in ["data/prices/daily_prices.csv", "data/prices/price_changes.csv", "data/prices/psx_full_dataset.csv"]:
+        for path in ["data/prices/daily_prices.csv", "data/prices/price_changes.csv", "data/prices/psx_full_dataset.csv", "data/dividends/psx_payouts.csv"]:
             fp = os.path.join(os.path.dirname(__file__), path)
             if os.path.exists(fp):
                 with open(fp, "r", encoding="utf-8") as f:
@@ -201,4 +250,5 @@ def push_to_github(token, repo):
 
 
 if __name__ == "__main__":
+    scrape_psx_payouts()
     scrape_psx()

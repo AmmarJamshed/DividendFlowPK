@@ -76,7 +76,22 @@ async function main() {
     if (r.Company) divMap.set(key(r), r);
   });
   scraped.forEach(d => divMap.set(key(d), { ...divMap.get(key(d)), ...d }));
-  const dividends = Array.from(divMap.values()).filter(d => d.Company).sort((a, b) => (a.Company || '').localeCompare(b.Company || '') || (a.Year || 0) - (b.Year || 0));
+  let dividends = Array.from(divMap.values()).filter(d => d.Company).sort((a, b) => (a.Company || '').localeCompare(b.Company || '') || (a.Year || 0) - (b.Year || 0));
+
+  // Override Payment_month with current payout dates from dps.psx.com.pk (psx.py)
+  const payoutsPath = join(DATA, 'dividends', 'psx_payouts.csv');
+  if (existsSync(payoutsPath)) {
+    const payouts = loadFallbackCsv(payoutsPath);
+    const payoutByCompany = new Map(payouts.map(p => [p.Company || p.company, p]));
+    dividends = dividends.map(d => {
+      const p = payoutByCompany.get(d.Company || d.company);
+      if (p && p.Payment_month) {
+        return { ...d, Payment_month: p.Payment_month };
+      }
+      return d;
+    });
+    console.log('[Scraper] Applied', payouts.length, 'current payout dates from PSX');
+  }
 
   const reportingCycles = buildReportingCycles(dividends);
   const byCyc = new Map(reportingCycles.map(r => [r.Company, r]));
@@ -93,7 +108,7 @@ async function main() {
     const p = parseFloat(d.Price || d.price || 0);
     if (c && p > 0) byCompany.set(c, p);
   });
-  const { writeFileSync, mkdirSync, readFileSync, existsSync } = await import('fs');
+  const { writeFileSync, mkdirSync, readFileSync } = await import('fs');
   const { toDividendCsv, toCyclesCsv } = await import('./update-github.js');
   mkdirSync(join(DATA, 'dividends'), { recursive: true });
   mkdirSync(join(DATA, 'financials'), { recursive: true });
