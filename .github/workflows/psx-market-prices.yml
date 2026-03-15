@@ -32,4 +32,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SCRAPER_EMAIL_TO: ${{ secrets.SCRAPER_EMAIL_TO }}
         run: python psx.py

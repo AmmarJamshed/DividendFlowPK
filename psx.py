@@ -250,5 +250,13 @@ def push_to_github(token, repo):
 
 
 if __name__ == "__main__":
-    scrape_psx_payouts()
-    scrape_psx()
+    from send_email import send_email
+    try:
+        payouts_count = len(scrape_psx_payouts())
+        prices_count = scrape_psx()
+        summary = f"{payouts_count} payouts, {prices_count} prices scraped"
+        send_email(success=True, summary=summary)
+    except Exception as e:
+        print(f"[Error] {e}")
+        send_email(success=False, error=str(e))
+        raise

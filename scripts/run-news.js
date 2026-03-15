@@ -6,6 +6,7 @@
 import { scrapePsxNews, getGroqPriceCommentary } from './scrape-news.js';
 import { scrapeCurrentPrices, computePriceChanges, loadPreviousPrices } from './scrape-prices.js';
 import { pushNewsToGitHub, toDividendCsv } from './update-github.js';
+import { sendScraperEmail } from './send-email.js';
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -148,10 +149,25 @@ async function main() {
   } else {
     console.log('[News] No GITHUB_TOKEN - skipping push');
   }
+  
+  if (process.env.SCRAPER_EMAIL_TO) {
+    await sendScraperEmail({
+      success: true,
+      changes: {
+        summary: `${news.length} news articles, ${priceCommentary.length} AI price commentaries, ${priceChanges.length} price movers`,
+        priceChanges: [],
+        dividendChanges: [],
+        newCompanies: [],
+      }
+    });
+  }
   console.log('[News] Done');
 }
 
-main().catch(err => {
+main().catch(async err => {
   console.error('[News] Error:', err);
+  if (process.env.SCRAPER_EMAIL_TO) {
+    await sendScraperEmail({ success: false, error: err.message }).catch(e => console.error('[Email]', e));
+  }
   process.exit(1);
 });
