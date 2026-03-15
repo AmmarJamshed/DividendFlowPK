@@ -64,13 +64,12 @@ async function main() {
     return acc;
   }, {});
 
-  let currentPrices = await scrapeCurrentPrices();
-  const previousPrices = loadPreviousPrices(today);
-  let priceChanges = computePriceChanges([...currentPrices], previousPrices);
-
-  // Fallback: if our scrape produced no price changes, preserve from psx.py output (price_changes.csv) for AI Risk Dashboard
+  // Use price data from psx.py (GitHub Actions) instead of scraping again
   const priceChangesPath = join(DATA, 'prices', 'price_changes.csv');
-  if (priceChanges.length === 0 && existsSync(priceChangesPath)) {
+  let priceChanges = [];
+  let currentPrices = new Map();
+  
+  if (existsSync(priceChangesPath)) {
     const existing = loadDividendCsv(priceChangesPath);
     const pcRows = existing.filter(r => (r.Company || r.company) && (r.ChangePct || r.Change));
     if (pcRows.length > 0) {
@@ -81,41 +80,22 @@ async function main() {
         Change: parseFloat(r.Change) || 0,
         ChangePct: parseFloat(r.ChangePct) || 0,
       })).filter(x => x.Company && (x.ChangePct !== 0 || x.Change !== 0));
-      console.log('[Prices] Using', priceChanges.length, 'price changes from existing file (psx.py)');
+      priceChanges.forEach(p => currentPrices.set(p.Company, p.Price));
+      console.log('[Prices] Loaded', priceChanges.length, 'price changes from psx.py (GitHub Actions)');
     }
   }
-  console.log('[Prices] Scraped', currentPrices.size, 'prices,', priceChanges.length, 'with day-over-day change (vs yesterday)');
+  
+  // If no price data from psx.py yet, scrape as fallback
+  if (currentPrices.size === 0) {
+    console.log('[Prices] No data from psx.py - scraping as fallback');
+    currentPrices = await scrapeCurrentPrices();
+    const previousPrices = loadPreviousPrices(today);
+    priceChanges = computePriceChanges([...currentPrices], previousPrices);
+  }
+  
+  console.log('[Prices]', currentPrices.size, 'prices,', priceChanges.length, 'with day-over-day change');
 
-  // Merge today's prices into history (keep last 14 days for yesterday comparison)
-  const dailyPath = join(DATA, 'prices', 'daily_prices.csv');
-  let existing = [];
-  if (existsSync(dailyPath)) {
-    const raw = readFileSync(dailyPath, 'utf-8').split('\n').filter(Boolean);
-    const hdrs = raw[0]?.split(',').map(h => h.trim()) || [];
-    const dateIdx = hdrs.findIndex(h => /date/i.test(h));
-    const companyIdx = hdrs.findIndex(h => /company/i.test(h));
-    const priceIdx = hdrs.findIndex(h => /price/i.test(h));
-    if (dateIdx >= 0 && companyIdx >= 0 && priceIdx >= 0) {
-      const cutoff = new Date(today);
-      cutoff.setDate(cutoff.getDate() - 14);
-      const cutoffStr = cutoff.toISOString().slice(0, 10);
-      for (let i = 1; i < raw.length; i++) {
-        const vals = raw[i].split(',').map(v => v.replace(/^"|"$/g, '').trim());
-        const rowDate = vals[dateIdx];
-        if (rowDate && rowDate !== today && rowDate >= cutoffStr) {
-          existing.push({ Company: vals[companyIdx], Date: rowDate, Price: vals[priceIdx] });
-        }
-      }
-    }
-  }
-  const todayRows = [...currentPrices].map(([Company, Price]) => ({ Company, Date: today, Price }));
-  const merged = [...existing, ...todayRows].sort((a, b) => a.Date.localeCompare(b.Date) || (a.Company || '').localeCompare(b.Company || ''));
-  // Only overwrite daily_prices if we have new data; otherwise preserve psx.py output for AI Risk Dashboard
-  if (todayRows.length > 0 || priceChanges.length > 0) {
-    writeFileSync(dailyPath, toCsv(merged, ['Company', 'Date', 'Price']));
-  } else {
-    console.log('[Prices] Keeping existing daily_prices (no new scrape data)');
-  }
+  // Skip updating daily_prices - psx.py (GitHub Actions) handles this
 
   // Refresh dividend calendar with latest prices and recalculated yields
   const divPath = join(DATA, 'dividends', 'psx_dividend_calendar.csv');
@@ -157,10 +137,7 @@ async function main() {
   }
   console.log('[Prices] AI commentary for', priceCommentary.length, 'movers');
 
-  writeFileSync(
-    join(DATA, 'prices', 'price_changes.csv'),
-    toCsv(priceChanges.map(c => ({ ...c, Date: today })), ['Company', 'Price', 'PreviousPrice', 'Change', 'ChangePct', 'Date'])
-  );
+  // Skip updating price_changes.csv - psx.py (GitHub Actions) handles this
   writeFileSync(
     join(DATA, 'news', 'price_commentary.csv'),
     toCsv(priceCommentary, ['Company', 'Direction', 'ChangePct', 'Commentary', 'Date'])
