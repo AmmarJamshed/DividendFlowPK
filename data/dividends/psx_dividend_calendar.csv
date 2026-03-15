@@ -1,74 +1,73 @@
 Company,Sector,Dividend_per_share,Payment_month,Dividend_yield,Price,Year
-OGDC,Oil & Gas Exploration,7.75,4,5.43,285.28,2026
-OGDC,Oil & Gas Exploration,6,10,4.2,285.28,2024
-PPL,Oil & Gas Exploration,12,10,5.5,218.4,2025
-PPL,Oil & Gas Exploration,10,4,4.6,218.4,2024
-PSO,Oil & Gas Marketing,25,10,6.35,393.46,2025
-PSO,Oil & Gas Marketing,22,4,5.6,393.46,2024
-HBL,Commercial Banks,12,4,4.26,281.53,2025
-HBL,Commercial Banks,10,10,3.55,281.53,2024
-MCB,Commercial Banks,24,4,6.42,373.87,2025
-MCB,Commercial Banks,22,10,5.89,373.87,2024
-UBL,Commercial Banks,18,4,4.33,416.07,2025
-UBL,Commercial Banks,16,10,3.84,416.07,2024
-ABL,Commercial Banks,8,4,4.7,170.38,2025
-ABL,Commercial Banks,7,10,4.1,170.38,2024
-BAFL,Commercial Banks,4,4,3.4,117.2,2025
-BAFL,Commercial Banks,3.5,10,3.0,117.2,2024
-BAHL,Commercial Banks,6,4,3.8,155.99,2025
-BAHL,Commercial Banks,5,10,3.2,155.99,2024
-HMB,Commercial Banks,4.5,4,4.0,113.91,2025
-HMB,Commercial Banks,4,10,3.5,113.91,2024
-FFC,Fertilizer,37,3,6.85,540.36,2025
-FFC,Fertilizer,35,9,6.48,540.36,2024
-EFERT,Fertilizer,12,4,5.55,216.28,2025
-EFERT,Fertilizer,10,10,4.62,216.28,2024
-FATIMA,Fertilizer,8,4,5.7,140.94,2025
-FATIMA,Fertilizer,7,10,5.0,140.94,2024
-LUCK,Cement,4,10,1.0,398.83,2025
-LUCK,Cement,3,10,0.75,398.83,2024
-DGKC,Cement,8,10,4.2,189.9,2025
-DGKC,Cement,6,4,3.16,189.9,2024
-MLCF,Cement,3,10,2.5,120,2025
-CHCC,Cement,2,10,2.0,100,2025
-HUBC,Power Generation,8,10,3.65,218.89,2025
-HUBC,Power Generation,6,4,2.74,218.89,2024
-KAPCO,Power Generation,2.5,4,8.5,29.39,2025
-KAPCO,Power Generation,2.2,10,7.5,29.39,2024
-NCPL,Power Generation,8,4,11.65,68.66,2025
-NPL,Power Generation,3,10,6.0,50,2025
-LPL,Power Generation,2.5,10,5.5,45,2025
-KEL,Power Distribution,0.5,10,6.21,8.05,2025
-NESTLE,Food & Personal Care,150,4,1.92,7830.4,2025
-NESTLE,Food & Personal Care,120,10,1.53,7830.4,2024
-UNITY,Food & Personal Care,0.4,10,3.97,10.08,2025
-UNITY,Food & Personal Care,0.35,4,3.47,10.08,2024
-COLG,Food & Personal Care,80,4,2.5,3200,2025
-COLG,Food & Personal Care,70,10,2.2,3200,2024
-TRG,Technology,2,10,4.28,46.73,2025
-SYS,Technology,5,10,4.01,124.61,2025
-MARI,Oil & Gas Exploration,45,10,7.29,617.65,2025
-MARI,Oil & Gas Exploration,40,4,6.48,617.65,2024
-POL,Oil & Gas Marketing,55,10,8.49,647.5,2025
-APL,Oil & Gas Marketing,35,10,6.6,533.14,2025
-APL,Oil & Gas Marketing,30,4,5.6,533.14,2024
-ENGRO,Investment Banks,45,4,2.4,1880.4,2025
-ENGRO,Investment Banks,40,10,2.1,1880.4,2024
-INDM,Automobiles,80,4,4.3,1880.4,2025
-INDM,Automobiles,70,10,3.7,1880.4,2024
-ISL,Steel,8,10,3.8,211.6,2025
-ISL,Steel,7,4,3.3,211.6,2024
-TGL,Glass,3,10,4.0,75.78,2025
-TGL,Glass,2.5,4,3.3,75.78,2024
-NCL,Textiles,4,10,2.7,145.93,2025
-NCL,Textiles,3.5,4,2.4,145.93,2024
-EPCL,Chemicals,1.5,10,4.6,32.43,2025
-EPCL,Chemicals,1.2,4,3.7,32.43,2024
-PNSC,Transport,12,10,5.0,240,2025
-PNSC,Transport,10,4,4.2,240,2024
 AABS,Commercial Banks,13,1,1.66,781.86,2026
+ABL,Commercial Banks,7,10,4.1,170.38,2024
+ABL,Commercial Banks,8,4,4.7,170.38,2025
 ABOT,Cement,10,4,1.15,870,2025
 ACPL,Cement,8,9,3,266.61,2025
 AGIC,Insurance,2.28,9,7.11,32.05,2025
 AGIL,Pharmaceuticals,1.75,10,1.31,133.24,2025
+APL,Oil & Gas Marketing,30,4,5.6,533.14,2024
+APL,Oil & Gas Marketing,35,10,6.6,533.14,2025
+BAFL,Commercial Banks,3.5,10,3.0,117.2,2024
+BAFL,Commercial Banks,4,4,3.4,117.2,2025
+BAHL,Commercial Banks,5,10,3.2,155.99,2024
+BAHL,Commercial Banks,6,4,3.8,155.99,2025
+CHCC,Cement,2,10,2.0,100,2025
+COLG,Food & Personal Care,70,10,2.2,3200,2024
+COLG,Food & Personal Care,80,4,2.5,3200,2025
+DGKC,Cement,6,4,3.16,189.9,2024
+DGKC,Cement,8,10,4.2,189.9,2025
+EFERT,Fertilizer,10,10,4.62,216.28,2024
+EFERT,Fertilizer,12,4,5.55,216.28,2025
+ENGRO,Investment Banks,40,10,2.1,1880.4,2024
+ENGRO,Investment Banks,45,4,2.4,1880.4,2025
+EPCL,Chemicals,1.2,4,3.7,32.43,2024
+EPCL,Chemicals,1.5,10,4.6,32.43,2025
+FATIMA,Fertilizer,7,10,5.0,140.94,2024
+FATIMA,Fertilizer,8,4,5.7,140.94,2025
+FFC,Fertilizer,35,9,6.48,540.36,2024
+FFC,Fertilizer,37,3,6.85,540.36,2025
+HBL,Commercial Banks,10,10,3.55,281.53,2024
+HBL,Commercial Banks,12,4,4.26,281.53,2025
+HMB,Commercial Banks,4,10,3.5,113.91,2024
+HMB,Commercial Banks,4.5,4,4.0,113.91,2025
+HUBC,Power Generation,6,4,2.74,218.89,2024
+HUBC,Power Generation,8,10,3.65,218.89,2025
+INDM,Automobiles,70,10,3.7,1880.4,2024
+INDM,Automobiles,80,4,4.3,1880.4,2025
+ISL,Steel,7,4,3.3,211.6,2024
+ISL,Steel,8,10,3.8,211.6,2025
+KAPCO,Power Generation,2.2,4,7.5,29.39,2024
+KAPCO,Power Generation,2.5,4,8.5,29.39,2025
+KEL,Power Distribution,0.5,10,6.21,8.05,2025
+LPL,Power Generation,2.5,10,5.5,45,2025
+LUCK,Cement,3,10,0.75,398.83,2024
+LUCK,Cement,4,10,1.0,398.83,2025
+MARI,Oil & Gas Exploration,40,4,6.48,617.65,2024
+MARI,Oil & Gas Exploration,45,10,7.29,617.65,2025
+MCB,Commercial Banks,22,10,5.89,373.87,2024
+MCB,Commercial Banks,24,4,6.42,373.87,2025
+MLCF,Cement,3,10,2.5,120,2025
+NCL,Textiles,3.5,4,2.4,145.93,2024
+NCL,Textiles,4,4,2.7,145.93,2025
+NCPL,Power Generation,8,4,11.65,68.66,2025
+NESTLE,Food & Personal Care,120,10,1.53,7830.4,2024
+NESTLE,Food & Personal Care,150,4,1.92,7830.4,2025
+NPL,Power Generation,3,10,6.0,50,2025
+OGDC,Oil & Gas Exploration,6,10,4.2,285.28,2024
+OGDC,Oil & Gas Exploration,7.75,4,5.43,285.28,2026
+PNSC,Transport,10,4,4.2,240,2024
+PNSC,Transport,12,10,5.0,240,2025
+POL,Oil & Gas Marketing,55,10,8.49,647.5,2025
+PPL,Oil & Gas Exploration,10,4,4.6,218.4,2024
+PPL,Oil & Gas Exploration,12,10,5.5,218.4,2025
+PSO,Oil & Gas Marketing,22,4,5.6,393.46,2024
 PSO,Oil & Gas Marketing,25,10,6.35,393.46,2025
+SYS,Technology,5,10,4.01,124.61,2025
+TGL,Glass,2.5,4,3.3,75.78,2024
+TGL,Glass,3,4,4.0,75.78,2025
+TRG,Technology,2,10,4.28,46.73,2025
+UBL,Commercial Banks,16,4,3.84,416.07,2024
+UBL,Commercial Banks,18,4,4.33,416.07,2025
+UNITY,Food & Personal Care,0.35,4,3.47,10.08,2024
+UNITY,Food & Personal Care,0.4,10,3.97,10.08,2025

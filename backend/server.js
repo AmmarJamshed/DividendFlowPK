@@ -204,13 +204,16 @@ app.get('/api/month-coverage', async (req, res) => {
 
     const weakMonths = [];
     const avgCount = dividends.length > 0 ? dividends.length / 12 : 0;
+    const strongMonths = [4, 10].map(m => monthCoverage[m].companies).flat();
+    const suggestFromStrong = [...new Set(strongMonths)].slice(0, 8);
     for (let m = 1; m <= 12; m++) {
       if (monthCoverage[m].count < avgCount * 0.5) {
         weakMonths.push({
           month: m,
           monthName: new Date(2000, m - 1).toLocaleString('default', { month: 'long' }),
           count: monthCoverage[m].count,
-          companies: monthCoverage[m].companies
+          companies: monthCoverage[m].companies,
+          suggestCompanies: monthCoverage[m].companies.length > 0 ? monthCoverage[m].companies : suggestFromStrong
         });
       }
     }

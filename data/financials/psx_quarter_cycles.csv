@@ -1,44 +1,44 @@
 Company,Sector,Fiscal_Year_End,Quarter_End_Months,Dividend_Announcement_Period,Book_Closure_Month,Estimated_Payment_Month
-HBL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-MCB,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-UBL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-ABL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-BAFL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-BAHL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-HMB,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
 AABS,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",January,January
-OGDC,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-PPL,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-MARI,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-PSO,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-POL,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-APL,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-FFC,Fertilizer,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,April
-EFERT,Fertilizer,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-FATIMA,Fertilizer,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-LUCK,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-DGKC,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-MLCF,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-CHCC,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-ABOT,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,April
-ACPL,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-HUBC,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-KAPCO,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,April
-NCPL,Power Generation,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-NPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-LPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-KEL,Power Distribution,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-NESTLE,Food & Personal Care,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-UNITY,Food & Personal Care,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-COLG,Food & Personal Care,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-TRG,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-SYS,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-ENGRO,Investment Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",March,April
-INDM,Automobiles,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,April
-ISL,Steel,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-TGL,Glass,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-NCL,Textiles,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-EPCL,Chemicals,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",September,October
-PNSC,Transport,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-AGIC,Insurance,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",September,September
-AGIL,Pharmaceuticals,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
+ABL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",October,October
+ABOT,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+ACPL,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,September
+AGIC,Insurance,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,September
+AGIL,Pharmaceuticals,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+APL,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+BAFL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",October,October
+BAHL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",October,October
+CHCC,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+COLG,Food & Personal Care,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",October,October
+DGKC,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+EFERT,Fertilizer,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+ENGRO,Investment Banks,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+EPCL,Chemicals,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+FATIMA,Fertilizer,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+FFC,Fertilizer,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,September
+HBL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",October,October
+HMB,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",October,October
+HUBC,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+INDM,Automobiles,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+ISL,Steel,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+KAPCO,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+KEL,Power Distribution,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+LPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+LUCK,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+MARI,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+MCB,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",October,October
+MLCF,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+NCL,Textiles,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+NCPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+NESTLE,Food & Personal Care,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",October,October
+NPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+OGDC,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+PNSC,Transport,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+POL,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+PPL,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+PSO,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+SYS,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+TGL,Glass,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+TRG,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+UBL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",April,April
+UNITY,Food & Personal Care,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",April,April
