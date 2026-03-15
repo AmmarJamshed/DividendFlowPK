@@ -85,9 +85,9 @@ export default function ForecastEngine() {
       {!loading && forecast && (
         <>
           {(forecast.asOfDate || forecast.lastPrice) && (
-            <div className="card p-4 bg-slate-700/30 border border-slate-600/50">
-              <p className="text-slate-300 text-sm">
-                <span className="text-slate-400">Last closing price:</span> Rs {forecast.lastPrice?.toLocaleString()}
+            <div className="card p-4 bg-amber-50 border border-amber-200">
+              <p className="text-slate-700 text-sm">
+                <span className="text-slate-600 font-medium">Last closing price:</span> Rs {forecast.lastPrice?.toLocaleString()}
                 <span className="text-slate-500 ml-2">• As of {forecast.asOfDate || 'latest'}</span>
               </p>
               {forecast.message && (
@@ -96,17 +96,17 @@ export default function ForecastEngine() {
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="card p-6 border-red-500/20">
-              <h4 className="text-slate-400 text-sm font-medium mb-2">Low Case</h4>
-              <p className="text-2xl font-bold text-red-400">Rs {forecast.lowCase?.toLocaleString()}</p>
+            <div className="card p-6 bg-rose-50/90 border border-rose-200">
+              <h4 className="text-slate-600 text-sm font-medium mb-2">Low Case</h4>
+              <p className="text-2xl font-bold text-red-600">Rs {forecast.lowCase?.toLocaleString()}</p>
             </div>
-            <div className="card p-6 border-teal-500/40 shadow-glow">
-              <h4 className="text-slate-400 text-sm font-medium mb-2">Base Case</h4>
-              <p className="text-2xl font-bold text-teal-400">Rs {forecast.baseCase?.toLocaleString()}</p>
+            <div className="card p-6 border-teal-500/40 shadow-glow bg-teal-50/50">
+              <h4 className="text-slate-600 text-sm font-medium mb-2">Base Case</h4>
+              <p className="text-2xl font-bold text-teal-600">Rs {forecast.baseCase?.toLocaleString()}</p>
             </div>
-            <div className="card p-6 border-green-500/20">
-              <h4 className="text-slate-400 text-sm font-medium mb-2">High Case</h4>
-              <p className="text-2xl font-bold text-green-400">Rs {forecast.highCase?.toLocaleString()}</p>
+            <div className="card p-6 bg-emerald-50/90 border border-emerald-200">
+              <h4 className="text-slate-600 text-sm font-medium mb-2">High Case</h4>
+              <p className="text-2xl font-bold text-emerald-600">Rs {forecast.highCase?.toLocaleString()}</p>
             </div>
           </div>
 
@@ -115,17 +115,17 @@ export default function ForecastEngine() {
             <p className="card-subtitle mb-6">Projected Dividend Yield + Expected Price Appreciation Range</p>
             {capitalGain && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/50">
-                  <h4 className="text-slate-400 text-sm font-medium mb-2">Conservative Scenario</h4>
-                  <p className="text-teal-400">Dividend: {capitalGain.conservative?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.conservative?.appreciation}% = <strong>{capitalGain.conservative?.blended?.toFixed(2)}%</strong></p>
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
+                  <h4 className="text-slate-600 text-sm font-medium mb-2">Conservative Scenario</h4>
+                  <p className="text-slate-700">Dividend: {capitalGain.conservative?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.conservative?.appreciation}% = <strong className="text-teal-600">{capitalGain.conservative?.blended?.toFixed(2)}%</strong></p>
                 </div>
-                <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/30">
-                  <h4 className="text-slate-400 text-sm font-medium mb-2">Base Scenario</h4>
-                  <p className="text-teal-400">Dividend: {capitalGain.base?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.base?.appreciation}% = <strong>{capitalGain.base?.blended?.toFixed(2)}%</strong></p>
+                <div className="p-4 rounded-xl bg-teal-50 border border-teal-200">
+                  <h4 className="text-slate-600 text-sm font-medium mb-2">Base Scenario</h4>
+                  <p className="text-slate-700">Dividend: {capitalGain.base?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.base?.appreciation}% = <strong className="text-teal-600">{capitalGain.base?.blended?.toFixed(2)}%</strong></p>
                 </div>
-                <div className="p-4 rounded-xl bg-slate-700/30 border border-slate-600/50">
-                  <h4 className="text-slate-400 text-sm font-medium mb-2">Optimistic Scenario</h4>
-                  <p className="text-teal-400">Dividend: {capitalGain.optimistic?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.optimistic?.appreciation}% = <strong>{capitalGain.optimistic?.blended?.toFixed(2)}%</strong></p>
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                  <h4 className="text-slate-600 text-sm font-medium mb-2">Optimistic Scenario</h4>
+                  <p className="text-slate-700">Dividend: {capitalGain.optimistic?.dividend?.toFixed(2)}% + Appreciation: {capitalGain.optimistic?.appreciation}% = <strong className="text-teal-600">{capitalGain.optimistic?.blended?.toFixed(2)}%</strong></p>
                 </div>
               </div>
             )}
