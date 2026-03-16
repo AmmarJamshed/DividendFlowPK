@@ -273,7 +273,23 @@ app.get('/api/forecast', async (req, res) => {
     }
 
     const today = new Date().toISOString().slice(0, 10);
-    if (fs.existsSync(dividendsPath)) {
+    
+    // Load psx_full_dataset.csv for most recent prices (from psx.py GitHub Actions)
+    const fullDatasetPath = path.join(pricesPath, 'psx_full_dataset.csv');
+    if (fs.existsSync(fullDatasetPath)) {
+      const fullData = await readCSV(fullDatasetPath);
+      fullData.forEach(d => {
+        const c = (d.symbol || d.Symbol || d.Company || d.company || '').trim();
+        const p = parseFloat(d.close || d.Close || d.Price || d.price || 0);
+        const dt = d.date || d.Date || today;
+        if (c && p > 0) {
+          priceData.push({ _company: c, _price: p, _date: dt });
+        }
+      });
+    }
+    
+    // Fallback to dividend calendar prices if no price data yet
+    if (priceData.length === 0 && fs.existsSync(dividendsPath)) {
       const divData = await readCSV(dividendsPath);
       const seenDiv = new Set();
       divData.forEach(d => {
