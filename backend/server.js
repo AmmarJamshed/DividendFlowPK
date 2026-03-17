@@ -303,7 +303,12 @@ app.get('/api/forecast', async (req, res) => {
     }
 
     const search = (company || '').toLowerCase();
-    let filtered = search ? priceData.filter(d => d._company.toLowerCase().includes(search)) : priceData;
+    let filtered = search ? priceData.filter(d => d._company.toLowerCase() === search) : priceData;
+    
+    // Fallback to partial match if no exact match found
+    if (filtered.length === 0 && search) {
+      filtered = priceData.filter(d => d._company.toLowerCase().includes(search));
+    }
     let filteredByDate = filtered;
     if (asOf) {
       filteredByDate = filtered.filter(d => (d._date || '') <= asOf);
