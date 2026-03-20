@@ -5,6 +5,7 @@ Fetches VaR, Haircut, 26Week Avg from www.nccpl.com.pk/market-information
 Output: data/risk/nccpl_risk_metrics.csv
 """
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+from undetected_playwright import stealth_sync
 import csv
 import os
 import time
@@ -24,192 +25,333 @@ def clean_symbol(symbol):
     return parts[0] if parts else symbol
 
 
+def process_downloaded_csv(csv_path):
+    """Process the downloaded NCCPL CSV"""
+    if not os.path.exists(csv_path):
+        print(f"[NCCPL] Error: Downloaded CSV not found at {csv_path}")
+        return []
+    
+    # Read the export
+    with open(csv_path, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+    
+    print(f"[NCCPL] Loaded {len(rows)} rows from export")
+    
+    # Group by base symbol
+    symbol_map = {}
+    
+    for row in rows:
+        symbol_full = row.get('Symbol', '').strip()
+        base_symbol = clean_symbol(symbol_full)
+        
+        if not base_symbol:
+            continue
+        
+        try:
+            var_value = float(row.get('Var Value', 0) or 0)
+            haircut = float(row.get('Hair Cut', 0) or 0)
+            week_26_avg = float(row.get('26Week Avg', 0) or 0)
+            free_float_str = str(row.get('Free Float', 0) or 0).replace(',', '').strip()
+            free_float = float(free_float_str) if free_float_str and free_float_str != '-' else 0
+            half_hour_rate = float(row.get('Half Hour Avg Rate', 0) or 0)
+            
+            # Skip futures/options (KSE30-MAR, OGTI-APR, etc.)
+            if base_symbol in ['KSE30', 'OGTI', 'BKTI']:
+                continue
+            
+            # Skip if it's a derivative with 0 haircut
+            if haircut == 0:
+                continue
+            
+            if base_symbol not in symbol_map:
+                symbol_map[base_symbol] = {
+                    'symbol': base_symbol,
+                    'symbol_full': symbol_full,
+                    'var_value': var_value,
+                    'haircut': haircut,
+                    'week_26_avg': week_26_avg,
+                    'free_float': free_float,
+                    'half_hour_avg_rate': half_hour_rate,
+                }
+            else:
+                # Keep the max VaR and Haircut
+                if var_value > symbol_map[base_symbol]['var_value']:
+                    symbol_map[base_symbol]['var_value'] = var_value
+                if haircut > symbol_map[base_symbol]['haircut']:
+                    symbol_map[base_symbol]['haircut'] = haircut
+                if week_26_avg > symbol_map[base_symbol]['week_26_avg']:
+                    symbol_map[base_symbol]['week_26_avg'] = week_26_avg
+                if free_float > symbol_map[base_symbol]['free_float']:
+                    symbol_map[base_symbol]['free_float'] = free_float
+                if half_hour_rate > symbol_map[base_symbol]['half_hour_avg_rate']:
+                    symbol_map[base_symbol]['half_hour_avg_rate'] = half_hour_rate
+        
+        except Exception as e:
+            print(f"[NCCPL] Error processing row {symbol_full}: {e}")
+            continue
+    
+    # Convert to list and sort by symbol
+    aggregated = sorted(symbol_map.values(), key=lambda x: x['symbol'])
+    
+    # Add timestamp
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for item in aggregated:
+        item['last_updated'] = now
+        item['trade_halt'] = 'N'
+    
+    # Save to CSV
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(OUTPUT_CSV, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            'symbol', 'symbol_full', 'var_value', 'haircut', 'week_26_avg', 
+            'free_float', 'half_hour_avg_rate', 'trade_halt', 'last_updated'
+        ])
+        writer.writeheader()
+        for item in aggregated:
+            writer.writerow({
+                'symbol': item['symbol'],
+                'symbol_full': item['symbol_full'],
+                'var_value': item['var_value'],
+                'haircut': item['haircut'],
+                'week_26_avg': item['week_26_avg'],
+                'free_float': item['free_float'],
+                'half_hour_avg_rate': item['half_hour_avg_rate'],
+                'trade_halt': item['trade_halt'],
+                'last_updated': item['last_updated'],
+            })
+    
+    print(f"[NCCPL] Processed {len(aggregated)} unique symbols")
+    print(f"[NCCPL] Saved to {OUTPUT_CSV}")
+    
+    # Clean up temp file
+    try:
+        os.remove(csv_path)
+        print(f"[NCCPL] Cleaned up temp file")
+    except:
+        pass
+    
+    return aggregated
+
+
 def scrape_nccpl_risk():
-    """Scrape NCCPL VAR Margins table"""
-    metrics = []
+    """Scrape NCCPL VAR Margins by downloading CSV export"""
     
     with sync_playwright() as p:
-        # Launch with more realistic browser settings
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage',
-                '--no-sandbox'
-            ]
-        )
+        # Launch browser
+        browser = p.chromium.launch(headless=True)
         
+        # Set up download handling
         context = browser.new_context(
             viewport={'width': 1920, 'height': 1080},
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            accept_downloads=True,
+            locale='en-US',
+            timezone_id='Asia/Karachi'
         )
         page = context.new_page()
         
-        # Hide webdriver flag
-        page.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', {
-                get: () => undefined
-            })
-        """)
+        # Apply stealth to bypass Cloudflare
+        stealth_sync(page)
         
         print("[NCCPL] Opening market-information page...")
         try:
-            page.goto(URL, timeout=90000)
+            page.goto(URL, wait_until='domcontentloaded', timeout=90000)
             
-            # Wait for Cloudflare to complete (longer wait)
+            # Wait for Cloudflare to complete with better detection
             print("[NCCPL] Waiting for page to load (Cloudflare check)...")
-            for i in range(6):
-                time.sleep(5)
+            for i in range(10):
+                time.sleep(3)
                 title = page.title()
-                if "Cloudflare" not in title and "Just a moment" not in title:
-                    print(f"[NCCPL] Page loaded: {title}")
+                content = page.content()
+                
+                # Check if we're past Cloudflare
+                if "Cloudflare" not in title and "Just a moment" not in title and "Market Information" in title:
+                    print(f"[NCCPL] Page loaded successfully: {title}")
                     break
-                print(f"[NCCPL] Still waiting ({i+1}/6)...")
+                    
+                # Check if Cloudflare challenge is present
+                if "Cloudflare" in content or "cf-browser-verification" in content:
+                    print(f"[NCCPL] Cloudflare detected, waiting... ({i+1}/10)")
+                else:
+                    print(f"[NCCPL] Page loading... ({i+1}/10)")
             else:
-                print("[NCCPL] Warning: Cloudflare may still be blocking")
+                print("[NCCPL] Warning: May still be blocked, attempting to proceed...")
             
+            # Additional wait for JavaScript to settle
+            page.wait_for_load_state('networkidle', timeout=30000)
             time.sleep(3)
             
-            # Click VAR Margins tab
+            # Click VAR Margins tab with retry
             print("[NCCPL] Looking for VAR Margins tab...")
-            try:
-                # Try multiple selectors
-                var_tab = None
-                selectors = [
-                    "a[role='tab']:has-text('VAR Margins')",
-                    "a:has-text('VAR Margins')",
-                    "[role='tab']:has-text('VAR')",
-                    ".nav-link:has-text('VAR')"
-                ]
-                
-                for selector in selectors:
-                    try:
-                        var_tab = page.locator(selector).first
-                        if var_tab.is_visible(timeout=3000):
-                            print(f"[NCCPL] Found tab with selector: {selector}")
-                            break
-                    except:
-                        continue
-                
-                if not var_tab:
-                    print("[NCCPL] Could not find VAR Margins tab, trying to proceed anyway...")
-                else:
+            tab_clicked = False
+            for attempt in range(3):
+                try:
+                    var_tab = page.locator("a[role='tab']:has-text('VAR Margins')").first
+                    var_tab.wait_for(state='visible', timeout=10000)
+                    var_tab.scroll_into_view_if_needed()
+                    time.sleep(1)
                     var_tab.click()
                     print("[NCCPL] Clicked VAR Margins tab")
-                    time.sleep(5)
-            except Exception as e:
-                print(f"[NCCPL] Error clicking tab: {e}")
+                    tab_clicked = True
+                    break
+                except Exception as e:
+                    print(f"[NCCPL] Attempt {attempt+1} to click tab failed: {e}")
+                    time.sleep(2)
             
-            # Wait for table to load
-            print("[NCCPL] Waiting for table...")
+            if not tab_clicked:
+                raise Exception("Could not click VAR Margins tab after 3 attempts")
+            
+            time.sleep(5)
+            
+            # Wait for table to appear
+            print("[NCCPL] Waiting for table to load...")
             page.wait_for_selector("table tbody tr", timeout=30000)
+            print("[NCCPL] Table loaded")
             time.sleep(2)
             
-            # Try to increase rows per page if pagination exists
+            # Click Export button and wait for download
+            print("[NCCPL] Clicking Export button...")
+            with page.expect_download(timeout=30000) as download_info:
+                export_btn = page.locator("button:has-text('Export')").first
+                export_btn.scroll_into_view_if_needed()
+                time.sleep(1)
+                export_btn.click()
+            
+            download = download_info.value
+            download_path = os.path.join(DATA_DIR, "var-margins-temp.csv")
+            os.makedirs(DATA_DIR, exist_ok=True)
+            download.save_as(download_path)
+            print(f"[NCCPL] Downloaded CSV to {download_path}")
+            
+        except Exception as e:
+            print(f"[NCCPL] Error during scraping: {e}")
+            
+            # Take screenshot for debugging
             try:
-                select = page.query_selector("select[name*='length']")
-                if select:
-                    page.select_option(select, "100")
-                    time.sleep(2)
+                screenshot_path = os.path.join(DATA_DIR, "nccpl-error-screenshot.png")
+                page.screenshot(path=screenshot_path)
+                print(f"[NCCPL] Saved error screenshot to {screenshot_path}")
             except:
                 pass
             
-            # Parse all table rows
-            rows = page.query_selector_all("table tbody tr")
-            print(f"[NCCPL] Found {len(rows)} rows")
-            
-            for row in rows:
-                cols = row.query_selector_all("td")
-                if len(cols) < 5:
-                    continue
-                
-                try:
-                    # Column structure: Date, Symbol, Var Value, Hair Cut, 26Week Avg, ...
-                    date_text = cols[0].inner_text().strip()
-                    symbol_full = cols[1].inner_text().strip()
-                    var_value = float(cols[2].inner_text().strip() or 0)
-                    haircut = float(cols[3].inner_text().strip() or 0)
-                    week_26_avg = float(cols[4].inner_text().strip() or 0)
-                    
-                    # Try to get additional columns if they exist
-                    acc_qty = 0
-                    half_hour_rate = 0
-                    trade_halt = ""
-                    
-                    if len(cols) > 5:
-                        try:
-                            acc_qty = float(cols[5].inner_text().strip().replace(",", "") or 0)
-                        except:
-                            pass
-                    
-                    if len(cols) > 6:
-                        try:
-                            half_hour_rate = float(cols[6].inner_text().strip() or 0)
-                        except:
-                            pass
-                    
-                    if len(cols) > 7:
-                        trade_halt = cols[7].inner_text().strip()
-                    
-                    # Clean symbol
-                    symbol = clean_symbol(symbol_full)
-                    
-                    if not symbol:
-                        continue
-                    
-                    metrics.append({
-                        "symbol": symbol,
-                        "symbol_full": symbol_full,
-                        "var_value": var_value,
-                        "haircut": haircut,
-                        "week_26_avg": week_26_avg,
-                        "free_float": acc_qty,
-                        "half_hour_avg_rate": half_hour_rate,
-                        "trade_halt": trade_halt,
-                        "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    })
-                except Exception as e:
-                    print(f"[NCCPL] Error parsing row: {e}")
-                    continue
-            
-        except PlaywrightTimeout as e:
-            print(f"[NCCPL] Timeout error: {e}")
-        except Exception as e:
-            print(f"[NCCPL] Error: {e}")
+            context.close()
+            browser.close()
+            return []
         finally:
             context.close()
             browser.close()
     
-    if not metrics:
-        print("[NCCPL] No data scraped - table may not have loaded")
+    # Process the downloaded CSV
+    print("[NCCPL] Processing downloaded CSV...")
+    return process_downloaded_csv(download_path)
+
+
+def process_downloaded_csv(csv_path):
+    """Process the downloaded NCCPL CSV"""
+    if not os.path.exists(csv_path):
+        print(f"[NCCPL] Error: Downloaded CSV not found at {csv_path}")
         return []
     
-    # Group by base symbol and take the max VaR/Haircut for each
-    symbol_map = {}
-    for m in metrics:
-        sym = m["symbol"]
-        if sym not in symbol_map:
-            symbol_map[sym] = m
-        else:
-            # Keep the max VaR and Haircut
-            if m["var_value"] > symbol_map[sym]["var_value"]:
-                symbol_map[sym]["var_value"] = m["var_value"]
-            if m["haircut"] > symbol_map[sym]["haircut"]:
-                symbol_map[sym]["haircut"] = m["haircut"]
+    # Read the export
+    with open(csv_path, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
     
-    aggregated = list(symbol_map.values())
+    print(f"[NCCPL] Loaded {len(rows)} rows from export")
+    
+    # Group by base symbol
+    symbol_map = {}
+    
+    for row in rows:
+        symbol_full = row.get('Symbol', '').strip()
+        base_symbol = clean_symbol(symbol_full)
+        
+        if not base_symbol:
+            continue
+        
+        try:
+            var_value = float(row.get('Var Value', 0) or 0)
+            haircut = float(row.get('Hair Cut', 0) or 0)
+            week_26_avg = float(row.get('26Week Avg', 0) or 0)
+            free_float_str = str(row.get('Free Float', 0) or 0).replace(',', '').strip()
+            free_float = float(free_float_str) if free_float_str and free_float_str != '-' else 0
+            half_hour_rate = float(row.get('Half Hour Avg Rate', 0) or 0)
+            
+            # Skip futures/options (KSE30-MAR, OGTI-APR, etc.)
+            if base_symbol in ['KSE30', 'OGTI', 'BKTI']:
+                continue
+            
+            # Skip if it's a derivative with 0 haircut
+            if haircut == 0:
+                continue
+            
+            if base_symbol not in symbol_map:
+                symbol_map[base_symbol] = {
+                    'symbol': base_symbol,
+                    'symbol_full': symbol_full,
+                    'var_value': var_value,
+                    'haircut': haircut,
+                    'week_26_avg': week_26_avg,
+                    'free_float': free_float,
+                    'half_hour_avg_rate': half_hour_rate,
+                }
+            else:
+                # Keep the max VaR and Haircut
+                if var_value > symbol_map[base_symbol]['var_value']:
+                    symbol_map[base_symbol]['var_value'] = var_value
+                if haircut > symbol_map[base_symbol]['haircut']:
+                    symbol_map[base_symbol]['haircut'] = haircut
+                if week_26_avg > symbol_map[base_symbol]['week_26_avg']:
+                    symbol_map[base_symbol]['week_26_avg'] = week_26_avg
+                if free_float > symbol_map[base_symbol]['free_float']:
+                    symbol_map[base_symbol]['free_float'] = free_float
+                if half_hour_rate > symbol_map[base_symbol]['half_hour_avg_rate']:
+                    symbol_map[base_symbol]['half_hour_avg_rate'] = half_hour_rate
+        
+        except Exception as e:
+            print(f"[NCCPL] Error processing row {symbol_full}: {e}")
+            continue
+    
+    # Convert to list and sort by symbol
+    aggregated = sorted(symbol_map.values(), key=lambda x: x['symbol'])
+    
+    # Add timestamp
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for item in aggregated:
+        item['last_updated'] = now
+        item['trade_halt'] = 'N'
     
     # Save to CSV
     os.makedirs(DATA_DIR, exist_ok=True)
-    with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
+    with open(OUTPUT_CSV, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=[
-            "symbol", "symbol_full", "var_value", "haircut", "week_26_avg", "free_float",
-            "half_hour_avg_rate", "trade_halt", "last_updated"
+            'symbol', 'symbol_full', 'var_value', 'haircut', 'week_26_avg', 
+            'free_float', 'half_hour_avg_rate', 'trade_halt', 'last_updated'
         ])
         writer.writeheader()
-        writer.writerows(aggregated)
+        for item in aggregated:
+            writer.writerow({
+                'symbol': item['symbol'],
+                'symbol_full': item['symbol_full'],
+                'var_value': item['var_value'],
+                'haircut': item['haircut'],
+                'week_26_avg': item['week_26_avg'],
+                'free_float': item['free_float'],
+                'half_hour_avg_rate': item['half_hour_avg_rate'],
+                'trade_halt': item['trade_halt'],
+                'last_updated': item['last_updated'],
+            })
     
-    print(f"[NCCPL] Saved {len(aggregated)} unique symbols to {OUTPUT_CSV}")
+    print(f"[NCCPL] Processed {len(aggregated)} unique symbols")
+    print(f"[NCCPL] Saved to {OUTPUT_CSV}")
+    
+    # Clean up temp file
+    try:
+        os.remove(csv_path)
+        print(f"[NCCPL] Cleaned up temp file")
+    except:
+        pass
+    
     return aggregated
 
 
