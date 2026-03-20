@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
+import axios from 'axios';
+
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export default function AIRiskDashboard() {
   const [companies, setCompanies] = useState(['HBL', 'MCB', 'OGDC', 'PPL', 'PSO']);
@@ -38,11 +41,10 @@ export default function AIRiskDashboard() {
       .finally(() => setLoading(false));
     
     // Fetch NCCPL risk data
-    fetch(`/api/stock-risk/${selected}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data && !data.error) {
-          setNccplRisk(data);
+    axios.get(`${API_BASE}/stock-risk/${selected}`)
+      .then(res => {
+        if (res.data && !res.data.error) {
+          setNccplRisk(res.data);
         }
       })
       .catch(() => {});

@@ -4,6 +4,9 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { Bar } from 'react-chartjs-2';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
+import axios from 'axios';
+
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -48,9 +51,8 @@ export default function Dashboard() {
         
         const riskPromises = topYieldStocks.map(d => {
           const symbol = (d.Company || d.company || '').trim();
-          return window.fetch(`/api/stock-risk/${symbol}`)
-            .then(r => r.ok ? r.json() : null)
-            .then(data => ({ symbol, data }))
+          return axios.get(`${API_BASE}/stock-risk/${symbol}`)
+            .then(res => ({ symbol, data: res.data }))
             .catch(() => ({ symbol, data: null }));
         });
         
