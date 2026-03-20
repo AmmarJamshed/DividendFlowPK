@@ -613,6 +613,128 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Risk Score Calculation Helper
+function calculateRiskScore(varValue, haircut, volatility = null) {
+  // Risk score formula based on NCCPL data
+  if (volatility !== null && volatility > 0) {
+    return (0.4 * varValue) + (0.3 * haircut) + (0.3 * volatility);
+  }
+  return (0.6 * varValue) + (0.4 * haircut);
+}
+
+function getRiskLabel(riskScore) {
+  if (riskScore <= 8) return 'Low';
+  if (riskScore <= 15) return 'Moderate';
+  return 'High';
+}
+
+function getRiskInsight(riskLabel, varValue, haircut) {
+  if (riskLabel === 'Low') {
+    return `Low downside risk with ~${varValue}% VaR and ${haircut}% haircut. Suitable for conservative portfolios.`;
+  } else if (riskLabel === 'Moderate') {
+    return `Moderate downside risk with ~${varValue}% VaR and ${haircut}% haircut. Standard risk profile.`;
+  } else {
+    return `High downside risk with ~${varValue}% VaR and ${haircut}% haircut. Higher volatility expected.`;
+  }
+}
+
+// GET /api/stock-risk/:symbol - Risk metrics for a specific stock
+app.get('/api/stock-risk/:symbol', async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    if (!symbol) {
+      return res.status(400).json({ error: 'Symbol is required' });
+    }
+
+    const riskFile = path.join(DATA_PATH, 'risk', 'nccpl_risk_metrics.csv');
+    if (!fs.existsSync(riskFile)) {
+      return res.status(404).json({ error: 'Risk data not available' });
+    }
+
+    const riskData = await readCSV(riskFile);
+    const searchSymbol = symbol.toUpperCase();
+    const stockRisk = riskData.find(r => 
+      (r.symbol || '').toUpperCase() === searchSymbol
+    );
+
+    if (!stockRisk) {
+      return res.status(404).json({ error: 'Risk data not found for symbol' });
+    }
+
+    const varValue = parseFloat(stockRisk.var_value || 0);
+    const haircut = parseFloat(stockRisk.haircut || 0);
+    const week26Avg = parseFloat(stockRisk.week_26_avg || 0);
+    const freeFloat = parseFloat(stockRisk.free_float || 0);
+    const halfHourRate = parseFloat(stockRisk.half_hour_avg_rate || 0);
+    
+    // Calculate risk score (using week26Avg as volatility proxy if > 0)
+    const volatility = week26Avg > 0 ? week26Avg : null;
+    const riskScore = calculateRiskScore(varValue, haircut, volatility);
+    const riskLabel = getRiskLabel(riskScore);
+    const insight = getRiskInsight(riskLabel, varValue, haircut);
+
+    res.json({
+      symbol: searchSymbol,
+      var: varValue,
+      haircut: haircut,
+      week_26_avg: week26Avg,
+      free_float: freeFloat,
+      half_hour_avg_rate: halfHourRate,
+      risk_score: Math.round(riskScore * 100) / 100,
+      risk_label: riskLabel,
+      insight: insight,
+      last_updated: stockRisk.last_updated || null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/stock-risk - All risk metrics
+app.get('/api/stock-risk', async (req, res) => {
+  try {
+    const riskFile = path.join(DATA_PATH, 'risk', 'nccpl_risk_metrics.csv');
+    if (!fs.existsSync(riskFile)) {
+      return res.json({ stocks: [], summary: null });
+    }
+
+    const riskData = await readCSV(riskFile);
+    const stocks = riskData.map(r => {
+      const varValue = parseFloat(r.var_value || 0);
+      const haircut = parseFloat(r.haircut || 0);
+      const week26Avg = parseFloat(r.week_26_avg || 0);
+      const volatility = week26Avg > 0 ? week26Avg : null;
+      const riskScore = calculateRiskScore(varValue, haircut, volatility);
+      const riskLabel = getRiskLabel(riskScore);
+
+      return {
+        symbol: (r.symbol || '').toUpperCase(),
+        var: varValue,
+        haircut: haircut,
+        risk_score: Math.round(riskScore * 100) / 100,
+        risk_label: riskLabel,
+      };
+    });
+
+    const lowRisk = stocks.filter(s => s.risk_label === 'Low').length;
+    const moderateRisk = stocks.filter(s => s.risk_label === 'Moderate').length;
+    const highRisk = stocks.filter(s => s.risk_label === 'High').length;
+    const avgVar = stocks.reduce((sum, s) => sum + s.var, 0) / stocks.length || 0;
+
+    const summary = {
+      total_stocks: stocks.length,
+      low_risk_pct: Math.round((lowRisk / stocks.length) * 100),
+      moderate_risk_pct: Math.round((moderateRisk / stocks.length) * 100),
+      high_risk_pct: Math.round((highRisk / stocks.length) * 100),
+      avg_var: Math.round(avgVar * 100) / 100,
+    };
+
+    res.json({ stocks, summary });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`DividendFlow PK Backend running on http://localhost:${PORT}`);
 });

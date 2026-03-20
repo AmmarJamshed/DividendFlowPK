@@ -8,6 +8,7 @@ export default function AIRiskDashboard() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dailyNews, setDailyNews] = useState({ news: [], commentary: [], priceChanges: [], priceCommentary: [] });
+  const [nccp lRisk, setNccplRisk] = useState(null);
 
   useEffect(() => {
     api.getDividends()
@@ -28,10 +29,23 @@ export default function AIRiskDashboard() {
     if (!selected) return;
     setLoading(true);
     setResult(null);
+    setNccplRisk(null);
+    
+    // Fetch AI risk analysis
     api.getRiskScore(selected)
       .then(res => setResult(res.data))
       .catch(err => setResult({ riskScore: 50, riskCategory: 'Moderate', analysis: err.message }))
       .finally(() => setLoading(false));
+    
+    // Fetch NCCPL risk data
+    fetch(`/api/stock-risk/${selected}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && !data.error) {
+          setNccplRisk(data);
+        }
+      })
+      .catch(() => {});
   };
 
   const getRiskStyles = (cat) => {
@@ -186,9 +200,46 @@ export default function AIRiskDashboard() {
                   <p className={`font-bold text-2xl ${styles.text}`}>{result.riskCategory}</p>
                 </div>
               </div>
+              
+              {/* NCCPL Risk Indicators */}
+              {nccplRisk && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 rounded-xl bg-blue-50 border border-blue-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-blue-600 text-xs font-semibold uppercase">NCCPL Risk</span>
+                    </div>
+                    <p className={`font-bold text-xl ${nccplRisk.risk_label === 'Low' ? 'text-emerald-600' : nccplRisk.risk_label === 'Moderate' ? 'text-amber-600' : 'text-rose-600'}`}>
+                      {nccplRisk.risk_label}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">Score: {nccplRisk.risk_score}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-orange-50 border border-orange-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-orange-600 text-xs font-semibold uppercase">Downside Risk (VaR)</span>
+                    </div>
+                    <p className="font-bold text-xl text-orange-700">~{nccplRisk.var}%</p>
+                    <p className="text-xs text-slate-500 mt-1">Potential loss</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-purple-50 border border-purple-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-purple-600 text-xs font-semibold uppercase">Haircut</span>
+                    </div>
+                    <p className="font-bold text-xl text-purple-700">{nccplRisk.haircut}%</p>
+                    <p className="text-xs text-slate-500 mt-1">Margin requirement</p>
+                  </div>
+                </div>
+              )}
+              
               <div className="p-5 rounded-2xl bg-white/80 border border-slate-200 text-sm leading-relaxed whitespace-pre-wrap text-slate-700 shadow-sm">
                 {result.analysis}
               </div>
+              
+              {nccplRisk && (
+                <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                  <strong>NCCPL Insight:</strong> {nccplRisk.insight}
+                  <div className="mt-2 text-[10px] text-slate-400">Source: NCCPL Market Information • Last updated: {nccplRisk.last_updated}</div>
+                </div>
+              )}
             </div>
           </div>
         );

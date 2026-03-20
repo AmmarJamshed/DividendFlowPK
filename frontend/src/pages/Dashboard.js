@@ -23,6 +23,7 @@ export default function Dashboard() {
   const [riskAlerts, setRiskAlerts] = useState([]);
   const [dailyNews, setDailyNews] = useState({ priceChanges: [], priceCommentary: [] });
   const [loading, setLoading] = useState(true);
+  const [stockRisks, setStockRisks] = useState({});
 
   useEffect(() => {
     const fetch = async () => {
@@ -39,6 +40,28 @@ export default function Dashboard() {
           { company: 'PSO', level: 'Elevated', message: 'Volatility indicators suggest caution' }
         ]);
         setDailyNews(newsRes.data || {});
+        
+        // Fetch NCCPL risk data for top yield stocks
+        const topYieldStocks = [...(divRes.data || [])]
+          .sort((a, b) => (parseFloat(b.Dividend_yield || b.dividend_yield) || 0) - (parseFloat(a.Dividend_yield || a.dividend_yield) || 0))
+          .slice(0, 5);
+        
+        const riskPromises = topYieldStocks.map(d => {
+          const symbol = (d.Company || d.company || '').trim();
+          return window.fetch(`/api/stock-risk/${symbol}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => ({ symbol, data }))
+            .catch(() => ({ symbol, data: null }));
+        });
+        
+        const risks = await Promise.all(riskPromises);
+        const riskMap = {};
+        risks.forEach(r => {
+          if (r.data && !r.data.error) {
+            riskMap[r.symbol] = r.data;
+          }
+        });
+        setStockRisks(riskMap);
       } catch (err) {
         console.error(err);
       } finally {
@@ -100,14 +123,34 @@ export default function Dashboard() {
         </div>
         <div className="card p-6 animate-slide-up border-l-4 border-l-emerald-500" style={{ animationDelay: '50ms' }}>
           <h3 className="card-header">Top Dividend Yield</h3>
-          <p className="card-subtitle">Highest yielding PSX companies</p>
+          <p className="card-subtitle">Highest yielding PSX companies with NCCPL risk indicators</p>
           <ul className="mt-4 space-y-3">
-            {topYield.map((d, i) => (
-              <li key={i} className="flex justify-between items-center py-2 border-b border-slate-200 last:border-0">
-                <span className="font-medium text-slate-700">{d.Company || d.company}</span>
-                <span className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-700 font-bold">{(d.Dividend_yield || d.dividend_yield || 0)}%</span>
-              </li>
-            ))}
+            {topYield.map((d, i) => {
+              const symbol = (d.Company || d.company || '').trim();
+              const risk = stockRisks[symbol];
+              const riskBadge = risk ? (
+                risk.risk_label === 'Low' ? <span className="text-xs px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-300 ml-2">🛡️ Low Risk</span> :
+                risk.risk_label === 'Moderate' ? <span className="text-xs px-2 py-1 rounded-lg bg-amber-100 text-amber-700 border border-amber-300 ml-2">⚖️ Moderate</span> :
+                <span className="text-xs px-2 py-1 rounded-lg bg-rose-100 text-rose-700 border border-rose-300 ml-2">🚨 High Risk</span>
+              ) : null;
+              
+              return (
+                <li key={i} className="flex flex-col py-2 border-b border-slate-200 last:border-0">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <span className="font-medium text-slate-700">{symbol}</span>
+                      {riskBadge}
+                    </div>
+                    <span className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-700 font-bold">{(d.Dividend_yield || d.dividend_yield || 0)}%</span>
+                  </div>
+                  {risk && (
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      VaR: {risk.var}% • Haircut: {risk.haircut}%
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
         <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500" style={{ animationDelay: '100ms' }}>
