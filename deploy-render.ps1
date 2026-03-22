@@ -7,7 +7,15 @@ if (-not $env:RENDER_API_KEY -and (Test-Path (Join-Path $PSScriptRoot "api-keys.
         if ($_ -match '^\s*RENDER_API_KEY=(.+)$') { $env:RENDER_API_KEY = $matches[1].Trim() }
     }
 }
-$toDeploy = @("dividendflow-frontend", "dividendflow-backend", "dividendflow-news")
+# All Blueprint services from render.yaml (web + cron)
+$toDeploy = @(
+    "dividendflow-frontend",
+    "dividendflow-backend",
+    "dividendflow-scraper",
+    "dividendflow-news",
+    "dividendflow-nccpl-scraper",
+    "dividendflow-health-check"
+)
 $deployed = 0
 
 if ($env:RENDER_API_KEY) {

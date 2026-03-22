@@ -120,11 +120,11 @@ This platform provides analytical insights based on historical and probabilistic
 .\render-cli\cli_v2.12.0.exe login      # Complete in browser
 .\render-cli\cli_v2.12.0.exe workspace set   # Select workspace
 
-# Deploy all services (frontend, backend, news cron)
+# Deploy all Blueprint services (web + crons)
 .\deploy-render.ps1
 ```
 
-The script downloads the Render CLI if missing, validates `render.yaml`, and triggers deploys. Set `GROQ_API_KEY` and `GITHUB_TOKEN` for the `dividendflow-news` cron in the Render Dashboard.
+Targets: **dividendflow-frontend**, **dividendflow-backend**, **dividendflow-scraper**, **dividendflow-news**, **dividendflow-nccpl-scraper**, **dividendflow-health-check**. Uses `RENDER_API_KEY` (env or `api-keys.txt`) or the Render CLI fallback. Set secrets (e.g. `GROQ_API_KEY`, `GITHUB_TOKEN`, `BROWSERLESS_TOKEN`) in the Render Dashboard per service.
 
 ## Future Deployment
 
