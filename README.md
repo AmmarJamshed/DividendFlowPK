@@ -113,6 +113,10 @@ This platform provides analytical insights based on historical and probabilistic
 
 **Never generates**: Buy now, Sell tomorrow, Guaranteed returns
 
+## Automation & schedules
+
+See **[DEPLOYMENT_CALENDAR.md](./DEPLOYMENT_CALENDAR.md)** for all Render crons, GitHub Actions times (UTC + PKT), and health checks.
+
 ## Deploy to Render via CLI
 
 ```powershell
