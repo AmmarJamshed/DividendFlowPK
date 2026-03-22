@@ -11,7 +11,7 @@ export default function AIRiskDashboard() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dailyNews, setDailyNews] = useState({ news: [], commentary: [], priceChanges: [], priceCommentary: [] });
-  const [nccp lRisk, setNccplRisk] = useState(null);
+  const [nccplRisk, setNccplRisk] = useState(null);
 
   useEffect(() => {
     api.getDividends()
