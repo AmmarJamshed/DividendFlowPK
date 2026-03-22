@@ -39,10 +39,10 @@ def _parse_book_closure_payment(book_closure_raw):
 
 
 def scrape_psx_payouts():
-    """Scrape all paginated rows from dps.psx.com.pk/payouts (DataTables, same pattern as historical).
+    """Scrape all rows from dps.psx.com.pk/payouts.
 
-    The site lists ~450+ payout announcements; only the first page was scraped before.
-    Run after major dividend seasons or once per year as needed — cron can keep this fresh.
+    The PSX portal uses a custom table (#announcementsTable) with Prev/Next buttons
+    (not jQuery DataTables). data-total is ~457; ~25 rows per page.
 
     Columns: Symbol, Company, Sector, Dividend announcement, Announcement date/time, Book closure.
     Book closure: DD/MM/YYYY - DD/MM/YYYY; payment month = month after book-closure END date.
@@ -56,24 +56,24 @@ def scrape_psx_payouts():
         page.wait_for_load_state("networkidle")
         time.sleep(2)
 
-        # Prefer 100 rows per page to reduce pagination clicks (DataTables standard)
-        try:
-            length_sel = page.locator("select[name*='length']").first
-            if length_sel.count() > 0:
-                length_sel.select_option("100")
-                time.sleep(2)
-        except Exception:
-            pass
+        page.wait_for_selector("#announcementsTable tbody tr", timeout=30000)
+        page.wait_for_selector("button.form__button.next", state="visible", timeout=60000)
 
-        max_pages = 40
-        for _ in range(max_pages):
-            rows = page.query_selector_all("table tbody tr")
+        for _ in range(60):
+            rows = page.query_selector_all("#announcementsTable tbody tr")
+            # Desktop + mobile duplicate the same buttons; use the last visible instance
+            next_handles = page.query_selector_all("button.form__button.next")
+            if not next_handles:
+                break
+            next_el = next_handles[-1]
+            data_offset = int(next_el.get_attribute("data-offset") or 0)
+            data_total = int(next_el.get_attribute("data-total") or 0)
+
             for row in rows:
                 cols = row.query_selector_all("td")
                 if len(cols) < 6:
                     continue
                 symbol = cols[0].inner_text().strip()
-                # Skip header / invalid rows
                 if not symbol or len(symbol) > 20 or "\n" in symbol:
                     continue
                 if symbol.lower() in ("symbol", "company", "sr", "#", "no.", "no"):
@@ -107,21 +107,26 @@ def scrape_psx_payouts():
                     "Year": pay_y,
                 })
 
-            next_btn = page.query_selector("a.paginate_button.next:not(.disabled)")
-            if not next_btn:
+            n_on_page = len(rows)
+            if data_total and data_offset + n_on_page >= data_total:
                 break
-            next_btn.click()
-            time.sleep(1.8)
+            if next_el.get_attribute("disabled") is not None:
+                break
             try:
-                page.wait_for_load_state("networkidle", timeout=15000)
+                next_el.click(timeout=10000)
+            except Exception:
+                break
+            time.sleep(1.5)
+            try:
+                page.wait_for_load_state("networkidle", timeout=25000)
             except Exception:
                 time.sleep(1)
 
         browser.close()
 
     os.makedirs(DIVIDEND_DIR, exist_ok=True)
-    # Avoid wiping a good file if the page layout changed or scrape failed
-    min_ok = 10
+    # Avoid wiping a good file if the page layout changed or scrape failed mid-run
+    min_ok = 100
     if len(payouts) >= min_ok:
         df = pd.DataFrame(payouts)
         df.to_csv(PAYOUTS_CSV, index=False)
@@ -179,12 +184,11 @@ def scrape_psx():
                     "volume": cols[8].inner_text().strip(),
                 })
 
-            next_button = page.query_selector("a.paginate_button.next:not(.disabled)")
-            if next_button:
-                next_button.click()
-                time.sleep(2)
-            else:
+            next_li = page.locator("#historicalTable_wrapper li.paginate_button.next:not(.disabled)").first
+            if next_li.count() == 0:
                 break
+            next_li.locator("a").click(timeout=10000)
+            time.sleep(2)
 
         browser.close()
 
