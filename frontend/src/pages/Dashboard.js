@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
@@ -47,6 +47,24 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [stockRisks, setStockRisks] = useState({});
+  /** Full headline + AI text for a selected alert */
+  const [alertDetailOpen, setAlertDetailOpen] = useState(null);
+
+  const closeAlertDetail = useCallback(() => setAlertDetailOpen(null), []);
+
+  useEffect(() => {
+    if (!alertDetailOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') closeAlertDetail();
+    };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [alertDetailOpen, closeAlertDetail]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -170,7 +188,7 @@ export default function Dashboard() {
         <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-4 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
           <h3 className="card-header">AI Risk Alerts</h3>
           <p className="card-subtitle">
-            Pulled from the latest scraped headlines (rotates daily in PKT). Each card shows the news item, source, and Groq summary when available.
+            Pulled from the latest scraped headlines (rotates daily in PKT). <strong className="text-slate-600">Click an alert</strong> to read the full headline, source link, and complete AI analysis.
           </p>
           {(riskAlerts[0]?.rotationDate || dailyNews.news?.length > 0 || dailyNews.priceChanges?.length > 0) && (
             <p className="text-[11px] text-slate-500 mt-1">
@@ -198,37 +216,54 @@ export default function Dashboard() {
                       ? { badge: 'bg-amber-100 text-amber-800 border-amber-300', dot: 'bg-amber-500' }
                       : { badge: 'bg-sky-100 text-sky-800 border-sky-300', dot: 'bg-sky-500' };
                 return (
-                  <li key={`${r.company}-${i}`} className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 shadow-sm">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className={`inline-block w-2 h-2 rounded-full ${levelStyles.dot}`} aria-hidden />
-                      <span className="font-semibold text-slate-800">{r.company}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-lg border font-bold ${levelStyles.badge}`}>{r.level}</span>
-                      {r.kind === 'price' && (
-                        <span className="text-[10px] uppercase tracking-wide text-slate-500">Price-driven</span>
-                      )}
-                    </div>
-                    <p className="text-sm font-medium text-slate-800 leading-snug line-clamp-3">{r.headline}</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
-                      <span className="text-slate-500">Source:</span>
-                      {r.url ? (
-                        <a
-                          href={r.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-teal-700 font-medium hover:underline break-all"
-                        >
-                          {r.source}
-                        </a>
-                      ) : (
-                        <span className="font-medium">{r.source}</span>
-                      )}
-                      {r.newsDate && (
-                        <span className="text-slate-400">· {String(r.newsDate).slice(0, 16)}</span>
-                      )}
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-amber-200/90">
-                      <p className="text-[10px] uppercase tracking-wide text-amber-800/80 font-semibold mb-1">AI summary (what we analyzed)</p>
-                      <p className="text-sm text-slate-600 leading-relaxed">{r.message}</p>
+                  <li key={`${r.company}-${i}`}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className="w-full text-left p-4 rounded-xl bg-amber-50/80 border border-amber-200 shadow-sm cursor-pointer transition-all hover:border-teal-400/50 hover:bg-amber-50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                      onClick={() => setAlertDetailOpen(r)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setAlertDetailOpen(r);
+                        }
+                      }}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${levelStyles.dot}`} aria-hidden />
+                          <span className="font-semibold text-slate-800">{r.company}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-lg border font-bold ${levelStyles.badge}`}>{r.level}</span>
+                          {r.kind === 'price' && (
+                            <span className="text-[10px] uppercase tracking-wide text-slate-500">Price-driven</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-semibold text-teal-700 shrink-0">View details →</span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-800 leading-snug line-clamp-2">{r.headline}</p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
+                        <span className="text-slate-500">Source:</span>
+                        {r.url ? (
+                          <a
+                            href={r.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-teal-700 font-medium hover:underline break-all"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {r.source}
+                          </a>
+                        ) : (
+                          <span className="font-medium">{r.source}</span>
+                        )}
+                        {r.newsDate && (
+                          <span className="text-slate-400">· {String(r.newsDate).slice(0, 16)}</span>
+                        )}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-amber-200/90">
+                        <p className="text-[10px] uppercase tracking-wide text-amber-800/80 font-semibold mb-1">AI summary (preview)</p>
+                        <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{r.message}</p>
+                      </div>
                     </div>
                   </li>
                 );
@@ -292,6 +327,86 @@ export default function Dashboard() {
                 if (decliners.length === 0) return <p className="text-slate-600 text-sm py-2">No decliners today — all tracked stocks gained.</p>;
                 return null;
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {alertDetailOpen && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/45 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="alert-detail-title"
+          onClick={closeAlertDetail}
+        >
+          <div
+            className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-white border border-slate-200 shadow-2xl shadow-slate-400/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 flex items-start justify-between gap-3 px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-amber-50/90 to-white">
+              <div>
+                <h4 id="alert-detail-title" className="text-lg font-bold text-slate-900">
+                  {alertDetailOpen.company}
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {alertDetailOpen.kind === 'price' ? 'Price-based signal' : 'News headline signal'} ·{' '}
+                  <span className="font-medium text-slate-600">{alertDetailOpen.level}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeAlertDetail}
+                className="shrink-0 w-9 h-9 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 text-xl leading-none font-light"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-5">
+              <section>
+                <h5 className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">Headline / signal</h5>
+                <p className="text-base text-slate-800 leading-relaxed font-medium">{alertDetailOpen.headline}</p>
+              </section>
+              <section>
+                <h5 className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">Source</h5>
+                <div className="text-sm text-slate-700">
+                  {alertDetailOpen.url ? (
+                    <a
+                      href={alertDetailOpen.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-teal-700 font-semibold hover:underline break-all"
+                    >
+                      {alertDetailOpen.source}
+                    </a>
+                  ) : (
+                    <span>{alertDetailOpen.source}</span>
+                  )}
+                  {alertDetailOpen.newsDate && (
+                    <span className="block text-xs text-slate-500 mt-1">
+                      Dated: {String(alertDetailOpen.newsDate)}
+                    </span>
+                  )}
+                </div>
+              </section>
+              <section className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                <h5 className="text-[11px] font-bold uppercase tracking-wide text-teal-800 mb-2">What the AI analyzed</h5>
+                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{alertDetailOpen.message}</p>
+                {alertDetailOpen.kind === 'price' && (
+                  <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-200">
+                    This row is driven by PSX price changes. When the daily news scraper runs, headlines and richer Groq commentary
+                    will appear here for the same tickers.
+                  </p>
+                )}
+              </section>
+              <button
+                type="button"
+                onClick={closeAlertDetail}
+                className="w-full py-2.5 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-500"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
