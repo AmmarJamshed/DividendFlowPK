@@ -116,8 +116,9 @@ async function main() {
   }
 
   const priceCommentary = [];
-  const topGainers = priceChanges.filter(c => c.ChangePct > 0).slice(0, 5);
-  const topDecliners = priceChanges.filter(c => c.ChangePct < 0).slice(0, 5);
+  // Cover more movers so dashboard rotation still finds Groq commentary (was top 5+5 only).
+  const topGainers = priceChanges.filter(c => c.ChangePct > 0).slice(0, 15);
+  const topDecliners = priceChanges.filter(c => c.ChangePct < 0).slice(0, 15);
   for (const c of [...topGainers, ...topDecliners]) {
     const headlines = newsByCompany[c.Company] || [];
     const comment = await getGroqPriceCommentary(

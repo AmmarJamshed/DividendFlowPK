@@ -108,8 +108,17 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
     };
   });
 
-  // Fallback: biggest price movers + optional Groq price commentary
+  // Fallback: biggest price movers + optional Groq price commentary (from daily job)
   if (!alerts.length && priceChanges.length) {
+    const findPriceCommentary = (company, pct) => {
+      const direction = pct >= 0 ? 'gain' : 'decline';
+      return (priceCommentary || []).find(
+        (x) =>
+          (x.Company || x.company || '').trim() === company &&
+          (x.Direction || x.direction || '').toLowerCase() === direction
+      );
+    };
+
     const sorted = [...priceChanges]
       .filter((p) => p.Company || p.company)
       .sort(
@@ -124,17 +133,25 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
       if (!company || seen.has(company)) continue;
       seen.add(company);
       unique.push(p);
-      if (unique.length >= maxAlerts + 4) break;
+      if (unique.length >= 48) break;
     }
-    alerts = rotateDeterministic(unique, `${dateKey}-price`).slice(0, maxAlerts).map((p) => {
+
+    // Prefer tickers that already have Groq price commentary so the modal isn't empty
+    const ranked = [...unique].sort((a, b) => {
+      const ca = (a.Company || a.company || '').trim();
+      const cb = (b.Company || b.company || '').trim();
+      const pa = parseFloat(a.ChangePct || a.changePct) || 0;
+      const pb = parseFloat(b.ChangePct || b.changePct) || 0;
+      const ha = findPriceCommentary(ca, pa) ? 1 : 0;
+      const hb = findPriceCommentary(cb, pb) ? 1 : 0;
+      if (hb !== ha) return hb - ha;
+      return Math.abs(pb) - Math.abs(pa);
+    });
+
+    alerts = rotateDeterministic(ranked, `${dateKey}-price`).slice(0, maxAlerts).map((p) => {
       const company = (p.Company || p.company || '').trim();
       const pct = parseFloat(p.ChangePct || p.changePct) || 0;
-      const direction = pct >= 0 ? 'gain' : 'decline';
-      const pc = (priceCommentary || []).find(
-        (x) =>
-          (x.Company || x.company) === company &&
-          (x.Direction || x.direction || '').toLowerCase() === direction
-      );
+      const pc = findPriceCommentary(company, pct);
       const aiText = (pc?.Commentary || pc?.commentary || '').trim();
       const headline =
         pct >= 0
@@ -150,7 +167,7 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
         newsDate: p.Date || p.date || null,
         message:
           aiText ||
-          'Price move from latest dataset. Run the news scraper for headline-level context.',
+          'No Groq commentary for this mover in the latest batch. The nightly job adds AI text for the largest gainers/decliners; this symbol may be outside that set, or GROQ_API_KEY was not set on the news job. Headlines appear when RSS/news matches a dividend ticker in daily_news.csv.',
         kind: 'price',
       };
     });
