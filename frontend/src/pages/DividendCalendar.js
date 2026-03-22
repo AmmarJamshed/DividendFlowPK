@@ -173,11 +173,19 @@ export default function DividendCalendar() {
             <div className="p-8 text-center text-slate-500">No dividend rows for this payment month in the current dataset.</div>
           ) : (
             <div className="table-responsive">
+              {(() => {
+                const hasPsxAnnouncement = dividendsForSelected.some(
+                  (d) => (d.Dividend_announcement || d.dividend_announcement || '').trim()
+                );
+                return (
               <table className="w-full">
                 <thead>
                   <tr className="bg-slate-50">
                     <th className="text-left p-4 font-semibold text-slate-600">Company</th>
                     <th className="text-left p-4 font-semibold text-slate-600">Sector</th>
+                    {hasPsxAnnouncement && (
+                      <th className="text-left p-4 font-semibold text-slate-600 min-w-[140px]">PSX announcement</th>
+                    )}
                     <th className="text-left p-4 font-semibold text-slate-600">Dividend/Share</th>
                     <th className="text-left p-4 font-semibold text-slate-600">Interim/Final</th>
                     <th className="text-left p-4 font-semibold text-slate-600">Payment period</th>
@@ -191,11 +199,15 @@ export default function DividendCalendar() {
                     const period = `${MONTH_SHORT[pm - 1] || pm} ${yr}`;
                     const type = d.Type || d.dividendType || 'Interim';
                     const isFinal = type === 'Final';
+                    const ann = (d.Dividend_announcement || d.dividend_announcement || '').trim();
                     return (
                       <tr key={`${d.Company || d.company}-${idx}`} className="border-t border-slate-100 hover:bg-teal-50/50 transition-colors">
                         <td className="p-4 font-medium text-slate-700">{d.Company || d.company}</td>
                         <td className="p-4 text-slate-500">{d.Sector || d.sector}</td>
-                        <td className="p-4">{d.Dividend_per_share || d.dividend_per_share}</td>
+                        {hasPsxAnnouncement && (
+                          <td className="p-4 text-slate-600 text-sm max-w-xs">{ann || '—'}</td>
+                        )}
+                        <td className="p-4">{d.Dividend_per_share || d.dividend_per_share || '—'}</td>
                         <td className="p-4">
                           <span
                             className={`px-2 py-1 rounded-lg font-medium text-xs ${
@@ -223,6 +235,8 @@ export default function DividendCalendar() {
                   })}
                 </tbody>
               </table>
+                );
+              })()}
             </div>
           )}
         </div>

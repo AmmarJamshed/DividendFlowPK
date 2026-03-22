@@ -24,46 +24,112 @@ DIVIDEND_CSV = os.path.join(DIVIDEND_DIR, "psx_dividend_calendar.csv")
 PAYOUTS_CSV = os.path.join(DIVIDEND_DIR, "psx_payouts.csv")
 
 
+def _parse_book_closure_payment(book_closure_raw):
+    """Use last DD/MM/YYYY in book closure as register end; payment month ≈ following month."""
+    matches = re.findall(r"(\d{1,2})/(\d{1,2})/(\d{4})", book_closure_raw or "")
+    if not matches:
+        return None
+    d, m, y = int(matches[-1][0]), int(matches[-1][1]), int(matches[-1][2])
+    if m == 12:
+        pay_m, pay_y = 1, y + 1
+    else:
+        pay_m, pay_y = m + 1, y
+    book_end_iso = f"{y}-{m:02d}-{d:02d}"
+    return book_end_iso, pay_m, pay_y
+
+
 def scrape_psx_payouts():
-    """Scrape current dividend payout dates from dps.psx.com.pk/payouts.
-    Book closure date format: DD/MM/YYYY - DD/MM/YYYY. Payment typically ~1 month after.
-    We use the end date month + 1 as Payment_month (e.g. book 30/03 -> payment April = 4).
+    """Scrape all paginated rows from dps.psx.com.pk/payouts (DataTables, same pattern as historical).
+
+    The site lists ~450+ payout announcements; only the first page was scraped before.
+    Run after major dividend seasons or once per year as needed — cron can keep this fresh.
+
+    Columns: Symbol, Company, Sector, Dividend announcement, Announcement date/time, Book closure.
+    Book closure: DD/MM/YYYY - DD/MM/YYYY; payment month = month after book-closure END date.
     """
     payouts = []
+    seen = set()
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto(PAYOUTS_URL, timeout=60000)
+        page.goto(PAYOUTS_URL, timeout=90000)
         page.wait_for_load_state("networkidle")
-        time.sleep(4)
+        time.sleep(2)
 
-        rows = page.query_selector_all("table tbody tr")
-        for row in rows:
-            cols = row.query_selector_all("td")
-            if len(cols) < 6:
-                continue
-            symbol = cols[0].inner_text().strip()
-            company = cols[1].inner_text().strip()
-            book_closure = cols[5].inner_text().strip()
-            # Parse "DD/MM/YYYY - DD/MM/YYYY" or "DD/MM/YYYY" - use end date
-            matches = re.findall(r"(\d{1,2})/(\d{1,2})/(\d{4})", book_closure)
-            if matches:
-                d, m, y = int(matches[-1][0]), int(matches[-1][1]), int(matches[-1][2])
-                # Payment typically 1 month after book closure
-                pay_month = m + 1 if m < 12 else 1
+        # Prefer 100 rows per page to reduce pagination clicks (DataTables standard)
+        try:
+            length_sel = page.locator("select[name*='length']").first
+            if length_sel.count() > 0:
+                length_sel.select_option("100")
+                time.sleep(2)
+        except Exception:
+            pass
+
+        max_pages = 40
+        for _ in range(max_pages):
+            rows = page.query_selector_all("table tbody tr")
+            for row in rows:
+                cols = row.query_selector_all("td")
+                if len(cols) < 6:
+                    continue
+                symbol = cols[0].inner_text().strip()
+                # Skip header / invalid rows
+                if not symbol or len(symbol) > 20 or "\n" in symbol:
+                    continue
+                if symbol.lower() in ("symbol", "company", "sr", "#", "no.", "no"):
+                    continue
+
+                company = cols[1].inner_text().strip()
+                sector = cols[2].inner_text().strip()
+                div_ann = cols[3].inner_text().strip()
+                ann_date = cols[4].inner_text().strip()
+                book_closure = cols[5].inner_text().strip()
+
+                parsed = _parse_book_closure_payment(book_closure)
+                if not parsed:
+                    continue
+                book_end_iso, pay_m, pay_y = parsed
+
+                dedupe_key = (symbol, book_closure.strip(), div_ann.strip())
+                if dedupe_key in seen:
+                    continue
+                seen.add(dedupe_key)
+
                 payouts.append({
                     "Company": symbol,
                     "CompanyName": company,
-                    "BookClosureEnd": f"{y}-{m:02d}-{d:02d}",
-                    "Payment_month": pay_month,
+                    "Sector": sector,
+                    "Dividend_announcement": div_ann,
+                    "Announcement_date": ann_date,
+                    "Book_closure": book_closure.replace("\n", " ").strip(),
+                    "BookClosureEnd": book_end_iso,
+                    "Payment_month": pay_m,
+                    "Year": pay_y,
                 })
+
+            next_btn = page.query_selector("a.paginate_button.next:not(.disabled)")
+            if not next_btn:
+                break
+            next_btn.click()
+            time.sleep(1.8)
+            try:
+                page.wait_for_load_state("networkidle", timeout=15000)
+            except Exception:
+                time.sleep(1)
+
         browser.close()
 
     os.makedirs(DIVIDEND_DIR, exist_ok=True)
-    if payouts:
+    # Avoid wiping a good file if the page layout changed or scrape failed
+    min_ok = 10
+    if len(payouts) >= min_ok:
         df = pd.DataFrame(payouts)
         df.to_csv(PAYOUTS_CSV, index=False)
-        print(f"Saved {len(payouts)} payouts to {PAYOUTS_CSV}")
+        print(f"Saved {len(payouts)} payouts (all pages) to {PAYOUTS_CSV}")
+    elif payouts:
+        print(f"[WARN] Only {len(payouts)} payout rows (< {min_ok}); not overwriting {PAYOUTS_CSV}")
+    else:
+        print(f"[WARN] No payout rows scraped; leaving existing {PAYOUTS_CSV} unchanged")
     return payouts
 
 

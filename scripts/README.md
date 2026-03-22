@@ -8,6 +8,7 @@ Automated cron jobs for PSX data updates.
 |--------|---------|
 | `run-all.js` | Main scraper: fetches PSX dividend data, merges with fallback, pushes to GitHub |
 | `scrape-psx.js` | Scrapes psxterminal.com/yields for dividend yields |
+| `../psx.py` | **PSX Data Portal**: full **payouts** table (all DataTables pages → `data/dividends/psx_payouts.csv`) + market prices. Used by GitHub Actions daily. |
 | `update-github.js` | Updates CSV files in repo via GitHub API |
 | `health-check.js` | Pings backend /api/health |
 
@@ -15,7 +16,11 @@ Automated cron jobs for PSX data updates.
 
 - **dividendflow-scraper** (Render): Daily at **4pm PKT** (11:00 UTC) – dividend data from psxterminal.com
 - **dividendflow-news** (Render): Daily at **5pm PKT** (12:00 UTC) – news + prices via `run-news.js` (Node)
-- **PSX Market Closing Prices** (GitHub Actions): Daily at **5pm PKT** (12:00 UTC) – full PSX dataset via `psx.py` from dps.psx.com.pk → `psx_full_dataset.csv` for Market Closing Prices tab
+- **PSX Market Closing Prices + payouts** (GitHub Actions): Daily at **5pm PKT** (12:00 UTC) – `python psx.py` scrapes **all pages** of [dps.psx.com.pk/payouts](https://dps.psx.com.pk/payouts) (~450+ rows) into `data/dividends/psx_payouts.csv`, and full prices into `psx_full_dataset.csv`. The backend uses this full payouts file (when ≥120 rows with announcement/book-closure columns) for the **Dividend Calendar** and **weak/strong month** counts. Re-scrape after major dividend seasons or year-end as needed (workflow can be run manually: *Actions → PSX Market Closing Prices → Run workflow*).
+
+### Backend: `PAYOUTS_FULL_MIN_ROWS`
+
+If `data/dividends/psx_payouts.csv` has at least this many rows (default **120**) and includes scraped columns (`Dividend_announcement` or `Book_closure`), the API builds the dividend list from payouts. Otherwise it falls back to `psx_dividend_calendar.csv`. Override with env `PAYOUTS_FULL_MIN_ROWS` on the backend service if needed.
 - **dividendflow-health-check** (Render): Every 6 hours
 
 ## Environment Variables

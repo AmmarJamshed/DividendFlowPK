@@ -151,16 +151,58 @@ function inferDividendType(company, paymentMonth, cyclesMap) {
   return pm === 10 ? 'Final' : pm === 4 ? 'Interim' : 'Interim';
 }
 
+/** PSX payout text e.g. 100%(I) (D) or 2160%(F) (D) */
+function inferDividendTypeFromAnnouncement(ann) {
+  const s = String(ann || '').toUpperCase();
+  if (/\(F\)/.test(s) || /\bFINAL\b/.test(s)) return 'Final';
+  if (/\(I+\)/.test(s) || /\bINTERIM\b/.test(s)) return 'Interim';
+  return null;
+}
+
+/** Rough DPS from "% of par" style (many PSX names use Rs 10 face): pct/100 * 10 */
+function parseDpsFromAnnouncement(ann) {
+  const m = String(ann || '').match(/^([\d,.]+)\s*%/);
+  if (!m) return 0;
+  const pct = parseFloat(m[1].replace(/,/g, ''));
+  if (!Number.isFinite(pct) || pct <= 0) return 0;
+  const guess = Math.round((pct / 100) * 10 * 10000) / 10000;
+  return guess > 0 && guess < 5000 ? guess : 0;
+}
+
+const PAYOUTS_FULL_MIN_ROWS = parseInt(process.env.PAYOUTS_FULL_MIN_ROWS || '120', 10);
+
 // Enrich dividends with latest prices, recalculated yields, and Interim/Final type
 async function getEnrichedDividends() {
-  const data = await readCSV(path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv'));
+  const calendarPath = path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv');
+  const payoutsPath = path.join(DATA_PATH, 'dividends', 'psx_payouts.csv');
+  const calendarRows = await readCSV(calendarPath);
+  const payoutRows = await readCSV(payoutsPath);
+
   const latestPrices = await getLatestPrices();
   let cyclesMap = new Map();
   try {
     const cycles = await readCSV(path.join(DATA_PATH, 'financials', 'psx_quarter_cycles.csv'));
     cycles.forEach(c => cyclesMap.set((c.Company || c.company || '').trim(), c));
   } catch (_) {}
-  return data.map(d => {
+
+  // Lookup calendar rows by company (and prefer same payment month)
+  const calendarsByCompany = new Map();
+  for (const d of calendarRows) {
+    const c = (d.Company || d.company || '').trim();
+    if (!c) continue;
+    if (!calendarsByCompany.has(c)) calendarsByCompany.set(c, []);
+    calendarsByCompany.get(c).push(d);
+  }
+
+  function pickCalendarRow(company, paymentMonth) {
+    const list = calendarsByCompany.get(company);
+    if (!list || !list.length) return null;
+    const pm = parseInt(paymentMonth || 0);
+    const same = list.find(r => parseInt(r.Payment_month || r.payment_month || 0) === pm);
+    return same || list[0];
+  }
+
+  function enrichCalendarRow(d) {
     const company = (d.Company || d.company || '').trim();
     const divPerShare = parseFloat(d.Dividend_per_share || d.dividend_per_share || 0);
     const csvPrice = parseFloat(d.Price || d.price || 0);
@@ -172,7 +214,61 @@ async function getEnrichedDividends() {
       : csvYield;
     const type = inferDividendType(company, d.Payment_month || d.payment_month, cyclesMap);
     return { ...d, Price: price, Dividend_yield: yieldVal, dividend_yield: yieldVal, Type: type, dividendType: type };
-  });
+  }
+
+  // Full PSX payouts list (paginated scrape) drives calendar + weak-month counts when large enough
+  const payoutHasRichCols = payoutRows.some(
+    (r) =>
+      (r.Dividend_announcement != null && String(r.Dividend_announcement).trim() !== '') ||
+      (r.Book_closure != null && String(r.Book_closure).trim() !== '')
+  );
+  const useFullPayouts = payoutRows.length >= PAYOUTS_FULL_MIN_ROWS && payoutHasRichCols;
+
+  if (!useFullPayouts) {
+    return calendarRows.map(enrichCalendarRow);
+  }
+
+  return payoutRows
+    .filter((p) => (p.Company || p.company || '').trim())
+    .map((p) => {
+      const company = (p.Company || p.company || '').trim();
+      const paymentMonth = parseInt(p.Payment_month || p.payment_month || 0);
+      const year = parseInt(p.Year || p.year || new Date().getFullYear());
+      const ann = p.Dividend_announcement || p.dividend_announcement || '';
+      const cal = pickCalendarRow(company, paymentMonth);
+      let divPerShare = parseFloat(cal?.Dividend_per_share || cal?.dividend_per_share || 0);
+      if (!divPerShare) divPerShare = parseDpsFromAnnouncement(ann);
+      const csvPrice = parseFloat(cal?.Price || cal?.price || 0);
+      const csvYield = parseFloat(cal?.Dividend_yield || cal?.dividend_yield || 0);
+      const lp = latestPrices.get(company);
+      const price = lp?.price > 0 ? lp.price : csvPrice;
+      const yieldVal = price > 0 && divPerShare > 0
+        ? Math.round((divPerShare / price) * 10000) / 100
+        : csvYield;
+      const fromAnn = inferDividendTypeFromAnnouncement(ann);
+      const type = fromAnn || inferDividendType(company, paymentMonth, cyclesMap);
+      const sector = (p.Sector || p.sector || cal?.Sector || cal?.sector || '').trim() || 'Other';
+      return {
+        Company: company,
+        company,
+        CompanyName: p.CompanyName || p.companyName || '',
+        Sector: sector,
+        Dividend_per_share: divPerShare || '',
+        Payment_month: paymentMonth,
+        payment_month: paymentMonth,
+        Year: year,
+        year,
+        Book_closure: p.Book_closure || p.book_closure || '',
+        Dividend_announcement: ann,
+        Announcement_date: p.Announcement_date || p.announcement_date || '',
+        BookClosureEnd: p.BookClosureEnd || p.bookClosureEnd || '',
+        Price: price,
+        Dividend_yield: yieldVal,
+        dividend_yield: yieldVal,
+        Type: type,
+        dividendType: type,
+      };
+    });
 }
 
 // GET /api/dividends - Dividend calendar data (yields recalculated from latest prices)
