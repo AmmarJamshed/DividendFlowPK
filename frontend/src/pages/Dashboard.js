@@ -185,7 +185,7 @@ export default function Dashboard() {
             })}
           </ul>
         </div>
-        <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-4 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
+        <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-6 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
           <h3 className="card-header">AI Risk Alerts</h3>
           <p className="card-subtitle">
             Only shows when a <strong className="text-slate-600">scraped headline</strong> lines up with a{' '}
@@ -292,13 +292,6 @@ export default function Dashboard() {
               })
             )}
           </ul>
-        </div>
-        <div className="card p-6 animate-slide-up flex flex-col justify-center border-l-4 border-l-violet-500 bg-gradient-to-br from-violet-50/50 to-transparent lg:col-span-2" style={{ animationDelay: '150ms' }}>
-          <h3 className="card-header">Portfolio Income</h3>
-          <p className="card-subtitle">Project your dividend income</p>
-          <p className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mt-4">Salary Simulator</p>
-          <p className="text-sm text-slate-600 mt-2">Estimate required portfolio for target income</p>
-          <Link to="/salary-simulator" className="mt-4 btn-primary inline-block text-center">Try it →</Link>
         </div>
       </div>
 
