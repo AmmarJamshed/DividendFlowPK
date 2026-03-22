@@ -1,0 +1,4 @@
+﻿Schedule or demand,Count,Items
+Continuous,2,dividendflow-backend; dividendflow-frontend
+Scheduled,5,dividendflow-scraper; dividendflow-news; dividendflow-nccpl-scraper; dividendflow-health-check; GitHub PSX cron
+On demand,6,Backend/frontend builds (per deploy); PSX manual workflow; deploy-render.ps1; git push; Render manual deploy

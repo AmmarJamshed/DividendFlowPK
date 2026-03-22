@@ -1,0 +1,14 @@
+﻿#,Item,Schedule or demand,When / detail (UTC → PKT),Platform,Description
+1,dividendflow-backend,Continuous,Runs 24/7 after deploy,Render Web,REST API; serves data CSVs; AI and market endpoints
+2,dividendflow-frontend,Continuous,Runs 24/7 after deploy,Render Static,Serves built React app
+3,Backend build,On demand,Each backend service deploy,Render,npm install in backend; node server.js
+4,Frontend build,On demand,Each frontend service deploy,Render,npm install && npm run build; publish build/
+5,dividendflow-scraper,Scheduled,Daily 11:00 UTC → 16:00 PKT,Render Cron,"run-all.js — dividend merge, CSVs, optional GitHub push + email"
+6,dividendflow-news,Scheduled,Daily 12:00 UTC → 17:00 PKT,Render Cron,"run-news.js — news, prices, Groq, GitHub push"
+7,dividendflow-nccpl-scraper,Scheduled,Daily 12:30 UTC → 17:30 PKT,Render Cron,NCCPL risk (Browserless) → CSV / GitHub
+8,dividendflow-health-check,Scheduled,Every 6 h: 00:00 06:00 12:00 18:00 UTC → 05/11/17/23 PKT,Render Cron,health-check.js pings BACKEND_URL
+9,PSX Market Closing Prices (GitHub Actions),Scheduled,Daily 12:00 UTC → 17:00 PKT,GitHub Actions,psx.py — prices + full payouts CSVs; commit/push
+10,PSX Market Closing Prices,On demand,Actions → Run workflow,GitHub Actions,Same as row 9 (manual)
+11,deploy-render.ps1,On demand,Whenever you run the script,Local + Render API,Triggers deploy for all Blueprint services
+12,Git push → Render,On demand,Push to connected branch (e.g. main),GitHub + Render,Auto build & deploy if enabled
+13,Render Manual Deploy,On demand,Dashboard → Manual Deploy,Render UI,Per-service redeploy

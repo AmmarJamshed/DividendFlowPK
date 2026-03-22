@@ -2,6 +2,22 @@
 
 **PKT** = Pakistan Standard Time (**UTC+5**, no DST). Unless noted, cron times are **UTC**.
 
+### Export (CSV + Excel)
+
+| File | Contents |
+|------|----------|
+| **[docs/deployment-calendar.xlsx](docs/deployment-calendar.xlsx)** | Workbook: *All items*, *Summary by type*, *Cron reference* (formatted) |
+| **[docs/deployment-calendar.csv](docs/deployment-calendar.csv)** | Main table — UTF-8 with BOM (opens cleanly in Excel) |
+| **[docs/deployment-calendar-summary.csv](docs/deployment-calendar-summary.csv)** | Grouped by Schedule or demand |
+| **[docs/deployment-calendar-cron.csv](docs/deployment-calendar-cron.csv)** | Cron expressions only |
+
+Regenerate after editing the script:
+
+```bash
+pip install openpyxl
+python scripts/export-deployment-calendar.py
+```
+
 ---
 
 ## Complete list (Schedule vs demand)
