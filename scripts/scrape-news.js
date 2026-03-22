@@ -198,6 +198,28 @@ function csvEscape(val) {
   return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+/** Headlines that move PSX broadly (IMF, policy, subsidies, politics) — kept even when no ticker matches. */
+const MACRO_HEADLINE_RE =
+  /\b(IMF|World Bank|subsid|subsidy|package|fiscal|budget|PSX|KSE\s*-?\s*100|stock exchange|benchmark index|State Bank|SBP|policy rate|discount rate|MPC|political|government|federal|assembly|senate|tariff|fuel price|circular debt|IPPs?|sovereign|default|reserves|CAD|current account)\b/i;
+
+function appendMacroOnlyArticles(news, items) {
+  const seen = new Set(news.map((r) => `${r.Headline || ''}\0${r.Url || ''}`));
+  for (const item of items || []) {
+    const title = (item.title || '').trim();
+    if (!title || !MACRO_HEADLINE_RE.test(title)) continue;
+    const key = `${title}\0${item.link || ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    news.push({
+      Company: 'PSX_MARKET',
+      Headline: title,
+      Date: item.pubDate,
+      Source: item.source || 'News',
+      Url: item.link || '',
+    });
+  }
+}
+
 export async function scrapePsxNews() {
   const companies = loadCompanies();
   if (companies.length === 0) {
@@ -234,6 +256,19 @@ export async function scrapePsxNews() {
     const aiComment = await getGroqCommentary(company, headlines);
     if (aiComment) {
       commentary.push({ Company: company, Commentary: aiComment, Date: new Date().toISOString().slice(0, 10) });
+    }
+  }
+
+  appendMacroOnlyArticles(news, items);
+  const macroHeadlines = news.filter((n) => n.Company === 'PSX_MARKET').map((n) => n.Headline).filter(Boolean);
+  if (macroHeadlines.length) {
+    const macroComment = await getGroqCommentary('PSX-wide macro and policy themes', macroHeadlines);
+    if (macroComment) {
+      commentary.push({
+        Company: 'PSX_MARKET',
+        Commentary: macroComment,
+        Date: new Date().toISOString().slice(0, 10),
+      });
     }
   }
 

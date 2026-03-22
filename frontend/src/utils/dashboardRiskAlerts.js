@@ -1,6 +1,7 @@
 /**
- * Build dashboard "AI Risk Alerts" from daily news scrape + optional price-move fallback.
- * Rotation uses Asia/Karachi calendar date so alerts change each local day.
+ * Dashboard AI Risk Alerts: only when news + meaningful price move align.
+ * Optional: PSX/macro/political headlines linked to top decliners (same session).
+ * Rotation uses Asia/Karachi calendar date.
  */
 
 export function getPktDateString() {
@@ -11,6 +12,9 @@ export function getPktDateString() {
     day: '2-digit',
   }).format(new Date());
 }
+
+/** Minimum |%| change to treat as a meaningful move (session vs prior close). */
+export const MIN_PRICE_MOVE_PCT = 0.5;
 
 function hashString(s) {
   let h = 0;
@@ -24,6 +28,18 @@ function parseTime(row) {
   const d = new Date(row.Date || row.date || 0);
   const t = d.getTime();
   return Number.isFinite(t) ? t : 0;
+}
+
+/** Max |ChangePct| per ticker from price batch. */
+export function maxAbsPctByCompany(priceChanges) {
+  const m = new Map();
+  for (const p of priceChanges || []) {
+    const c = (p.Company || p.company || '').trim();
+    if (!c) continue;
+    const v = Math.abs(parseFloat(p.ChangePct || p.changePct) || 0);
+    m.set(c, Math.max(m.get(c) || 0, v));
+  }
+  return m;
 }
 
 /** One row per company — keep the most recent headline. */
@@ -53,6 +69,35 @@ export function pickLatestCommentaryPerCompany(commentaryRows) {
   return byCo;
 }
 
+/** Headlines that often move the whole PSX or sectors (IMF, subsidies, policy, politics). */
+const MACRO_HEADLINE_RE =
+  /\b(IMF|World Bank|subsid|subsidy|package|fiscal|budget|PSX|KSE\s*-?\s*100|stock exchange|benchmark index|State Bank|SBP|policy rate|discount rate|MPC|political|government|federal|assembly|senate|tariff|fuel price|circular debt|IPPs?|sovereign|default|reserves|CAD|current account)\b/i;
+
+function pickLatestMacroArticle(newsRows) {
+  const hits = (newsRows || []).filter((r) =>
+    MACRO_HEADLINE_RE.test(r.Headline || r.headline || '')
+  );
+  if (!hits.length) return null;
+  hits.sort((a, b) => parseTime(b) - parseTime(a));
+  return hits[0];
+}
+
+/** Signed ChangePct for company (row with largest absolute move if duplicates). */
+function signedPctForCompany(priceChanges, company) {
+  let best = 0;
+  let bestAbs = 0;
+  for (const p of priceChanges || []) {
+    const c = (p.Company || p.company || '').trim();
+    if (c !== company) continue;
+    const pct = parseFloat(p.ChangePct || p.changePct) || 0;
+    if (Math.abs(pct) >= bestAbs) {
+      bestAbs = Math.abs(pct);
+      best = pct;
+    }
+  }
+  return best;
+}
+
 /** Simple keyword tier for display (not investment advice). */
 export function deriveRiskLevel(headline, commentary) {
   const t = `${headline || ''} ${commentary || ''}`.toLowerCase();
@@ -72,111 +117,106 @@ function rotateDeterministic(items, dateKey) {
 }
 
 /**
- * @param {object} dailyNews - { news, commentary, priceChanges, priceCommentary }
- * @param {object} opts - { maxAlerts?: number, dateKey?: string }
+ * @param {object} dailyNews - { news, commentary, priceChanges }
+ * @param {object} opts - { maxAlerts?: number, dateKey?: string, minPriceMovePct?: number }
  */
 export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
   const maxAlerts = opts.maxAlerts ?? 4;
   const dateKey = opts.dateKey || getPktDateString();
+  const minMove = opts.minPriceMovePct ?? MIN_PRICE_MOVE_PCT;
 
   const news = dailyNews?.news || [];
   const commentary = dailyNews?.commentary || [];
   const priceChanges = dailyNews?.priceChanges || [];
-  const priceCommentary = dailyNews?.priceCommentary || [];
 
   const commentaryByCo = pickLatestCommentaryPerCompany(commentary);
-  let candidates = pickLatestNewsPerCompany(news);
+  const absMoves = maxAbsPctByCompany(priceChanges);
+  const candidates = pickLatestNewsPerCompany(news);
 
-  // Attach AI commentary per company
-  let alerts = candidates.map((row) => {
-    const company = (row.Company || row.company || '').trim();
-    const headline = (row.Headline || row.headline || '').trim();
-    const source = (row.Source || row.source || 'News').trim() || 'News';
-    const url = (row.Url || row.url || '').trim();
-    const cRow = commentaryByCo.get(company);
-    const aiText = cRow ? (cRow.Commentary || cRow.commentary || '').trim() : '';
-    const level = deriveRiskLevel(headline, aiText);
-    return {
-      company,
-      level,
-      headline,
-      source,
-      url,
-      newsDate: row.Date || row.date || null,
-      message: aiText || 'No AI summary yet — commentary runs with the daily news job.',
-      kind: 'news',
-    };
-  });
-
-  // Fallback: biggest price movers + optional Groq price commentary (from daily job)
-  if (!alerts.length && priceChanges.length) {
-    const findPriceCommentary = (company, pct) => {
-      const direction = pct >= 0 ? 'gain' : 'decline';
-      return (priceCommentary || []).find(
-        (x) =>
-          (x.Company || x.company || '').trim() === company &&
-          (x.Direction || x.direction || '').toLowerCase() === direction
-      );
-    };
-
-    const sorted = [...priceChanges]
-      .filter((p) => p.Company || p.company)
-      .sort(
-        (a, b) =>
-          Math.abs(parseFloat(b.ChangePct || b.changePct) || 0) -
-          Math.abs(parseFloat(a.ChangePct || a.changePct) || 0)
-      );
-    const seen = new Set();
-    const unique = [];
-    for (const p of sorted) {
-      const company = (p.Company || p.company || '').trim();
-      if (!company || seen.has(company)) continue;
-      seen.add(company);
-      unique.push(p);
-      if (unique.length >= 48) break;
-    }
-
-    // Prefer tickers that already have Groq price commentary so the modal isn't empty
-    const ranked = [...unique].sort((a, b) => {
-      const ca = (a.Company || a.company || '').trim();
-      const cb = (b.Company || b.company || '').trim();
-      const pa = parseFloat(a.ChangePct || a.changePct) || 0;
-      const pb = parseFloat(b.ChangePct || b.changePct) || 0;
-      const ha = findPriceCommentary(ca, pa) ? 1 : 0;
-      const hb = findPriceCommentary(cb, pb) ? 1 : 0;
-      if (hb !== ha) return hb - ha;
-      return Math.abs(pb) - Math.abs(pa);
-    });
-
-    alerts = rotateDeterministic(ranked, `${dateKey}-price`).slice(0, maxAlerts).map((p) => {
-      const company = (p.Company || p.company || '').trim();
-      const pct = parseFloat(p.ChangePct || p.changePct) || 0;
-      const pc = findPriceCommentary(company, pct);
-      const aiText = (pc?.Commentary || pc?.commentary || '').trim();
-      const headline =
-        pct >= 0
-          ? `Shares up ${pct.toFixed(2)}% (session vs prior close).`
-          : `Shares down ${Math.abs(pct).toFixed(2)}% (session vs prior close).`;
+  // 1) Company-specific: scraped headline for that ticker AND meaningful move same batch
+  let alerts = candidates
+    .map((row) => {
+      const company = (row.Company || row.company || '').trim();
+      const headline = (row.Headline || row.headline || '').trim();
+      const source = (row.Source || row.source || 'News').trim() || 'News';
+      const url = (row.Url || row.url || '').trim();
+      const cRow = commentaryByCo.get(company);
+      const aiText = cRow ? (cRow.Commentary || cRow.commentary || '').trim() : '';
       const level = deriveRiskLevel(headline, aiText);
+      const move = absMoves.get(company) || 0;
+      const rawPct = signedPctForCompany(priceChanges, company);
       return {
         company,
         level,
         headline,
-        source: 'PSX price data',
-        url: '',
-        newsDate: p.Date || p.date || null,
+        source,
+        url,
+        newsDate: row.Date || row.date || null,
         message:
           aiText ||
-          'No Groq commentary for this mover in the latest batch. The nightly job adds AI text for the largest gainers/decliners; this symbol may be outside that set, or GROQ_API_KEY was not set on the news job. Headlines appear when RSS/news matches a dividend ticker in daily_news.csv.',
-        kind: 'price',
+          'AI summary will appear after the next successful news job with GROQ_API_KEY set.',
+        kind: 'news',
+        priceMovePct: rawPct,
+        absMove: move,
       };
-    });
+    })
+    .filter((a) => a.absMove >= minMove);
+
+  const used = new Set(alerts.map((a) => a.company));
+
+  // 2) Macro / PSX-wide headline → tie to largest decliners still having a real move (liquidity names often move on IMF/subsidy news)
+  const macro = pickLatestMacroArticle(news);
+  const psxMarketBrief = (commentaryByCo.get('PSX_MARKET')?.Commentary || commentaryByCo.get('PSX_MARKET')?.commentary || '').trim();
+
+  if (macro && priceChanges.length && alerts.length < maxAlerts) {
+    const headline = (macro.Headline || macro.headline || '').trim();
+    const source = (macro.Source || macro.source || 'News').trim() || 'News';
+    const url = (macro.Url || macro.url || '').trim();
+    const decliners = [...priceChanges]
+      .map((p) => ({
+        company: (p.Company || p.company || '').trim(),
+        pct: parseFloat(p.ChangePct || p.changePct) || 0,
+        date: p.Date || p.date,
+      }))
+      .filter((x) => x.company && x.pct < 0 && Math.abs(x.pct) >= minMove)
+      .sort((a, b) => a.pct - b.pct);
+
+    for (const d of decliners) {
+      if (alerts.length >= maxAlerts) break;
+      if (used.has(d.company)) continue;
+      used.add(d.company);
+      const cRow = commentaryByCo.get(d.company);
+      const aiExtra = cRow ? (cRow.Commentary || cRow.commentary || '').trim() : '';
+      const bridgeMsg = [
+        `Session: ${d.company} ${d.pct.toFixed(2)}% (vs prior close).`,
+        'Shown because a macro / market-wide or policy headline appeared the same day — these stories often hit PSX leaders and liquid names first.',
+        psxMarketBrief ? `Macro AI brief: ${psxMarketBrief}` : null,
+        aiExtra ? `Company AI brief: ${aiExtra}` : null,
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      alerts.push({
+        company: d.company,
+        level: deriveRiskLevel(headline, bridgeMsg),
+        headline,
+        source,
+        url,
+        newsDate: macro.Date || macro.date || d.date,
+        message: bridgeMsg,
+        kind: 'macro_link',
+        priceMovePct: d.pct,
+        absMove: Math.abs(d.pct),
+      });
+    }
   }
+
+  // No price-only fallback — pure movers without news stay off this card
 
   const stable = [...alerts].sort((a, b) => a.company.localeCompare(b.company));
   const rotated = rotateDeterministic(stable, dateKey);
-  return rotated.slice(0, maxAlerts).map((a) => ({
-    ...a,
-    rotationDate: dateKey,
-  }));
+  return rotated.slice(0, maxAlerts).map((a) => {
+    const { absMove: _, ...rest } = a;
+    return { ...rest, rotationDate: dateKey };
+  });
 }

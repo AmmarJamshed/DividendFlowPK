@@ -5,7 +5,7 @@ import { Bar } from 'react-chartjs-2';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 import axios from 'axios';
-import { buildDashboardRiskAlerts, getPktDateString } from '../utils/dashboardRiskAlerts';
+import { buildDashboardRiskAlerts, getPktDateString, MIN_PRICE_MOVE_PCT } from '../utils/dashboardRiskAlerts';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -188,7 +188,10 @@ export default function Dashboard() {
         <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-4 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
           <h3 className="card-header">AI Risk Alerts</h3>
           <p className="card-subtitle">
-            Pulled from the latest scraped headlines (rotates daily in PKT). <strong className="text-slate-600">Click an alert</strong> to read the full headline, source link, and complete AI analysis.
+            Only shows when a <strong className="text-slate-600">scraped headline</strong> lines up with a{' '}
+            <strong className="text-slate-600">meaningful same-session price move</strong> (≥{MIN_PRICE_MOVE_PCT}% vs prior close).
+            Macro / policy / PSX stories (IMF, subsidies, rates, etc.) can attach to large <em>decliners</em>. Pure price moves without news are hidden.
+            <span className="block mt-1"><strong className="text-slate-600">Click an alert</strong> for full text, source, and AI summary.</span>
           </p>
           {(riskAlerts[0]?.rotationDate || dailyNews.news?.length > 0 || dailyNews.priceChanges?.length > 0) && (
             <p className="text-[11px] text-slate-500 mt-1">
@@ -204,8 +207,15 @@ export default function Dashboard() {
           <ul className="mt-4 space-y-4 flex-1 max-h-[560px] overflow-y-auto pr-1">
             {riskAlerts.length === 0 ? (
               <li className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
-                <p className="font-medium text-slate-700 mb-1">No alerts yet</p>
-                <p>Run the daily news scraper (after market news) so headlines and AI commentary populate. You can still use the <Link to="/ai-risk-dashboard" className="text-teal-600 font-medium underline">AI Risk Dashboard</Link> for manual analysis.</p>
+                <p className="font-medium text-slate-700 mb-1">No qualifying alerts</p>
+                <p className="mb-2">
+                  We need <strong>both</strong> a matching headline in the news feed <strong>and</strong> a move of at least{' '}
+                  {MIN_PRICE_MOVE_PCT}% for that ticker (or a macro headline plus a large decliner). Run the daily news job with{' '}
+                  <code className="text-xs bg-slate-200 px-1 rounded">GROQ_API_KEY</code> set, and ensure RSS/articles mention your tickers or macro themes.
+                </p>
+                <p>
+                  <Link to="/ai-risk-dashboard" className="text-teal-600 font-medium underline">AI Risk Dashboard</Link> — manual analysis anytime.
+                </p>
               </li>
             ) : (
               riskAlerts.map((r, i) => {
@@ -234,13 +244,25 @@ export default function Dashboard() {
                           <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${levelStyles.dot}`} aria-hidden />
                           <span className="font-semibold text-slate-800">{r.company}</span>
                           <span className={`text-xs px-2 py-0.5 rounded-lg border font-bold ${levelStyles.badge}`}>{r.level}</span>
-                          {r.kind === 'price' && (
-                            <span className="text-[10px] uppercase tracking-wide text-slate-500">Price-driven</span>
+                          {r.kind === 'news' && (
+                            <span className="text-[10px] uppercase tracking-wide text-teal-700 font-semibold">News + move</span>
+                          )}
+                          {r.kind === 'macro_link' && (
+                            <span className="text-[10px] uppercase tracking-wide text-violet-700 font-semibold">Macro / PSX</span>
                           )}
                         </div>
                         <span className="text-[10px] font-semibold text-teal-700 shrink-0">View details →</span>
                       </div>
                       <p className="text-sm font-medium text-slate-800 leading-snug line-clamp-2">{r.headline}</p>
+                      {typeof r.priceMovePct === 'number' && r.priceMovePct !== 0 && (
+                        <p className="mt-1.5 text-xs font-semibold text-slate-700">
+                          Session vs prior:{' '}
+                          <span className={r.priceMovePct < 0 ? 'text-rose-600' : 'text-emerald-600'}>
+                            {r.priceMovePct > 0 ? '+' : ''}
+                            {r.priceMovePct.toFixed(2)}%
+                          </span>
+                        </p>
+                      )}
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
                         <span className="text-slate-500">Source:</span>
                         {r.url ? (
@@ -350,8 +372,12 @@ export default function Dashboard() {
                   {alertDetailOpen.company}
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {alertDetailOpen.kind === 'price' ? 'Price-based signal' : 'News headline signal'} ·{' '}
-                  <span className="font-medium text-slate-600">{alertDetailOpen.level}</span>
+                  {alertDetailOpen.kind === 'macro_link'
+                    ? 'Macro / PSX headline + declining leader'
+                    : alertDetailOpen.kind === 'news'
+                      ? 'Company headline + price move'
+                      : 'Signal'}{' '}
+                  · <span className="font-medium text-slate-600">{alertDetailOpen.level}</span>
                 </p>
               </div>
               <button
@@ -364,6 +390,19 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="px-5 py-4 space-y-5">
+              {typeof alertDetailOpen.priceMovePct === 'number' && alertDetailOpen.priceMovePct !== 0 && (
+                <section className="rounded-xl bg-slate-100 border border-slate-200 px-3 py-2">
+                  <h5 className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-1">Session price move</h5>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {alertDetailOpen.company}:{' '}
+                    <span className={alertDetailOpen.priceMovePct < 0 ? 'text-rose-600' : 'text-emerald-600'}>
+                      {alertDetailOpen.priceMovePct > 0 ? '+' : ''}
+                      {alertDetailOpen.priceMovePct.toFixed(2)}%
+                    </span>{' '}
+                    <span className="text-slate-500 font-normal">(vs prior close in latest dataset)</span>
+                  </p>
+                </section>
+              )}
               <section>
                 <h5 className="text-[11px] font-bold uppercase tracking-wide text-slate-500 mb-2">Headline / signal</h5>
                 <p className="text-base text-slate-800 leading-relaxed font-medium">{alertDetailOpen.headline}</p>
@@ -393,10 +432,10 @@ export default function Dashboard() {
               <section className="rounded-xl bg-slate-50 border border-slate-100 p-4">
                 <h5 className="text-[11px] font-bold uppercase tracking-wide text-teal-800 mb-2">What the AI analyzed</h5>
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{alertDetailOpen.message}</p>
-                {alertDetailOpen.kind === 'price' && (
+                {alertDetailOpen.kind === 'macro_link' && (
                   <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-200">
-                    This row is driven by PSX price changes. When the daily news scraper runs, headlines and richer Groq commentary
-                    will appear here for the same tickers.
+                    The headline is a broader market or policy story; this ticker is shown because it had a large down move the same
+                    session — a pattern common when IMF, subsidy, or rate news hits PSX leaders.
                   </p>
                 )}
               </section>
