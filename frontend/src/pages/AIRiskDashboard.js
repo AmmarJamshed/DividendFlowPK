@@ -81,7 +81,7 @@ export default function AIRiskDashboard() {
     <div className="space-y-6">
       <div className="card p-6 border-l-4 border-l-teal-500">
         <h3 className="card-header text-lg">Daily News & AI Commentary</h3>
-        <p className="card-subtitle mb-4">Latest news and Groq-powered commentary on adverse events</p>
+        <p className="card-subtitle mb-4">Latest news and AI commentary on adverse events</p>
         <div className="space-y-4 max-h-[400px] overflow-y-auto">
           {hasNews && Object.keys(newsByCo).length > 0 ? Object.entries(newsByCo).slice(0, 12).map(([co, items]) => (
             <div key={co} className="p-4 rounded-xl bg-teal-50 border border-teal-200">
@@ -98,7 +98,7 @@ export default function AIRiskDashboard() {
               )}
             </div>
           )) : (
-            <p className="text-slate-500 text-sm py-4">No news yet. Run the daily news scraper to populate. Data updates after each scrape (5pm PKT).</p>
+            <p className="text-slate-500 text-sm py-4">No news loaded yet. This section refreshes daily after market close (Pakistan time).</p>
           )}
         </div>
       </div>
@@ -106,9 +106,9 @@ export default function AIRiskDashboard() {
       <div className="card p-6 border-l-4 border-l-emerald-500">
         <h3 className="card-header text-lg">Today vs Yesterday — Price Movers</h3>
         <p className="card-subtitle mb-4">
-          Daily stock appreciations and plunges with Groq-powered analysis based on news.
+          Daily stock appreciations and plunges with AI context where news is available.
           {(dailyNews.priceChanges?.length > 0 && dailyNews.priceChanges[0]?.Date) && (
-            <span className="block text-teal-600 font-medium mt-1">From last scrape: {dailyNews.priceChanges[0].Date}</span>
+            <span className="block text-teal-600 font-medium mt-1">Data as of: {dailyNews.priceChanges[0].Date}</span>
           )}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -127,7 +127,7 @@ export default function AIRiskDashboard() {
                   )}
                 </li>
               )) : (
-                <p className="text-slate-500 text-sm py-2">No gainers today. Data updates after each scrape.</p>
+                <p className="text-slate-500 text-sm py-2">No gainers in the latest snapshot.</p>
               )}
             </ul>
           </div>
@@ -146,7 +146,7 @@ export default function AIRiskDashboard() {
                   )}
                 </li>
               )) : (
-                <p className="text-slate-500 text-sm py-2">No decliners today. Data updates after each scrape.</p>
+                <p className="text-slate-500 text-sm py-2">No decliners in the latest snapshot.</p>
               )}
             </ul>
           </div>
@@ -155,7 +155,7 @@ export default function AIRiskDashboard() {
 
       <div className="card p-6 border-l-4 border-l-violet-500">
         <h3 className="card-header text-lg">AI Adverse Media Analysis</h3>
-        <p className="card-subtitle mb-6">Groq-powered analysis of governance risk, regulatory issues, and sentiment. Risk level elevated based on sentiment and volatility indicators when applicable.</p>
+        <p className="card-subtitle mb-6">AI-assisted read on governance risk, regulatory issues, and sentiment. Categories reflect model output and market-style indicators—not investment advice.</p>
         <div className="flex flex-wrap gap-2 mb-6">
           {companies.map(c => (
             <button

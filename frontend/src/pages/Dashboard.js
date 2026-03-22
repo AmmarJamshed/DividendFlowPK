@@ -155,7 +155,7 @@ export default function Dashboard() {
         </div>
         <div className="card p-6 animate-slide-up border-l-4 border-l-emerald-500 lg:col-span-3" style={{ animationDelay: '50ms' }}>
           <h3 className="card-header">Top Dividend Yield</h3>
-          <p className="card-subtitle">Highest yielding PSX companies with NCCPL risk indicators</p>
+          <p className="card-subtitle">Highest yielding PSX companies with clearing-house risk snapshot (VaR &amp; margin)</p>
           <ul className="mt-4 space-y-3">
             {topYield.map((d, i) => {
               const symbol = (d.Company || d.company || '').trim();
@@ -188,20 +188,15 @@ export default function Dashboard() {
         <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-6 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
           <h3 className="card-header">AI Risk Alerts</h3>
           <p className="card-subtitle">
-            Only shows when a <strong className="text-slate-600">scraped headline</strong> lines up with a{' '}
-            <strong className="text-slate-600">meaningful same-session price move</strong> (≥{MIN_PRICE_MOVE_PCT}% vs prior close).
-            Macro / policy / PSX stories (IMF, subsidies, rates, etc.) can attach to large <em>decliners</em>. Pure price moves without news are hidden.
-            <span className="block mt-1"><strong className="text-slate-600">Click an alert</strong> for full text, source, and AI summary.</span>
+            Alerts appear when a <strong className="text-slate-600">public news headline</strong> lines up with a{' '}
+            <strong className="text-slate-600">meaningful same-session price move</strong> (about {MIN_PRICE_MOVE_PCT}% or more vs prior close).
+            Broader stories (policy, IMF, rates, subsidies) may be linked to large <em>decliners</em> when they affect the wider market.
+            We don&apos;t show raw price swings without a related story. <strong className="text-slate-600">Click an alert</strong> for the article, source, and a short AI read.
           </p>
           {(riskAlerts[0]?.rotationDate || dailyNews.news?.length > 0 || dailyNews.priceChanges?.length > 0) && (
             <p className="text-[11px] text-slate-500 mt-1">
-              Rotation date (PKT): <span className="font-medium text-slate-600">{riskAlerts[0]?.rotationDate || getPktDateString()}</span>
-              {(dailyNews.news?.length > 0 || dailyNews.commentary?.length > 0) && (
-                <span className="block mt-0.5">
-                  {dailyNews.news?.length ? `${dailyNews.news.length} headline(s) in feed` : 'No headlines file'}
-                  {dailyNews.commentary?.length ? ` · ${dailyNews.commentary.length} AI brief(s)` : ''}
-                </span>
-              )}
+              Pakistan time (PKT): <span className="font-medium text-slate-600">{riskAlerts[0]?.rotationDate || getPktDateString()}</span>
+              <span className="block mt-0.5">Refreshed daily after market close.</span>
             </p>
           )}
           <ul className="mt-4 space-y-4 flex-1 max-h-[560px] overflow-y-auto pr-1">
@@ -209,12 +204,11 @@ export default function Dashboard() {
               <li className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
                 <p className="font-medium text-slate-700 mb-1">No qualifying alerts</p>
                 <p className="mb-2">
-                  We need <strong>both</strong> a matching headline in the news feed <strong>and</strong> a move of at least{' '}
-                  {MIN_PRICE_MOVE_PCT}% for that ticker (or a macro headline plus a large decliner). Run the daily news job with{' '}
-                  <code className="text-xs bg-slate-200 px-1 rounded">GROQ_API_KEY</code> set, and ensure RSS/articles mention your tickers or macro themes.
+                  Nothing matched <strong>today</strong>: we look for a <strong>news headline</strong> plus a move of at least{' '}
+                  {MIN_PRICE_MOVE_PCT}% for that company (or a major market/policy story tied to a large decliner). Check back after the next session — coverage depends on what&apos;s in the public press and how stocks moved.
                 </p>
                 <p>
-                  <Link to="/ai-risk-dashboard" className="text-teal-600 font-medium underline">AI Risk Dashboard</Link> — manual analysis anytime.
+                  <Link to="/ai-risk-dashboard" className="text-teal-600 font-medium underline">AI Risk Dashboard</Link> — dig deeper on any ticker.
                 </p>
               </li>
             ) : (

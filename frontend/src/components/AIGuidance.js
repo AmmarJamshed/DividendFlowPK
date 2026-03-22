@@ -8,13 +8,9 @@ const ROUTE_TIPS = {
     'Add holdings in Portfolio to estimate dividend income.',
   ],
   '/dividend-calendar': [
-    'Click Dividend Calendar to see upcoming payouts.',
-    'Use the search bar to find a company quickly.',
-    'Check Interim/Final column for dividend type.',
-  ],
-  '/weak-month-optimizer': [
-    'Use Weak Month Optimizer to balance dividend income across months.',
-    'Add your holdings to see which months need more coverage.',
+    'Click a month on the calendar to see every payout and weak-month analysis.',
+    'Weak months show ideas to spread dividend income across the year.',
+    'Check Interim vs Final in the table for each payment.',
   ],
   '/ai-risk-dashboard': [
     'Review AI risk scores before adding new positions.',

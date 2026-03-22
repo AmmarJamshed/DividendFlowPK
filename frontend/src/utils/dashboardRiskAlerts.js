@@ -133,7 +133,7 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
   const absMoves = maxAbsPctByCompany(priceChanges);
   const candidates = pickLatestNewsPerCompany(news);
 
-  // 1) Company-specific: scraped headline for that ticker AND meaningful move same batch
+  // 1) Company-specific: headline for that ticker AND meaningful move same batch
   let alerts = candidates
     .map((row) => {
       const company = (row.Company || row.company || '').trim();
@@ -154,7 +154,7 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
         newsDate: row.Date || row.date || null,
         message:
           aiText ||
-          'AI summary will appear after the next successful news job with GROQ_API_KEY set.',
+          'A short AI summary will appear here when available for this story.',
         kind: 'news',
         priceMovePct: rawPct,
         absMove: move,
