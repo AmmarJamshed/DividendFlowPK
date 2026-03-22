@@ -5,6 +5,7 @@ import { Bar } from 'react-chartjs-2';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 import axios from 'axios';
+import { buildDashboardRiskAlerts, getPktDateString } from '../utils/dashboardRiskAlerts';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -38,7 +39,12 @@ export default function Dashboard() {
   const [dividends, setDividends] = useState([]);
   const [monthCoverage, setMonthCoverage] = useState(null);
   const [riskAlerts, setRiskAlerts] = useState([]);
-  const [dailyNews, setDailyNews] = useState({ priceChanges: [], priceCommentary: [] });
+  const [dailyNews, setDailyNews] = useState({
+    news: [],
+    commentary: [],
+    priceChanges: [],
+    priceCommentary: [],
+  });
   const [loading, setLoading] = useState(true);
   const [stockRisks, setStockRisks] = useState({});
 
@@ -52,11 +58,14 @@ export default function Dashboard() {
         ]);
         setDividends(divRes.data);
         setMonthCoverage(covRes.data);
-        setRiskAlerts([
-          { company: 'OGDC', level: 'Moderate', message: 'Regulatory scrutiny data-driven signal' },
-          { company: 'PSO', level: 'Elevated', message: 'Volatility indicators suggest caution' }
-        ]);
-        setDailyNews(newsRes.data || {});
+        const newsPayload = newsRes.data || {};
+        setDailyNews(newsPayload);
+        setRiskAlerts(
+          buildDashboardRiskAlerts(newsPayload, {
+            maxAlerts: 4,
+            dateKey: getPktDateString(),
+          })
+        );
         
         // Same top-5 as on-screen (dedupe by company); previously used raw rows so 5th ticker could miss risk (e.g. KAPCO).
         const topYieldStocks = getTopYieldRows(divRes.data || []);
@@ -118,15 +127,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card p-6 animate-slide-up border-l-4 border-l-teal-500" style={{ animationDelay: '0ms' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+        <div className="card p-6 animate-slide-up border-l-4 border-l-teal-500 lg:col-span-3" style={{ animationDelay: '0ms' }}>
           <h3 className="card-header">Monthly Dividend Heatmap</h3>
           <p className="card-subtitle">Companies paying dividends by month</p>
           <div className="h-52 mt-4">
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
-        <div className="card p-6 animate-slide-up border-l-4 border-l-emerald-500" style={{ animationDelay: '50ms' }}>
+        <div className="card p-6 animate-slide-up border-l-4 border-l-emerald-500 lg:col-span-3" style={{ animationDelay: '50ms' }}>
           <h3 className="card-header">Top Dividend Yield</h3>
           <p className="card-subtitle">Highest yielding PSX companies with NCCPL risk indicators</p>
           <ul className="mt-4 space-y-3">
@@ -158,20 +167,76 @@ export default function Dashboard() {
             })}
           </ul>
         </div>
-        <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500" style={{ animationDelay: '100ms' }}>
+        <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-4 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
           <h3 className="card-header">AI Risk Alerts</h3>
-          <p className="card-subtitle">Data-driven risk signals</p>
-          <ul className="mt-4 space-y-3">
-            {riskAlerts.map((r, i) => (
-              <li key={i} className="p-3 rounded-xl bg-amber-50 border border-amber-200">
-                <span className="font-semibold text-slate-800">{r.company}</span>
-                <span className="mx-2 text-amber-600 font-bold">• {r.level}</span>
-                <p className="text-sm text-slate-600 mt-1">{r.message}</p>
+          <p className="card-subtitle">
+            Pulled from the latest scraped headlines (rotates daily in PKT). Each card shows the news item, source, and Groq summary when available.
+          </p>
+          {(riskAlerts[0]?.rotationDate || dailyNews.news?.length > 0 || dailyNews.priceChanges?.length > 0) && (
+            <p className="text-[11px] text-slate-500 mt-1">
+              Rotation date (PKT): <span className="font-medium text-slate-600">{riskAlerts[0]?.rotationDate || getPktDateString()}</span>
+              {(dailyNews.news?.length > 0 || dailyNews.commentary?.length > 0) && (
+                <span className="block mt-0.5">
+                  {dailyNews.news?.length ? `${dailyNews.news.length} headline(s) in feed` : 'No headlines file'}
+                  {dailyNews.commentary?.length ? ` · ${dailyNews.commentary.length} AI brief(s)` : ''}
+                </span>
+              )}
+            </p>
+          )}
+          <ul className="mt-4 space-y-4 flex-1 max-h-[560px] overflow-y-auto pr-1">
+            {riskAlerts.length === 0 ? (
+              <li className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
+                <p className="font-medium text-slate-700 mb-1">No alerts yet</p>
+                <p>Run the daily news scraper (after market news) so headlines and AI commentary populate. You can still use the <Link to="/ai-risk-dashboard" className="text-teal-600 font-medium underline">AI Risk Dashboard</Link> for manual analysis.</p>
               </li>
-            ))}
+            ) : (
+              riskAlerts.map((r, i) => {
+                const levelStyles =
+                  r.level === 'Elevated'
+                    ? { badge: 'bg-rose-100 text-rose-800 border-rose-300', dot: 'bg-rose-500' }
+                    : r.level === 'Moderate'
+                      ? { badge: 'bg-amber-100 text-amber-800 border-amber-300', dot: 'bg-amber-500' }
+                      : { badge: 'bg-sky-100 text-sky-800 border-sky-300', dot: 'bg-sky-500' };
+                return (
+                  <li key={`${r.company}-${i}`} className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 shadow-sm">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span className={`inline-block w-2 h-2 rounded-full ${levelStyles.dot}`} aria-hidden />
+                      <span className="font-semibold text-slate-800">{r.company}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-lg border font-bold ${levelStyles.badge}`}>{r.level}</span>
+                      {r.kind === 'price' && (
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500">Price-driven</span>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium text-slate-800 leading-snug line-clamp-3">{r.headline}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
+                      <span className="text-slate-500">Source:</span>
+                      {r.url ? (
+                        <a
+                          href={r.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-teal-700 font-medium hover:underline break-all"
+                        >
+                          {r.source}
+                        </a>
+                      ) : (
+                        <span className="font-medium">{r.source}</span>
+                      )}
+                      {r.newsDate && (
+                        <span className="text-slate-400">· {String(r.newsDate).slice(0, 16)}</span>
+                      )}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-amber-200/90">
+                      <p className="text-[10px] uppercase tracking-wide text-amber-800/80 font-semibold mb-1">AI summary (what we analyzed)</p>
+                      <p className="text-sm text-slate-600 leading-relaxed">{r.message}</p>
+                    </div>
+                  </li>
+                );
+              })
+            )}
           </ul>
         </div>
-        <div className="card p-6 animate-slide-up flex flex-col justify-center border-l-4 border-l-violet-500 bg-gradient-to-br from-violet-50/50 to-transparent" style={{ animationDelay: '150ms' }}>
+        <div className="card p-6 animate-slide-up flex flex-col justify-center border-l-4 border-l-violet-500 bg-gradient-to-br from-violet-50/50 to-transparent lg:col-span-2" style={{ animationDelay: '150ms' }}>
           <h3 className="card-header">Portfolio Income</h3>
           <p className="card-subtitle">Project your dividend income</p>
           <p className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mt-4">Salary Simulator</p>
