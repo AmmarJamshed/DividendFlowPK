@@ -10,6 +10,20 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+/** One row per company (highest yield), then top 5 — must match list shown in UI so risk API is called for the same symbols. */
+function getTopYieldRows(dividends) {
+  const byCompany = new Map();
+  (dividends || []).forEach(d => {
+    const c = (d.Company || d.company || '').trim();
+    const y = parseFloat(d.Dividend_yield || d.dividend_yield) || 0;
+    const existing = byCompany.get(c);
+    if (!existing || (parseFloat(existing.Dividend_yield || existing.dividend_yield) || 0) < y) byCompany.set(c, d);
+  });
+  return [...byCompany.values()]
+    .sort((a, b) => (parseFloat(b.Dividend_yield || b.dividend_yield) || 0) - (parseFloat(a.Dividend_yield || a.dividend_yield) || 0))
+    .slice(0, 5);
+}
+
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -44,10 +58,8 @@ export default function Dashboard() {
         ]);
         setDailyNews(newsRes.data || {});
         
-        // Fetch NCCPL risk data for top yield stocks
-        const topYieldStocks = [...(divRes.data || [])]
-          .sort((a, b) => (parseFloat(b.Dividend_yield || b.dividend_yield) || 0) - (parseFloat(a.Dividend_yield || a.dividend_yield) || 0))
-          .slice(0, 5);
+        // Same top-5 as on-screen (dedupe by company); previously used raw rows so 5th ticker could miss risk (e.g. KAPCO).
+        const topYieldStocks = getTopYieldRows(divRes.data || []);
         
         const riskPromises = topYieldStocks.map(d => {
           const symbol = (d.Company || d.company || '').trim();
@@ -79,16 +91,7 @@ export default function Dashboard() {
     count: monthCoverage.monthCoverage?.[i + 1]?.count || 0
   })) : [];
 
-  const byCompany = new Map();
-  (dividends || []).forEach(d => {
-    const c = (d.Company || d.company || '').trim();
-    const y = parseFloat(d.Dividend_yield || d.dividend_yield) || 0;
-    const existing = byCompany.get(c);
-    if (!existing || (parseFloat(existing.Dividend_yield || existing.dividend_yield) || 0) < y) byCompany.set(c, d);
-  });
-  const topYield = [...byCompany.values()]
-    .sort((a, b) => (parseFloat(b.Dividend_yield || b.dividend_yield) || 0) - (parseFloat(a.Dividend_yield || a.dividend_yield) || 0))
-    .slice(0, 5);
+  const topYield = getTopYieldRows(dividends);
 
   const chartData = {
     labels: heatmapData.map(d => d.month),
