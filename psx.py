@@ -14,6 +14,7 @@ import json
 import base64
 import urllib.request
 import re
+import calendar
 from datetime import datetime, timedelta
 
 URL = "https://dps.psx.com.pk/historical"
@@ -26,7 +27,12 @@ PAYOUTS_CSV = os.path.join(DIVIDEND_DIR, "psx_payouts.csv")
 
 def _parse_book_closure_payment(book_closure_raw):
     """Use last DD/MM/YYYY in book closure as register end; payment month ≈ following month."""
-    matches = re.findall(r"(\d{1,2})/(\d{1,2})/(\d{4})", book_closure_raw or "")
+    text = (book_closure_raw or "").replace("\n", " ").strip()
+    if not text or text in ("-", "—", "N/A", "TBA"):
+        return None
+    matches = re.findall(r"(\d{1,2})/(\d{1,2})/(\d{4})", text)
+    if not matches:
+        matches = re.findall(r"(\d{1,2})-(\d{1,2})-(\d{4})", text)
     if not matches:
         return None
     d, m, y = int(matches[-1][0]), int(matches[-1][1]), int(matches[-1][2])
@@ -36,6 +42,50 @@ def _parse_book_closure_payment(book_closure_raw):
         pay_m, pay_y = m + 1, y
     book_end_iso = f"{y}-{m:02d}-{d:02d}"
     return book_end_iso, pay_m, pay_y
+
+
+_MONTH_WORDS = (
+    ("january", 1), ("february", 2), ("march", 3), ("april", 4), ("may", 5), ("june", 6),
+    ("july", 7), ("august", 8), ("september", 9), ("october", 10), ("november", 11), ("december", 12),
+)
+
+
+def _month_num_from_word(word):
+    w = (word or "").strip().lower()
+    if not w:
+        return None
+    for name, num in _MONTH_WORDS:
+        if w.startswith(name[:3]) or name.startswith(w[: min(3, len(w))]):
+            return num
+    return None
+
+
+def _parse_announcement_date_payment(announcement_raw):
+    """When book closure is '-' on PSX, infer payment month as month after announcement date."""
+    m = re.search(r"\b([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})", announcement_raw or "")
+    if not m:
+        return None
+    ann_m = _month_num_from_word(m.group(1))
+    if not ann_m:
+        return None
+    day = int(m.group(2))
+    y = int(m.group(3))
+    last_d = calendar.monthrange(y, ann_m)[1]
+    day = min(day, last_d)
+    if ann_m == 12:
+        pay_m, pay_y = 1, y + 1
+    else:
+        pay_m, pay_y = ann_m + 1, y
+    book_end_iso = f"{y}-{ann_m:02d}-{day:02d}"
+    return book_end_iso, pay_m, pay_y
+
+
+def _parse_payment_dates(book_closure_raw, announcement_raw):
+    """Book closure first; fallback to announcement when closure is missing (PSX shows '-')."""
+    p = _parse_book_closure_payment(book_closure_raw)
+    if p:
+        return p
+    return _parse_announcement_date_payment(announcement_raw)
 
 
 def scrape_psx_payouts():
@@ -85,7 +135,7 @@ def scrape_psx_payouts():
                 ann_date = cols[4].inner_text().strip()
                 book_closure = cols[5].inner_text().strip()
 
-                parsed = _parse_book_closure_payment(book_closure)
+                parsed = _parse_payment_dates(book_closure, ann_date)
                 if not parsed:
                     continue
                 book_end_iso, pay_m, pay_y = parsed
