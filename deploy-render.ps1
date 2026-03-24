@@ -18,6 +18,14 @@ $toDeploy = @(
 )
 $deployed = 0
 
+# DividendFlow crons: weekdays only (Mon–Fri UTC), matches render.yaml — skip weekend runs to save compute
+$cronSchedules = @(
+    @{ Name = "dividendflow-scraper";       Schedule = "0 11 * * 1-5" }
+    @{ Name = "dividendflow-news";          Schedule = "0 12 * * 1-5" }
+    @{ Name = "dividendflow-nccpl-scraper"; Schedule = "30 12 * * 1-5" }
+    @{ Name = "dividendflow-health-check";  Schedule = "0 0,6,12,18 * * 1-5" }
+)
+
 if ($env:RENDER_API_KEY) {
     Write-Host "=== Deploying via Render API ===" -ForegroundColor Cyan
     $headers = @{
@@ -28,6 +36,27 @@ if ($env:RENDER_API_KEY) {
     try {
         $resp = Invoke-RestMethod -Uri "https://api.render.com/v1/services?limit=100" -Headers $headers -Method Get
         $services = if ($resp -is [array]) { $resp } else { @($resp) }
+
+        Write-Host "`n--- Syncing DividendFlow cron schedules (weekdays only) ---" -ForegroundColor Cyan
+        foreach ($row in $cronSchedules) {
+            $cronName = $row.Name
+            $want = $row.Schedule
+            $wrap = $services | Where-Object { $_.service.name -eq $cronName } | Select-Object -First 1
+            if (-not $wrap) {
+                Write-Host "Cron $cronName not found in service list" -ForegroundColor Yellow
+                continue
+            }
+            $sid = $wrap.service.id
+            $cur = $wrap.service.serviceDetails.schedule
+            if ($cur -eq $want) {
+                Write-Host "$cronName already $want" -ForegroundColor DarkGray
+                continue
+            }
+            Write-Host "PATCH $cronName schedule: '$cur' -> '$want'" -ForegroundColor Green
+            $patchBody = @{ serviceDetails = @{ schedule = $want } } | ConvertTo-Json -Compress
+            Invoke-RestMethod -Uri "https://api.render.com/v1/services/$sid" -Headers $headers -Method Patch -Body $patchBody | Out-Null
+        }
+
         foreach ($name in $toDeploy) {
             $svc = $services | Where-Object { ($_.name -eq $name) -or ($_.service.name -eq $name) } | Select-Object -First 1
             $id = if ($svc.service) { $svc.service.id } else { $svc.id }

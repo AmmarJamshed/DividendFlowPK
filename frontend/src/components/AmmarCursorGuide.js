@@ -6,6 +6,26 @@ import { useAIAssistance } from '../context/AIAssistanceContext';
 const DEBOUNCE_MS = 780;
 const AVATAR = `${process.env.PUBLIC_URL || ''}/ammar-guide.png`;
 
+function GuideMessageBody({ loading, message, fallback }) {
+  if (loading) {
+    return <p className="text-[0.9375rem] text-slate-600 leading-relaxed">Taking a look at what you’re hovering over…</p>;
+  }
+  const raw = (message || '').trim() || fallback;
+  const blocks = raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  if (blocks.length <= 1) {
+    return <p className="text-[0.9375rem] text-slate-700 leading-relaxed">{raw}</p>;
+  }
+  return (
+    <div className="space-y-2.5">
+      {blocks.map((para, i) => (
+        <p key={i} className="text-[0.9375rem] text-slate-700 leading-relaxed first:mt-0">
+          {para}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function gatherElementContext(clientX, clientY) {
   const el = document.elementFromPoint(clientX, clientY);
   if (!el || el.nodeType !== 1) return '';
@@ -183,7 +203,7 @@ export default function AmmarCursorGuide() {
 
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const bubbleW = 280;
+  const bubbleW = Math.min(360, vw - 24);
   const pad = 12;
   let left = pos.x + 56;
   let top = pos.y - 100;
@@ -191,7 +211,7 @@ export default function AmmarCursorGuide() {
     left = Math.max(pad, pos.x - bubbleW - 56);
   }
   left = Math.min(Math.max(pad, left), vw - bubbleW - pad);
-  top = Math.min(Math.max(pad, top), vh - 160);
+  top = Math.min(Math.max(pad, top), vh - 200);
 
   return (
     <>
@@ -211,16 +231,18 @@ export default function AmmarCursorGuide() {
       </div>
 
       <div
-        className="fixed z-[9999] pointer-events-none max-w-[280px] sm:max-w-xs rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl shadow-slate-400/25 p-3 pr-4"
+        className="fixed z-[9999] pointer-events-none w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl bg-white/97 backdrop-blur-md border border-slate-200/90 shadow-xl shadow-slate-400/20 overflow-hidden"
         style={{ left, top }}
       >
-        <p className="text-xs font-semibold text-teal-700 mb-1">Ammar — your guide</p>
-        <p className="text-sm text-slate-600 leading-snug">
-          {loading ? 'Taking a look at what you’re hovering…' : message || 'Move around the page and pause — I’ll explain what you’re looking at, using live DividendFlow data.'}
-        </p>
-        <p className="text-[10px] text-slate-400 mt-2 leading-tight">
-          Powered by Groq. Not investment advice — informational only.
-        </p>
+        <div className="border-l-4 border-teal-500 bg-gradient-to-br from-teal-50/80 to-white px-4 py-3.5">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-teal-800">Ammar</p>
+          <p className="text-xs text-slate-500 mb-2.5">Your guide on DividendFlow PK</p>
+          <GuideMessageBody
+            loading={loading}
+            message={message}
+            fallback="Move around the page and pause — I’ll explain what you’re looking at, using the same data the site shows you."
+          />
+        </div>
       </div>
     </>
   );
