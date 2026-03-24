@@ -156,6 +156,113 @@ async function getLatestPrices() {
   return latest;
 }
 
+/** YYYY-MM-DD minus N calendar days (UTC). */
+function subtractDaysIso(isoDateStr, days) {
+  if (!isoDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoDateStr)) return null;
+  const [y, m, d] = isoDateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - days);
+  return dt.toISOString().slice(0, 10);
+}
+
+/** Latest close on or before `targetDate` (and on/before sessionDate) per symbol from daily_prices.csv */
+async function buildWeekAgoPriceMap(sessionDateStr) {
+  const map = new Map();
+  const dailyPath = path.join(DATA_PATH, 'prices', 'daily_prices.csv');
+  if (!sessionDateStr || !fs.existsSync(dailyPath)) return map;
+
+  const targetStr = subtractDaysIso(sessionDateStr, 7);
+  if (!targetStr) return map;
+
+  const rows = await readCSV(dailyPath);
+  const bySymbol = new Map();
+  for (const r of rows) {
+    const sym = (r.Company || r.company || '').trim();
+    const ds = (r.Date || r.date || '').trim();
+    const p = parseFloat(String(r.Price || r.price || '').replace(/,/g, ''));
+    if (!sym || !ds || !(p > 0)) continue;
+    if (!bySymbol.has(sym)) bySymbol.set(sym, []);
+    bySymbol.get(sym).push({ d: ds, p });
+  }
+
+  for (const [sym, arr] of bySymbol) {
+    let bestP = null;
+    let bestD = '';
+    for (const { d, p } of arr) {
+      if (d > sessionDateStr) continue;
+      if (d <= targetStr && (!bestD || d.localeCompare(bestD) > 0)) {
+        bestD = d;
+        bestP = p;
+      }
+    }
+    if (bestP != null) map.set(sym.toUpperCase(), bestP);
+  }
+  return map;
+}
+
+/**
+ * Heuristic label from ~7d return + NCCPL VaR/haircut. Not investment advice.
+ * Good buy: solid week, clearing risk not extreme.
+ * Safe buy: calmer week + lower VaR.
+ * Risk buy: strong week with elevated margin risk, or very hot week, or weak week with stress.
+ */
+function classifyBuySignal(weekChgPct, varVal, haircutVal) {
+  if (weekChgPct == null || Number.isNaN(weekChgPct)) {
+    return { buySignal: '—', buySignalDetail: 'Add daily price history (7d) to classify.' };
+  }
+  const v = varVal != null && varVal > 0 ? varVal : null;
+  const h = haircutVal != null && haircutVal > 0 ? haircutVal : null;
+  const highRisk = (v != null && v >= 26) || (h != null && h >= 38);
+  const lowRisk = v != null && v <= 18 && (h == null || h <= 32);
+
+  if (weekChgPct >= 5 && highRisk) {
+    return {
+      buySignal: 'Risk buy',
+      buySignalDetail: `Week ${weekChgPct >= 0 ? '+' : ''}${weekChgPct.toFixed(1)}% with elevated VaR/haircut (NCCPL).`,
+    };
+  }
+  if (weekChgPct >= 8) {
+    return {
+      buySignal: 'Risk buy',
+      buySignalDetail: `Week +${weekChgPct.toFixed(1)}% — strong move; often higher volatility.`,
+    };
+  }
+  if (weekChgPct >= 3 && v != null && v <= 25 && (h == null || h < 38)) {
+    return {
+      buySignal: 'Good buy',
+      buySignalDetail: `Week +${weekChgPct.toFixed(1)}% with moderate NCCPL risk.`,
+    };
+  }
+  if (weekChgPct > -2.5 && weekChgPct < 5 && lowRisk) {
+    return {
+      buySignal: 'Safe buy',
+      buySignalDetail: `Week ${weekChgPct >= 0 ? '+' : ''}${weekChgPct.toFixed(1)}%, lower VaR — steadier profile.`,
+    };
+  }
+  if (weekChgPct >= 1 && weekChgPct < 5 && v != null && v <= 22) {
+    return {
+      buySignal: 'Safe buy',
+      buySignalDetail: `Week +${weekChgPct.toFixed(1)}%, contained VaR.`,
+    };
+  }
+  if (weekChgPct <= -3 || highRisk) {
+    return {
+      buySignal: 'Risk buy',
+      buySignalDetail:
+        weekChgPct <= -3
+          ? `Week ${weekChgPct.toFixed(1)}% — weaker tape; higher uncertainty.`
+          : `Elevated clearing risk (VaR/haircut) vs week ${weekChgPct >= 0 ? '+' : ''}${weekChgPct.toFixed(1)}%.`,
+    };
+  }
+  if (weekChgPct >= 2) {
+    return { buySignal: 'Good buy', buySignalDetail: `Week +${weekChgPct.toFixed(1)}%.` };
+  }
+  return {
+    buySignal: 'Safe buy',
+    buySignalDetail: `Week ${weekChgPct >= 0 ? '+' : ''}${weekChgPct.toFixed(1)}% — neutral-to-soft risk read.`,
+  };
+}
+
 // Infer Interim vs Final from Fiscal_Year_End and Payment_month
 function inferDividendType(company, paymentMonth, cyclesMap) {
   const cycle = cyclesMap.get(company);
@@ -671,7 +778,7 @@ app.get('/api/market-closing-prices', async (req, res) => {
   try {
     const fp = path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv');
     if (!fs.existsSync(fp)) {
-      return res.json({ rows: [], date: null, summary: null, riskAsOf: null });
+      return res.json({ rows: [], date: null, summary: null, riskAsOf: null, buySignalNote: null });
     }
     const rows = await readCSV(fp);
     const date = rows[0]?.date || rows[0]?.Date || null;
@@ -716,15 +823,34 @@ app.get('/api/market-closing-prices', async (req, res) => {
         haircut: risk && risk.haircut != null && risk.haircut > 0 ? Math.round(risk.haircut * 100) / 100 : null,
       };
     }).filter(x => x.symbol && x.close > 0);
-    const topGainer = parsed.filter(p => p.changePct > 0).sort((a, b) => b.changePct - a.changePct)[0];
-    const topLoser = parsed.filter(p => p.changePct < 0).sort((a, b) => a.changePct - b.changePct)[0];
+    const weekAgoMap = await buildWeekAgoPriceMap(date);
+    const withSignals = parsed.map((x) => {
+      const up = x.symbol.toUpperCase();
+      const w0 = weekAgoMap.get(up);
+      let weekChgPct = null;
+      if (w0 != null && w0 > 0 && x.close > 0) {
+        weekChgPct = Math.round(((x.close - w0) / w0) * 10000) / 100;
+      }
+      const sig = classifyBuySignal(weekChgPct, x.var, x.haircut);
+      return { ...x, weekChgPct, buySignal: sig.buySignal, buySignalDetail: sig.buySignalDetail };
+    });
+
+    const topGainer = withSignals.filter(p => p.changePct > 0).sort((a, b) => b.changePct - a.changePct)[0];
+    const topLoser = withSignals.filter(p => p.changePct < 0).sort((a, b) => a.changePct - b.changePct)[0];
     const summary = {
-      totalCompanies: parsed.length,
+      totalCompanies: withSignals.length,
       topGainer: topGainer ? { symbol: topGainer.symbol, changePct: topGainer.changePct } : null,
       topLoser: topLoser ? { symbol: topLoser.symbol, changePct: topLoser.changePct } : null,
       date,
     };
-    res.json({ rows: parsed, date, summary, riskAsOf });
+    res.json({
+      rows: withSignals,
+      date,
+      summary,
+      riskAsOf,
+      buySignalNote:
+        'Good buy / Safe buy / Risk buy are heuristic labels from ~7 calendar day change (daily_prices.csv) plus NCCPL VaR & haircut — not investment advice.',
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

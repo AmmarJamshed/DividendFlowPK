@@ -3,6 +3,8 @@ import { api } from '../api';
 
 const PAGE_SIZE = 25;
 
+const BUY_SIGNAL_RANK = { 'Good buy': 4, 'Safe buy': 3, 'Risk buy': 2, '—': 0 };
+
 function formatNum(n) {
   if (n == null || isNaN(n)) return '—';
   return Number(n).toLocaleString('en-PK', { maximumFractionDigits: 2 });
@@ -43,7 +45,7 @@ function AICommentary({ summary }) {
 }
 
 export default function MarketClosingPrices() {
-  const [data, setData] = useState({ rows: [], date: null, summary: null, riskAsOf: null });
+  const [data, setData] = useState({ rows: [], date: null, summary: null, riskAsOf: null, buySignalNote: null });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState({ key: 'changePct', dir: 'desc' });
@@ -52,7 +54,7 @@ export default function MarketClosingPrices() {
   useEffect(() => {
     api.getMarketClosingPrices()
       .then(res => setData(res.data))
-      .catch(() => setData({ rows: [], date: null, summary: null }))
+      .catch(() => setData({ rows: [], date: null, summary: null, riskAsOf: null, buySignalNote: null }))
       .finally(() => setLoading(false));
   }, []);
 
@@ -65,6 +67,19 @@ export default function MarketClosingPrices() {
     list = [...list].sort((a, b) => {
       const va = a[k];
       const vb = b[k];
+      if (k === 'buySignal') {
+        const ra = BUY_SIGNAL_RANK[va] ?? 1;
+        const rb = BUY_SIGNAL_RANK[vb] ?? 1;
+        return d * (ra - rb);
+      }
+      if (k === 'weekChgPct') {
+        const na = typeof va === 'number' && !Number.isNaN(va) ? va : null;
+        const nb = typeof vb === 'number' && !Number.isNaN(vb) ? vb : null;
+        if (na == null && nb == null) return 0;
+        if (na == null) return 1;
+        if (nb == null) return -1;
+        return d * (na - nb);
+      }
       if (k === 'var' || k === 'haircut') {
         const na = typeof va === 'number' && !Number.isNaN(va) ? va : null;
         const nb = typeof vb === 'number' && !Number.isNaN(vb) ? vb : null;
@@ -139,12 +154,26 @@ export default function MarketClosingPrices() {
                 >
                   Haircut %
                 </th>
+                <th
+                  className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600"
+                  onClick={() => toggleSort('weekChgPct')}
+                  title="Approx. change vs price ~7 calendar days ago (daily_prices.csv)."
+                >
+                  Week %
+                </th>
+                <th
+                  className="text-left px-4 py-3 font-medium cursor-pointer hover:text-teal-600 min-w-[108px]"
+                  onClick={() => toggleSort('buySignal')}
+                  title="Heuristic from week % + VaR + haircut. Not investment advice."
+                >
+                  Buy view
+                </th>
                 <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600 rounded-tr-2xl" onClick={() => toggleSort('volume')}>Shares Traded</th>
               </tr>
             </thead>
             <tbody>
               {pageRows.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No data available</td></tr>
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-500">No data available</td></tr>
               ) : (
                 pageRows.map((r, i) => (
                   <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
@@ -168,6 +197,30 @@ export default function MarketClosingPrices() {
                         <span className="px-2 py-0.5 rounded-lg bg-violet-50 text-violet-800 text-xs font-medium">{formatNum(r.haircut)}%</span>
                       ) : (
                         '—'
+                      )}
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-right text-xs font-medium tabular-nums ${(r.weekChgPct || 0) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}
+                      title={r.buySignalDetail || ''}
+                    >
+                      {typeof r.weekChgPct === 'number' ? (
+                        <>{(r.weekChgPct >= 0 ? '+' : '')}{formatNum(r.weekChgPct)}%</>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="px-4 py-3" title={r.buySignalDetail || ''}>
+                      {r.buySignal === 'Good buy' && (
+                        <span className="inline-flex px-2 py-1 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-semibold border border-emerald-200">Good buy</span>
+                      )}
+                      {r.buySignal === 'Safe buy' && (
+                        <span className="inline-flex px-2 py-1 rounded-lg bg-sky-100 text-sky-900 text-xs font-semibold border border-sky-200">Safe buy</span>
+                      )}
+                      {r.buySignal === 'Risk buy' && (
+                        <span className="inline-flex px-2 py-1 rounded-lg bg-orange-100 text-orange-900 text-xs font-semibold border border-orange-200">Risk buy</span>
+                      )}
+                      {(r.buySignal === '—' || !r.buySignal) && (
+                        <span className="text-slate-400 text-xs">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-500">{formatNum(r.volume)}</td>
@@ -196,10 +249,17 @@ export default function MarketClosingPrices() {
             </button>
           </div>
         )}
-        <p className="px-4 py-3 text-xs text-slate-500 border-t border-slate-100 bg-slate-50/80">
-          <strong className="text-slate-600">VaR</strong> and <strong className="text-slate-600">Haircut</strong> come from NCCPL market data (
-          <code className="text-[11px] bg-slate-200/80 px-1 rounded">data/risk/nccpl_risk_metrics.csv</code>
-          ), refreshed by the daily <strong>dividendflow-nccpl-scraper</strong> job after market close — same pipeline as the AI Risk Dashboard.
+        <p className="px-4 py-3 text-xs text-slate-500 border-t border-slate-100 bg-slate-50/80 space-y-1">
+          <span className="block">
+            <strong className="text-slate-600">VaR</strong> and <strong className="text-slate-600">Haircut</strong> come from NCCPL market data (
+            <code className="text-[11px] bg-slate-200/80 px-1 rounded">data/risk/nccpl_risk_metrics.csv</code>
+            ), refreshed by the daily <strong>dividendflow-nccpl-scraper</strong> after market close.
+          </span>
+          <span className="block">
+            <strong className="text-slate-600">Week %</strong> uses <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices.csv</code> (updated by <strong>dividendflow-news</strong> / pipeline).{' '}
+            <strong className="text-slate-600">Buy view</strong> combines week move + VaR + haircut — heuristic only, not investment advice.
+            {data.buySignalNote && <span className="block mt-1 text-slate-400">{data.buySignalNote}</span>}
+          </span>
         </p>
       </div>
     </div>
