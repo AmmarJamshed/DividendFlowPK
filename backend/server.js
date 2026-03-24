@@ -104,26 +104,52 @@ async function analyzeWithGroq(prompt) {
 
 // ============ API ROUTES ============
 
-// Load latest price per company from daily_prices (and other price CSVs)
+// Load latest price per company from price CSVs (Company+Price and symbol+close shapes)
 async function getLatestPrices() {
   const pricesPath = path.join(DATA_PATH, 'prices');
   const latest = new Map();
   if (!fs.existsSync(pricesPath)) return latest;
   const files = fs.readdirSync(pricesPath).filter(f => f.endsWith('.csv'));
+
+  function ingestRow(company, price, date) {
+    const c = (company || '').trim();
+    const p = typeof price === 'number' ? price : parseFloat(String(price || '').replace(/,/g, ''));
+    const d = (date || '').trim();
+    if (!c || !Number.isFinite(p) || p <= 0) return;
+    const existing = latest.get(c);
+    if (!existing || (d && (!existing.date || d > existing.date))) {
+      latest.set(c, { price: p, date: d });
+    }
+  }
+
   for (const file of files) {
     const rows = await readCSV(path.join(pricesPath, file));
-    const dateIdx = rows[0] ? Object.keys(rows[0]).find(k => /date/i.test(k)) : null;
-    const companyIdx = rows[0] ? Object.keys(rows[0]).find(k => /company/i.test(k)) : null;
-    const priceIdx = rows[0] ? Object.keys(rows[0]).find(k => /price/i.test(k)) : null;
-    if (!companyIdx || !priceIdx) continue;
-    for (const r of rows) {
-      const company = (r.Company || r.company || r[companyIdx] || '').trim();
-      const price = parseFloat(r.Price || r.price || r[priceIdx] || 0);
-      const date = r.Date || r.date || r[dateIdx] || '';
-      if (!company || price <= 0) continue;
-      const existing = latest.get(company);
-      if (!existing || (date && (!existing.date || date > existing.date))) {
-        latest.set(company, { price, date });
+    if (!rows.length) continue;
+    const keys = Object.keys(rows[0]);
+    const dateKey = keys.find((k) => /^date$/i.test(k));
+    const companyKey = keys.find((k) => /^company$/i.test(k));
+    const symbolKey = keys.find((k) => /^symbol$/i.test(k));
+    const priceKey = keys.find((k) => /^price$/i.test(k));
+    const closeKey = keys.find((k) => /^close$/i.test(k));
+
+    // daily_prices.csv, price_changes.csv: Company + Price
+    if (companyKey && priceKey) {
+      for (const r of rows) {
+        const company = (r[companyKey] || '').trim();
+        const price = parseFloat(String(r[priceKey] || '').replace(/,/g, ''));
+        const date = dateKey ? String(r[dateKey] || '').trim() : '';
+        ingestRow(company, price, date);
+      }
+      continue;
+    }
+
+    // psx_full_dataset.csv: symbol + close (was previously skipped — no "Company"/"Price" columns)
+    if (symbolKey && closeKey) {
+      for (const r of rows) {
+        const company = (r[symbolKey] || '').trim();
+        const price = parseFloat(String(r[closeKey] || '').replace(/,/g, ''));
+        const date = dateKey ? String(r[dateKey] || '').trim() : '';
+        ingestRow(company, price, date);
       }
     }
   }
