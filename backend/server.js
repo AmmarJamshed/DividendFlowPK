@@ -102,6 +102,74 @@ async function analyzeWithGroq(prompt) {
   }
 }
 
+/** Short digest of data file freshness (cron / scraper outputs) for AI guide context */
+function buildSiteDataDigest() {
+  const lines = [];
+  const watch = [
+    ['dividend_calendar', path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv')],
+    ['daily_prices', path.join(DATA_PATH, 'prices', 'daily_prices.csv')],
+    ['psx_full_dataset', path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv')],
+    ['daily_news', path.join(DATA_PATH, 'news', 'daily_news.csv')],
+    ['ai_commentary', path.join(DATA_PATH, 'news', 'ai_commentary.csv')],
+    ['nccpl_risk_metrics', path.join(DATA_PATH, 'risk', 'nccpl_risk_metrics.csv')],
+    ['reporting_cycles', path.join(DATA_PATH, 'financials', 'psx_quarter_cycles.csv')],
+  ];
+  for (const [label, fp] of watch) {
+    if (fs.existsSync(fp)) {
+      lines.push(`${label}: last modified ${fs.statSync(fp).mtime.toISOString()}`);
+    } else {
+      lines.push(`${label}: (file not present)`);
+    }
+  }
+  return lines.join('\n');
+}
+
+const guideRateByIp = new Map();
+const GUIDE_MIN_INTERVAL_MS = 2200;
+
+async function groqAmmarGuide(systemPrompt, userContent) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey || apiKey === 'your_api_key_here') {
+    return {
+      ok: false,
+      message:
+        'I need a Groq API key on the server (GROQ_API_KEY) before I can explain the page in real time. Your toggle is on — once the backend is configured, try again.',
+    };
+  }
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent },
+        ],
+        max_tokens: 240,
+        temperature: 0.35,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 20000,
+      }
+    );
+    const text = (response.data.choices[0]?.message?.content || '').trim();
+    return {
+      ok: true,
+      message: text || "I'm Ammar — pause on any widget and I'll walk you through it.",
+    };
+  } catch (err) {
+    console.error('Groq Ammar guide error:', err.response?.data || err.message);
+    return {
+      ok: false,
+      message: 'I could not reach the AI service just now. Please try again in a few seconds.',
+    };
+  }
+}
+
 // ============ API ROUTES ============
 
 // Load latest price per company from price CSVs (Company+Price and symbol+close shapes)
@@ -853,6 +921,53 @@ app.get('/api/market-closing-prices', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/ai-site-guide — Groq “Ammar” contextual hints (cursor pause); uses live data digest
+app.post('/api/ai-site-guide', async (req, res) => {
+  try {
+    const rawIp = req.headers['x-forwarded-for'];
+    const ip = typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : rawIp?.[0] || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const prev = guideRateByIp.get(ip) || 0;
+    if (now - prev < GUIDE_MIN_INTERVAL_MS) {
+      return res.status(429).json({
+        ok: false,
+        message: 'Hang on a beat — pause again in a second so I can keep up.',
+      });
+    }
+    guideRateByIp.set(ip, now);
+
+    const routePath = String(req.body?.path || '').slice(0, 256);
+    const pageTitle = String(req.body?.pageTitle || '').slice(0, 220);
+    const elementContext = String(req.body?.elementContext || '').slice(0, 2000);
+
+    const digest = buildSiteDataDigest();
+    const systemPrompt = `You are Ammar, the friendly on-site guide for DividendFlow PK — AI dividend intelligence for the Pakistan Stock Exchange (PSX). Your tagline is "Ammar — your guide."
+
+Behavior:
+- Reply in 2–4 short sentences, warm and clear, first person as Ammar.
+- Use the "Site data freshness" lines below when the user asks about how current data is, or when it helps explain scrapers/cron updates.
+- Describe what the user is likely looking at from the browser context. If context is thin, give a useful tip for their current route.
+- Explain metrics (dividend yield, VaR, haircut, price change, calendar entries) in plain language.
+- Do not give personalized buy/sell recommendations or promise returns. Remind that nothing here is investment advice.
+
+Current route: ${routePath}
+Document title: ${pageTitle}
+
+Site data freshness (automated jobs write these files):
+${digest}`;
+
+    const userContent = `The user paused the cursor here. Say what this part of DividendFlow PK is and what it means.
+
+Browser-reported context (may be truncated):
+${elementContext}`;
+
+    const out = await groqAmmarGuide(systemPrompt, userContent);
+    res.json(out);
+  } catch (err) {
+    res.status(500).json({ ok: false, message: err.message || 'Guide error' });
   }
 });
 

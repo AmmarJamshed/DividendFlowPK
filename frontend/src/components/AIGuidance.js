@@ -88,12 +88,15 @@ export default function AIGuidance() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-[9998] flex flex-col items-end gap-2 pointer-events-none [&>*]:pointer-events-auto">
+    <div
+      data-ammar-ignore
+      className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-[9998] flex flex-col items-end gap-2 pointer-events-none [&>*]:pointer-events-auto"
+    >
       {open && (
         <div className="w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200 shadow-xl shadow-slate-300/30 overflow-hidden animate-fade-in">
           <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-teal-50">
             <RobotIcon className="w-7 h-7 shrink-0" />
-            <span className="font-semibold text-teal-700">AI Assistant</span>
+            <span className="font-semibold text-teal-700">Ammar — quick tips</span>
           </div>
           <div className="p-4 max-h-48 overflow-y-auto">
             <p className="text-sm text-slate-600">{message || tips[0]}</p>
@@ -119,7 +122,7 @@ export default function AIGuidance() {
       <button
         onClick={() => setOpen(o => !o)}
         className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 shadow-md shadow-teal-400/30 hover:shadow-lg hover:shadow-teal-400/35 transition-shadow flex items-center justify-center border border-teal-400/20"
-        aria-label="Toggle AI Assistant"
+        aria-label="Toggle Ammar quick tips"
       >
         <RobotIcon className="w-[22px] h-[22px] sm:w-6 sm:h-6" />
       </button>

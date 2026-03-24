@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
+import { useAIAssistance } from '../context/AIAssistanceContext';
 
 /**
  * Custom Investment Robot Cursor - friendly mascot with ₨ PKR on chest
  * Replaces default cursor, follows mouse, animates on hover/click
  */
 export default function RobotCursor() {
+  const { enabled: aiAssistanceOn } = useAIAssistance();
   const [pos, setPos] = useState({ x: -100, y: -100 });
   const [hover, setHover] = useState(false);
   const [click, setClick] = useState(false);
@@ -12,6 +14,8 @@ export default function RobotCursor() {
   const targetRef = useRef({ x: -100, y: -100 });
 
   useEffect(() => {
+    if (aiAssistanceOn) return undefined;
+
     const handleMove = (e) => {
       targetRef.current = { x: e.clientX, y: e.clientY };
       if (!rafRef.current) {
@@ -49,7 +53,11 @@ export default function RobotCursor() {
       document.removeEventListener('mouseup', handleUp);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [aiAssistanceOn]);
+
+  if (aiAssistanceOn) {
+    return null;
+  }
 
   return (
     <>

@@ -14,4 +14,5 @@ export const api = {
   getDataStatus: () => axios.get(`${API_BASE}/data-status`),
   getDailyNews: () => axios.get(`${API_BASE}/daily-news`),
   getMarketClosingPrices: () => axios.get(`${API_BASE}/market-closing-prices`),
+  postSiteGuide: (body, config) => axios.post(`${API_BASE}/ai-site-guide`, body, config),
 };

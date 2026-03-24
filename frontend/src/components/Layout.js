@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api';
 import RobotCursor from './RobotCursor';
 import AIGuidance from './AIGuidance';
+import AmmarCursorGuide from './AmmarCursorGuide';
+import { useAIAssistance } from '../context/AIAssistanceContext';
 
 const navItems = [
   { path: '/', label: 'Dashboard' },
@@ -22,6 +24,7 @@ const Disclaimer = () => (
 
 export default function Layout({ children }) {
   const location = useLocation();
+  const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
   const [dataUpdated, setDataUpdated] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -89,7 +92,7 @@ export default function Layout({ children }) {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <header className="h-14 lg:h-16 border-b border-slate-200/80 flex items-center justify-between gap-3 px-4 lg:px-8 bg-[#e8e6e2]/90 backdrop-blur-sm shrink-0">
+        <header className="min-h-14 lg:min-h-16 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2 py-2 px-4 lg:px-8 bg-[#e8e6e2]/90 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -102,11 +105,27 @@ export default function Layout({ children }) {
               {navItems.find((n) => n.path === location.pathname)?.label || 'Dashboard'}
             </h2>
           </div>
-          {dataUpdated && (
-            <span className="hidden sm:inline text-xs lg:text-sm text-white font-semibold px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 shadow-md shrink-0">
-              {dataUpdated}
-            </span>
-          )}
+          <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+            <button
+              type="button"
+              onClick={() => setAiAssistance((v) => !v)}
+              aria-pressed={aiAssistanceOn}
+              title={aiAssistanceOn ? 'Disable AI assistance (Ammar cursor guide)' : 'Enable AI assistance — Ammar explains what you hover'}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap ${
+                aiAssistanceOn
+                  ? 'bg-gradient-to-r from-teal-600 to-cyan-600 border-teal-500 text-white shadow-md shadow-teal-500/25'
+                  : 'bg-white/90 border-slate-200 text-slate-600 hover:border-teal-300 hover:text-teal-800'
+              }`}
+            >
+              <span className="hidden sm:inline">{aiAssistanceOn ? 'AI assistance on' : 'Enable AI assistance'}</span>
+              <span className="sm:hidden">{aiAssistanceOn ? 'AI on' : 'AI off'}</span>
+            </button>
+            {dataUpdated && (
+              <span className="hidden sm:inline text-xs lg:text-sm text-white font-semibold px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 shadow-md shrink-0 max-w-[200px] lg:max-w-none truncate">
+                {dataUpdated}
+              </span>
+            )}
+          </div>
         </header>
         <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-transparent">
           <div className="animate-fade-in max-w-7xl mx-auto">
@@ -115,6 +134,7 @@ export default function Layout({ children }) {
         </div>
       </main>
       <RobotCursor />
+      <AmmarCursorGuide />
       <AIGuidance />
     </div>
   );
