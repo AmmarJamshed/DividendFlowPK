@@ -13,11 +13,14 @@ export function AIAssistanceProvider({ children }) {
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, enabled ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
+    const id = window.requestAnimationFrame(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, enabled ? '1' : '0');
+      } catch {
+        /* ignore */
+      }
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [enabled]);
 
   return (

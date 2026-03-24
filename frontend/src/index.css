@@ -39,6 +39,22 @@ body::before {
   z-index: 0;
 }
 
+/* Robot mascot: hide OS cursor without `*` (avoids huge style recalc when toggling AI assistance) */
+html.df-robot-cursor,
+html.df-robot-cursor body {
+  cursor: none !important;
+}
+html.df-robot-cursor a[href],
+html.df-robot-cursor button,
+html.df-robot-cursor input,
+html.df-robot-cursor textarea,
+html.df-robot-cursor select,
+html.df-robot-cursor [role='button'],
+html.df-robot-cursor summary,
+html.df-robot-cursor label[for] {
+  cursor: none !important;
+}
+
 @layer components {
   .card {
     @apply rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-sm shadow-lg shadow-slate-300/20 transition-all duration-300 hover:shadow-xl hover:shadow-slate-300/30;

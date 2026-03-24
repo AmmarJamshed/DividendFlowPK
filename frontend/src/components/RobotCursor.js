@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useLayoutEffect, useState, useRef } from 'react';
 import { useAIAssistance } from '../context/AIAssistanceContext';
 
 /**
@@ -13,8 +13,13 @@ export default function RobotCursor() {
   const rafRef = useRef(null);
   const targetRef = useRef({ x: -100, y: -100 });
 
-  useEffect(() => {
-    if (aiAssistanceOn) return undefined;
+  useLayoutEffect(() => {
+    if (aiAssistanceOn) {
+      document.documentElement.classList.remove('df-robot-cursor');
+      return undefined;
+    }
+
+    document.documentElement.classList.add('df-robot-cursor');
 
     const handleMove = (e) => {
       targetRef.current = { x: e.clientX, y: e.clientY };
@@ -47,11 +52,13 @@ export default function RobotCursor() {
     document.addEventListener('mouseup', handleUp);
 
     return () => {
+      document.documentElement.classList.remove('df-robot-cursor');
       window.removeEventListener('mousemove', handleMove);
       document.removeEventListener('mouseover', handleOver);
       document.removeEventListener('mousedown', handleDown);
       document.removeEventListener('mouseup', handleUp);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     };
   }, [aiAssistanceOn]);
 
@@ -61,11 +68,6 @@ export default function RobotCursor() {
 
   return (
     <>
-      <style>{`
-        * { cursor: none !important; }
-        html, body { cursor: none !important; }
-        a, button, input, select, textarea, [role="button"] { cursor: none !important; }
-      `}</style>
       <div
         className="fixed pointer-events-none z-[9999] transition-transform duration-75"
         style={{

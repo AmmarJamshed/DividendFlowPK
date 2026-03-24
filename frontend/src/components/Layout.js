@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api';
 import RobotCursor from './RobotCursor';
@@ -108,7 +108,11 @@ export default function Layout({ children }) {
           <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
             <button
               type="button"
-              onClick={() => setAiAssistance((v) => !v)}
+              onClick={() => {
+                startTransition(() => {
+                  setAiAssistance((v) => !v);
+                });
+              }}
               aria-pressed={aiAssistanceOn}
               title={aiAssistanceOn ? 'Disable AI assistance (Ammar cursor guide)' : 'Enable AI assistance — Ammar explains what you hover'}
               className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap ${
