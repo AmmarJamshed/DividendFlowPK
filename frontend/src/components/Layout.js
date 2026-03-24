@@ -1,4 +1,4 @@
-import { useState, useEffect, startTransition } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api';
 import RobotCursor from './RobotCursor';
@@ -16,6 +16,25 @@ const navItems = [
   { path: '/reporting-cycles', label: 'PSX Reporting Cycles' },
 ];
 
+function AiToggleSpinner({ className }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path
+        className="opacity-90"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
+    </svg>
+  );
+}
+
 const Disclaimer = () => (
   <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-xs text-slate-600 bg-[#f0eeea]/80">
     This platform provides analytical insights based on historical and probabilistic models. It does not constitute investment advice. Users should conduct further research before making financial decisions.
@@ -25,8 +44,13 @@ const Disclaimer = () => (
 export default function Layout({ children }) {
   const location = useLocation();
   const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
+  const [isAiTogglePending, startAiToggleTransition] = useTransition();
+  const [aiToggleMinSpin, setAiToggleMinSpin] = useState(false);
+  const aiSpinTimerRef = useRef(null);
   const [dataUpdated, setDataUpdated] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const aiToggleLoading = isAiTogglePending || aiToggleMinSpin;
 
   useEffect(() => {
     api.getDataStatus()
@@ -37,6 +61,12 @@ export default function Layout({ children }) {
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (aiSpinTimerRef.current) window.clearTimeout(aiSpinTimerRef.current);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex text-slate-700 relative">
@@ -109,20 +139,45 @@ export default function Layout({ children }) {
             <button
               type="button"
               onClick={() => {
-                startTransition(() => {
+                if (aiToggleLoading) return;
+                if (aiSpinTimerRef.current) window.clearTimeout(aiSpinTimerRef.current);
+                setAiToggleMinSpin(true);
+                aiSpinTimerRef.current = window.setTimeout(() => {
+                  setAiToggleMinSpin(false);
+                  aiSpinTimerRef.current = null;
+                }, 320);
+                startAiToggleTransition(() => {
                   setAiAssistance((v) => !v);
                 });
               }}
               aria-pressed={aiAssistanceOn}
-              title={aiAssistanceOn ? 'Disable AI assistance (Ammar cursor guide)' : 'Enable AI assistance — Ammar explains what you hover'}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap ${
+              aria-busy={aiToggleLoading}
+              disabled={aiToggleLoading}
+              title={
+                aiToggleLoading
+                  ? 'Applying…'
+                  : aiAssistanceOn
+                    ? 'Disable AI assistance (Ammar cursor guide)'
+                    : 'Enable AI assistance — Ammar explains what you hover'
+              }
+              className={`inline-flex items-center justify-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap min-w-[7.5rem] sm:min-w-[10.5rem] ${
                 aiAssistanceOn
                   ? 'bg-gradient-to-r from-teal-600 to-cyan-600 border-teal-500 text-white shadow-md shadow-teal-500/25'
                   : 'bg-white/90 border-slate-200 text-slate-600 hover:border-teal-300 hover:text-teal-800'
-              }`}
+              } ${aiToggleLoading ? 'opacity-90 cursor-wait' : ''}`}
             >
-              <span className="hidden sm:inline">{aiAssistanceOn ? 'AI assistance on' : 'Enable AI assistance'}</span>
-              <span className="sm:hidden">{aiAssistanceOn ? 'AI on' : 'AI off'}</span>
+              {aiToggleLoading ? (
+                <>
+                  <AiToggleSpinner className="w-3.5 h-3.5 shrink-0 animate-spin text-current" />
+                  <span className="hidden sm:inline">Applying…</span>
+                  <span className="sm:hidden">…</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">{aiAssistanceOn ? 'AI assistance on' : 'Enable AI assistance'}</span>
+                  <span className="sm:hidden">{aiAssistanceOn ? 'AI on' : 'AI off'}</span>
+                </>
+              )}
             </button>
             {dataUpdated && (
               <span className="hidden sm:inline text-xs lg:text-sm text-white font-semibold px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 shadow-md shrink-0 max-w-[200px] lg:max-w-none truncate">
