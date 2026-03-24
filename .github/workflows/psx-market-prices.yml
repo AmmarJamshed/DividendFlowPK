@@ -1,12 +1,12 @@
 # Market Closing Prices scraper - runs psx.py daily after PSX market close
-# Schedule: 12:00 UTC (5pm PKT) - same as dividendflow-news
+# Schedule: 12:00 UTC (5pm PKT) Mon–Fri only — PSX closed weekends
 # Outputs: psx_full_dataset.csv, daily_prices.csv, price_changes.csv → pushed to GitHub
 
 name: PSX Market Closing Prices
 
 on:
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "0 12 * * 1-5"
   workflow_dispatch:
 
 jobs:

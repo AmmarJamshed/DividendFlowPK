@@ -3,10 +3,11 @@
 
 services:
   # Cron: Scrape PSX payout data, update dividend CSVs, push to GitHub
+  # Weekdays only (Mon–Fri UTC): PSX closed Sat/Sun — saves cron runs with no new market data
   - type: cron
     runtime: node
     name: dividendflow-scraper
-    schedule: "0 11 * * *"
+    schedule: "0 11 * * 1-5"
     rootDir: .
     buildCommand: cd scripts && npm install
     startCommand: cd scripts && node run-all.js
@@ -24,7 +25,7 @@ services:
   - type: cron
     runtime: node
     name: dividendflow-news
-    schedule: "0 12 * * *"
+    schedule: "0 12 * * 1-5"
     rootDir: .
     buildCommand: cd scripts && npm install
     startCommand: cd scripts && node run-news.js
@@ -42,7 +43,7 @@ services:
   - type: cron
     runtime: python
     name: dividendflow-nccpl-scraper
-    schedule: "30 12 * * *"
+    schedule: "30 12 * * 1-5"
     rootDir: .
     buildCommand: pip install -r requirements-scraper.txt && playwright install chromium
     startCommand: python scripts/scrape-nccpl-browserless.py
@@ -54,11 +55,11 @@ services:
       - key: GITHUB_REPO
         value: AmmarJamshed/DividendFlowPK
 
-  # Cron: Health check - ping backend every 6 hours
+  # Cron: Health check - ping backend 4×/day on weekdays only (00,06,12,18 UTC)
   - type: cron
     runtime: node
     name: dividendflow-health-check
-    schedule: "0 */6 * * *"
+    schedule: "0 0,6,12,18 * * 1-5"
     rootDir: .
     buildCommand: cd scripts && npm install
     startCommand: cd scripts && node health-check.js

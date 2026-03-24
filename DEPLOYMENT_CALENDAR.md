@@ -28,11 +28,11 @@ python scripts/export-deployment-calendar.py
 | 2 | **dividendflow-frontend** | **Continuous** | Runs 24/7 after deploy | Render Static | Serves built React app |
 | 3 | **Backend build** | **On demand** | Each time backend service deploys | Render | `cd backend && npm install` → `node server.js` |
 | 4 | **Frontend build** | **On demand** | Each time frontend service deploys | Render | `npm install && npm run build` → publish `build/` |
-| 5 | **dividendflow-scraper** | **Scheduled** | **Daily 11:00 UTC** → **16:00 PKT** | Render Cron | `run-all.js` — dividend merge, CSVs, optional GitHub push + email |
-| 6 | **dividendflow-news** | **Scheduled** | **Daily 12:00 UTC** → **17:00 PKT** | Render Cron | `run-news.js` — news, prices, Groq, GitHub push |
-| 7 | **dividendflow-nccpl-scraper** | **Scheduled** | **Daily 12:30 UTC** → **17:30 PKT** | Render Cron | NCCPL risk via Browserless → CSV / GitHub |
-| 8 | **dividendflow-health-check** | **Scheduled** | **Every 6 hours**: 00:00, 06:00, 12:00, 18:00 UTC → 05:00, 11:00, 17:00, 23:00 PKT | Render Cron | `health-check.js` pings `BACKEND_URL` |
-| 9 | **PSX Market Closing Prices** (GitHub Actions) | **Scheduled** | **Daily 12:00 UTC** → **17:00 PKT** | GitHub Actions | `psx.py` — full prices + **all pages payouts** → CSVs → commit/push |
+| 5 | **dividendflow-scraper** | **Scheduled** | **Mon–Fri 11:00 UTC** → **16:00 PKT** | Render Cron | `run-all.js` — dividend merge, CSVs, optional GitHub push + email |
+| 6 | **dividendflow-news** | **Scheduled** | **Mon–Fri 12:00 UTC** → **17:00 PKT** | Render Cron | `run-news.js` — news, prices, Groq, GitHub push |
+| 7 | **dividendflow-nccpl-scraper** | **Scheduled** | **Mon–Fri 12:30 UTC** → **17:30 PKT** | Render Cron | NCCPL risk via Browserless → CSV / GitHub |
+| 8 | **dividendflow-health-check** | **Scheduled** | **Mon–Fri** at 00:00, 06:00, 12:00, 18:00 UTC → 05:00, 11:00, 17:00, 23:00 PKT | Render Cron | `health-check.js` pings `BACKEND_URL` |
+| 9 | **PSX Market Closing Prices** (GitHub Actions) | **Scheduled** | **Mon–Fri 12:00 UTC** → **17:00 PKT** | GitHub Actions | `psx.py` — full prices + **all pages payouts** → CSVs → commit/push |
 | 10 | **PSX Market Closing Prices** | **On demand** | Any time (manual button) | GitHub Actions | Same as row 9 — *Actions → Run workflow* |
 | 11 | **deploy-render.ps1** | **On demand** | Any time you run it | Local + Render API | Triggers deploy for all Blueprint services |
 | 12 | **Git push → Render** | **On demand** | When you push to connected branch (e.g. `main`) | GitHub + Render | Auto-build & deploy if enabled in Render |
@@ -54,11 +54,11 @@ python scripts/export-deployment-calendar.py
 
 | Service / workflow | Cron (UTC) | Human readable |
 |--------------------|------------|----------------|
-| `dividendflow-scraper` | `0 11 * * *` | Daily 11:00 |
-| `dividendflow-news` | `0 12 * * *` | Daily 12:00 |
-| `dividendflow-nccpl-scraper` | `30 12 * * *` | Daily 12:30 |
-| `dividendflow-health-check` | `0 */6 * * *` | Every 6 hours on the hour |
-| GitHub `PSX Market Closing Prices` | `0 12 * * *` | Daily 12:00 |
+| `dividendflow-scraper` | `0 11 * * 1-5` | Weekdays 11:00 UTC |
+| `dividendflow-news` | `0 12 * * 1-5` | Weekdays 12:00 |
+| `dividendflow-nccpl-scraper` | `30 12 * * 1-5` | Weekdays 12:30 |
+| `dividendflow-health-check` | `0 0,6,12,18 * * 1-5` | Weekdays 4×/day at 00,06,12,18 UTC |
+| GitHub `PSX Market Closing Prices` | `0 12 * * 1-5` | Weekdays 12:00 |
 
 ---
 
@@ -70,6 +70,10 @@ python scripts/export-deployment-calendar.py
 4. **05:00 / 11:00 / 17:00 / 23:00** — `dividendflow-health-check`
 
 *Render cold starts can add a few minutes.*
+
+### Why weekdays only (`1-5` in cron)
+
+PSX does not trade Saturday–Sunday. Running scrapers on weekends mostly repeats stale data and still bills cron runtime (and cold starts). Schedules use **`1-5`** = Monday–Friday (standard cron, UTC). **Health checks** are also weekday-only so weekend pings are skipped.
 
 ---
 

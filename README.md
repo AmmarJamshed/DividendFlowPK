@@ -71,7 +71,7 @@ Data is updated periodically. For latest figures, visit PSX directly.
 
 ## Daily News Scraper
 
-A cron job runs daily (7am PKT) to:
+A Render cron runs **weekdays** after market context (~17:00 PKT / 12:00 UTC) to:
 
 1. **Scrape news** from Dawn Business RSS (and optionally GNews API if `GNEWS_API_KEY` is set)
 2. **Filter** by PSX companies in the dividend calendar
