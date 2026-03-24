@@ -666,12 +666,12 @@ app.get('/api/daily-news', async (req, res) => {
   }
 });
 
-// GET /api/market-closing-prices - Full PSX dataset from psx_full_dataset.csv
+// GET /api/market-closing-prices - Full PSX dataset from psx_full_dataset.csv + NCCPL VaR/haircut merge
 app.get('/api/market-closing-prices', async (req, res) => {
   try {
     const fp = path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv');
     if (!fs.existsSync(fp)) {
-      return res.json({ rows: [], date: null, summary: null });
+      return res.json({ rows: [], date: null, summary: null, riskAsOf: null });
     }
     const rows = await readCSV(fp);
     const date = rows[0]?.date || rows[0]?.Date || null;
@@ -680,17 +680,42 @@ app.get('/api/market-closing-prices', async (req, res) => {
       const v = String(s).replace(/,/g, '').replace('%', '').trim();
       return parseFloat(v) || 0;
     };
-    const parsed = rows.map(r => ({
-      symbol: r.symbol || r.Symbol || '',
-      company: r.symbol || r.Symbol || '',
-      close: parseNum(r.close || r.Close),
-      change: parseNum(r.change || r.Change),
-      changePct: parseNum(r.change_pct || r.ChangePct || r['change_pct']),
-      volume: parseInt((r.volume || r.Volume || '0').toString().replace(/,/g, ''), 10) || 0,
-      open: parseNum(r.open || r.Open),
-      high: parseNum(r.high || r.High),
-      low: parseNum(r.low || r.Low),
-    })).filter(x => x.symbol && x.close > 0);
+
+    const riskFile = path.join(DATA_PATH, 'risk', 'nccpl_risk_metrics.csv');
+    const riskBySymbol = new Map();
+    let riskAsOf = null;
+    if (fs.existsSync(riskFile)) {
+      const riskRows = await readCSV(riskFile);
+      for (const r of riskRows) {
+        const sym = (r.symbol || '').toUpperCase().trim();
+        if (!sym) continue;
+        const lu = (r.last_updated || '').trim();
+        if (lu && (!riskAsOf || lu > riskAsOf)) riskAsOf = lu;
+        riskBySymbol.set(sym, {
+          var: parseFloat(r.var_value || 0) || null,
+          haircut: parseFloat(r.haircut || 0) || null,
+        });
+      }
+    }
+
+    const parsed = rows.map(r => {
+      const symbol = (r.symbol || r.Symbol || '').trim();
+      const up = symbol.toUpperCase();
+      const risk = riskBySymbol.get(up);
+      return {
+        symbol,
+        company: symbol,
+        close: parseNum(r.close || r.Close),
+        change: parseNum(r.change || r.Change),
+        changePct: parseNum(r.change_pct || r.ChangePct || r['change_pct']),
+        volume: parseInt((r.volume || r.Volume || '0').toString().replace(/,/g, ''), 10) || 0,
+        open: parseNum(r.open || r.Open),
+        high: parseNum(r.high || r.High),
+        low: parseNum(r.low || r.Low),
+        var: risk && risk.var != null && risk.var > 0 ? Math.round(risk.var * 100) / 100 : null,
+        haircut: risk && risk.haircut != null && risk.haircut > 0 ? Math.round(risk.haircut * 100) / 100 : null,
+      };
+    }).filter(x => x.symbol && x.close > 0);
     const topGainer = parsed.filter(p => p.changePct > 0).sort((a, b) => b.changePct - a.changePct)[0];
     const topLoser = parsed.filter(p => p.changePct < 0).sort((a, b) => a.changePct - b.changePct)[0];
     const summary = {
@@ -699,7 +724,7 @@ app.get('/api/market-closing-prices', async (req, res) => {
       topLoser: topLoser ? { symbol: topLoser.symbol, changePct: topLoser.changePct } : null,
       date,
     };
-    res.json({ rows: parsed, date, summary });
+    res.json({ rows: parsed, date, summary, riskAsOf });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

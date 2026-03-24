@@ -43,7 +43,7 @@ function AICommentary({ summary }) {
 }
 
 export default function MarketClosingPrices() {
-  const [data, setData] = useState({ rows: [], date: null, summary: null });
+  const [data, setData] = useState({ rows: [], date: null, summary: null, riskAsOf: null });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState({ key: 'changePct', dir: 'desc' });
@@ -65,6 +65,14 @@ export default function MarketClosingPrices() {
     list = [...list].sort((a, b) => {
       const va = a[k];
       const vb = b[k];
+      if (k === 'var' || k === 'haircut') {
+        const na = typeof va === 'number' && !Number.isNaN(va) ? va : null;
+        const nb = typeof vb === 'number' && !Number.isNaN(vb) ? vb : null;
+        if (na == null && nb == null) return 0;
+        if (na == null) return 1;
+        if (nb == null) return -1;
+        return d * (na - nb);
+      }
       if (typeof va === 'number' && typeof vb === 'number') return d * (va - vb);
       return d * String(va || '').localeCompare(String(vb || ''));
     });
@@ -99,9 +107,14 @@ export default function MarketClosingPrices() {
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300 w-full sm:w-64"
           />
-          <span className="text-sm text-slate-500 self-center">
+          <span className="text-sm text-slate-500 self-center text-right sm:text-left">
             {filtered.length} stocks
-            {data.date && ` • ${data.date}`}
+            {data.date && ` • Close ${data.date}`}
+            {data.riskAsOf && (
+              <span className="block sm:inline sm:ml-1 text-xs text-slate-400">
+                {' '}• NCCPL VaR/Haircut as of {data.riskAsOf}
+              </span>
+            )}
           </span>
         </div>
         <div className="overflow-x-auto">
@@ -112,12 +125,26 @@ export default function MarketClosingPrices() {
                 <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('close')}>Close</th>
                 <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('change')}>Change</th>
                 <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('changePct')}>Daily %</th>
+                <th
+                  className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600"
+                  onClick={() => toggleSort('var')}
+                  title="NCCPL-style downside risk (VaR %). Updated with daily risk scrape."
+                >
+                  VaR %
+                </th>
+                <th
+                  className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600"
+                  onClick={() => toggleSort('haircut')}
+                  title="NCCPL margin haircut % for the scrip. Updated with daily risk scrape."
+                >
+                  Haircut %
+                </th>
                 <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600 rounded-tr-2xl" onClick={() => toggleSort('volume')}>Shares Traded</th>
               </tr>
             </thead>
             <tbody>
               {pageRows.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">No data available</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No data available</td></tr>
               ) : (
                 pageRows.map((r, i) => (
                   <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
@@ -128,6 +155,20 @@ export default function MarketClosingPrices() {
                     </td>
                     <td className={`px-4 py-3 text-right font-medium ${(r.changePct || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                       {(r.changePct || 0) >= 0 ? '+' : ''}{formatNum(r.changePct)}%
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-600 tabular-nums" title="Clearing-house style VaR (NCCPL)">
+                      {typeof r.var === 'number' ? (
+                        <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 text-xs font-medium">{formatNum(r.var)}%</span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right text-slate-600 tabular-nums" title="Margin haircut (NCCPL)">
+                      {typeof r.haircut === 'number' ? (
+                        <span className="px-2 py-0.5 rounded-lg bg-violet-50 text-violet-800 text-xs font-medium">{formatNum(r.haircut)}%</span>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right text-slate-500">{formatNum(r.volume)}</td>
                   </tr>
@@ -155,6 +196,11 @@ export default function MarketClosingPrices() {
             </button>
           </div>
         )}
+        <p className="px-4 py-3 text-xs text-slate-500 border-t border-slate-100 bg-slate-50/80">
+          <strong className="text-slate-600">VaR</strong> and <strong className="text-slate-600">Haircut</strong> come from NCCPL market data (
+          <code className="text-[11px] bg-slate-200/80 px-1 rounded">data/risk/nccpl_risk_metrics.csv</code>
+          ), refreshed by the daily <strong>dividendflow-nccpl-scraper</strong> job after market close — same pipeline as the AI Risk Dashboard.
+        </p>
       </div>
     </div>
   );
