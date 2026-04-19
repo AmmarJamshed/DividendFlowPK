@@ -2,10 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { api } from '../api';
 
 const SUGGESTIONS = [
-  'Which stocks went up the most in the last scrape?',
-  'Which stocks look sad or down in the data?',
-  'What does the news hint could go better later?',
-  'Any stocks the news says might face trouble?',
+  'Which stocks led gains in the latest scrape?',
+  'Which names declined most in the saved data?',
+  'Summarize constructive signals from the news file.',
+  'Any names the commentary flags as stressed or risky?',
 ];
 
 function Spinner() {
@@ -18,14 +18,22 @@ export default function DashboardMarketChat() {
     {
       role: 'assistant',
       text:
-        "Hi! I'm Market Buddy. Ask me about **which PSX stocks moved up or down** in our latest saved data, or what the **news lines** might mean — I only read what DividendFlow already scraped, so I'm like a smart parrot, not a crystal ball.",
+        "I'm **Market Buddy**. Ask about **PSX movers and headlines** in DividendFlow's latest saved scrape — I only summarize what's in those files, not live tape or bespoke advice.",
     },
   ]);
   const [loading, setLoading] = useState(false);
-  const bottomRef = useRef(null);
+  /** Scroll only inside the chat panel — never scrollIntoView (that pulls the whole page). */
+  const scrollRef = useRef(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = scrollRef.current;
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      });
+    });
+    return () => cancelAnimationFrame(id);
   }, [messages, loading]);
 
   const send = async (text) => {
@@ -60,19 +68,20 @@ export default function DashboardMarketChat() {
           <span className="text-2xl" aria-hidden>
             🌟
           </span>
-          <h2 className="text-lg sm:text-xl font-extrabold tracking-tight">Market Buddy — ask in plain words</h2>
+          <h2 className="text-lg sm:text-xl font-extrabold tracking-tight">Market Buddy — Q&amp;A on the latest scrape</h2>
         </div>
         <p className="text-sm text-white/95 leading-relaxed max-w-3xl">
-          Stocks are pieces of companies. DividendFlow saves <strong>yesterday-style numbers and news</strong> after each run.
-          Ask things like &quot;who won today?&quot; or &quot;who fell?&quot; — I&apos;ll explain using <strong>only that saved info</strong>.
+          Built for <strong>analysts, advisors, and serious retail users</strong> as well as newcomers. Replies use{' '}
+          <strong>the same batch data</strong> DividendFlow ingests after each run — useful for a quick read, not a substitute for your own
+          models or broker tools.
         </p>
       </div>
 
       <div className="px-4 sm:px-5 py-3 bg-amber-50/90 border-b border-amber-200">
         <p className="text-xs sm:text-sm text-amber-950 leading-relaxed">
-          <strong className="font-bold">Important:</strong> answers are <strong>AI guesses</strong> built from the files we have — they are{' '}
-          <strong>not 100% right</strong>, not a promise about the future, and <strong>not investment advice</strong>. Grown-ups should
-          double-check everything before real money. Learning first, decisions later.
+          <strong className="font-bold">Important:</strong> output is <strong>AI-generated</strong> from archived CSVs —{' '}
+          <strong>not verified for completeness</strong>, <strong>not a forecast</strong>, and <strong>not investment, legal, or tax advice</strong>.
+          Verify against primary sources and your compliance process before acting.
         </p>
       </div>
 
@@ -92,7 +101,10 @@ export default function DashboardMarketChat() {
           ))}
         </div>
 
-        <div className="rounded-2xl bg-slate-50 border border-slate-200 max-h-[min(22rem,50vh)] overflow-y-auto p-3 space-y-3">
+        <div
+          ref={scrollRef}
+          className="rounded-2xl bg-slate-50 border border-slate-200 max-h-[min(22rem,50vh)] overflow-y-auto overflow-x-hidden p-3 space-y-3 overscroll-contain"
+        >
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -110,10 +122,9 @@ export default function DashboardMarketChat() {
           {loading && (
             <div className="flex items-center gap-2 text-sm text-slate-600 px-2 py-2">
               <Spinner />
-              <span>Thinking with your latest scrape…</span>
+              <span>Reading latest scrape…</span>
             </div>
           )}
-          <div ref={bottomRef} />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2">
@@ -122,7 +133,7 @@ export default function DashboardMarketChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
-            placeholder="e.g. Which 3 stocks had the best day in the file?"
+            placeholder="e.g. Top advancers vs decliners in the last file?"
             className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50 text-sm"
             disabled={loading}
             maxLength={2000}
@@ -139,7 +150,7 @@ export default function DashboardMarketChat() {
         </div>
 
         <p className="text-[10px] text-slate-500 text-center leading-snug">
-          Powered by AI (Groq). Same data as the &quot;Today vs Yesterday&quot; and news sections — if those are empty, I have less to read.
+          Model: Groq. Same inputs as the dashboard news / movers panels — sparse files mean shorter answers.
         </p>
       </div>
     </section>
