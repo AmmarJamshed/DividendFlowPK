@@ -15,4 +15,5 @@ export const api = {
   getDailyNews: () => axios.get(`${API_BASE}/daily-news`),
   getMarketClosingPrices: () => axios.get(`${API_BASE}/market-closing-prices`),
   postSiteGuide: (body, config) => axios.post(`${API_BASE}/ai-site-guide`, body, config),
+  postMarketChat: (body) => axios.post(`${API_BASE}/market-chat`, body),
 };

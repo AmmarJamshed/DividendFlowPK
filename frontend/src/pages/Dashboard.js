@@ -4,6 +4,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { Bar } from 'react-chartjs-2';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
+import DashboardMarketChat from '../components/DashboardMarketChat';
 import axios from 'axios';
 import { buildDashboardRiskAlerts, getPktDateString, MIN_PRICE_MOVE_PCT } from '../utils/dashboardRiskAlerts';
 
@@ -137,7 +138,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
-          <p className="text-slate-500">Loading dashboard...</p>
+          <p className="text-slate-500">Loading your learning dashboard…</p>
         </div>
       </div>
     );
@@ -145,25 +146,52 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+      <div className="rounded-3xl border-2 border-teal-200/80 bg-gradient-to-br from-white via-teal-50/40 to-cyan-50/50 p-5 sm:p-7 shadow-md shadow-teal-100/50">
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="text-4xl sm:text-5xl leading-none select-none" aria-hidden>
+            📈
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
+              Learn PSX like a game — for curious kids &amp; grown-ups
+            </h1>
+            <p className="mt-2 text-sm sm:text-base text-slate-600 leading-relaxed max-w-3xl">
+              A <strong>stock</strong> is a tiny slice of a real company. When the company does well, your slice might grow (or shrink) with the
+              price. <strong>Dividends</strong> are like thank-you pocket money some companies pay to people who hold their stock. Nothing
+              here tells you to buy or sell — we show <strong>facts and ideas</strong> so you can learn, then talk to a parent or adviser
+              before real money.
+            </p>
+            <p className="mt-3 text-xs text-teal-800 font-semibold">
+              Jump down to <a href="#market-chat" className="underline hover:text-teal-950">Market Buddy</a> to ask questions in your own words.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <DashboardMarketChat />
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
         <div className="card p-6 animate-slide-up border-l-4 border-l-teal-500 lg:col-span-3" style={{ animationDelay: '0ms' }}>
-          <h3 className="card-header">Monthly Dividend Heatmap</h3>
-          <p className="card-subtitle">Companies paying dividends by month</p>
+          <h3 className="card-header">When companies pay (by month)</h3>
+          <p className="card-subtitle">Taller bar = more dividend paydays that month — like a calendar of &quot;money days&quot;</p>
           <div className="h-52 mt-4">
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
         <div className="card p-6 animate-slide-up border-l-4 border-l-emerald-500 lg:col-span-3" style={{ animationDelay: '50ms' }}>
-          <h3 className="card-header">Top Dividend Yield</h3>
-          <p className="card-subtitle">Highest yielding PSX companies with clearing-house risk snapshot (VaR &amp; margin)</p>
+          <h3 className="card-header">Biggest dividend pocket-money rates</h3>
+          <p className="card-subtitle">
+            High yield can mean more dividend per rupee invested — we also show <strong>risk badges</strong> (VaR &amp; haircut) so you see it
+            isn&apos;t free magic.
+          </p>
           <ul className="mt-4 space-y-3">
             {topYield.map((d, i) => {
               const symbol = (d.Company || d.company || '').trim();
               const risk = stockRisks[symbol];
               const riskBadge = risk ? (
-                risk.risk_label === 'Low' ? <span className="text-xs px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-300 ml-2">🛡️ Low Risk</span> :
-                risk.risk_label === 'Moderate' ? <span className="text-xs px-2 py-1 rounded-lg bg-amber-100 text-amber-700 border border-amber-300 ml-2">⚖️ Moderate</span> :
-                <span className="text-xs px-2 py-1 rounded-lg bg-rose-100 text-rose-700 border border-rose-300 ml-2">🚨 High Risk</span>
+                risk.risk_label === 'Low' ? <span className="text-xs px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-300 ml-2">🛡️ gentler ride</span> :
+                risk.risk_label === 'Moderate' ? <span className="text-xs px-2 py-1 rounded-lg bg-amber-100 text-amber-700 border border-amber-300 ml-2">⚖️ middle path</span> :
+                <span className="text-xs px-2 py-1 rounded-lg bg-rose-100 text-rose-700 border border-rose-300 ml-2">🚨 bumpier ride</span>
               ) : null;
               
               return (
@@ -186,12 +214,11 @@ export default function Dashboard() {
           </ul>
         </div>
         <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-6 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
-          <h3 className="card-header">AI Risk Alerts</h3>
+          <h3 className="card-header">News + big price moves</h3>
           <p className="card-subtitle">
-            Alerts appear when a <strong className="text-slate-600">public news headline</strong> lines up with a{' '}
-            <strong className="text-slate-600">meaningful same-session price move</strong> (about {MIN_PRICE_MOVE_PCT}% or more vs prior close).
-            Broader stories (policy, IMF, rates, subsidies) may be linked to large <em>decliners</em> when they affect the wider market.
-            We don&apos;t show raw price swings without a related story. <strong className="text-slate-600">Click an alert</strong> for the article, source, and a short AI read.
+            We match a <strong>real headline</strong> with a <strong>big same-day price move</strong> (about {MIN_PRICE_MOVE_PCT}% or more).
+            Big world news (rates, IMF, subsidies) can show next to a stock that fell hard that day. <strong>Click a card</strong> to read the
+            story — still just learning material, not a buy/sell command.
           </p>
           {(riskAlerts[0]?.rotationDate || dailyNews.news?.length > 0 || dailyNews.priceChanges?.length > 0) && (
             <p className="text-[11px] text-slate-500 mt-1">
@@ -291,9 +318,9 @@ export default function Dashboard() {
 
       {(dailyNews.priceChanges?.length > 0) && (
         <div className="card p-6 animate-slide-up">
-          <h3 className="card-header">Today vs Yesterday</h3>
+          <h3 className="card-header">Who went up? Who went down?</h3>
           <p className="card-subtitle">
-            Today vs yesterday. Updated daily after market close (5pm PKT).
+            From our latest saved prices (usually after 5pm PKT). Green = climbed, red = dipped — still not advice, just the scoreboard.
             {dailyNews.priceChanges?.[0]?.Date && (
               <span className="block text-slate-500 text-xs mt-1">As of {dailyNews.priceChanges[0].Date}</span>
             )}

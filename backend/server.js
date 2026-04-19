@@ -784,60 +784,210 @@ async function computePriceChangesFromDailyPrices() {
   return changes.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
 }
 
+/** Same datasets as GET /api/daily-news — shared with market chatbot */
+async function fetchDailyNewsPayload() {
+  const newsPath = path.join(DATA_PATH, 'news');
+  const pricesPath = path.join(DATA_PATH, 'prices');
+  let news = [];
+  let commentary = [];
+  let priceChanges = [];
+  let priceCommentary = [];
+  if (fs.existsSync(path.join(newsPath, 'daily_news.csv'))) {
+    news = await readCSV(path.join(newsPath, 'daily_news.csv'));
+  }
+  if (fs.existsSync(path.join(newsPath, 'ai_commentary.csv'))) {
+    commentary = await readCSV(path.join(newsPath, 'ai_commentary.csv'));
+  }
+  priceChanges = await computePriceChangesFromDailyPrices();
+  if (priceChanges.length === 0 && fs.existsSync(path.join(pricesPath, 'price_changes.csv'))) {
+    priceChanges = await readCSV(path.join(pricesPath, 'price_changes.csv'));
+  }
+  const hasMeaningfulChanges = priceChanges.some(p => {
+    const pct = parseFloat(p.ChangePct || p.changePct || p.Change_pct) || 0;
+    return pct !== 0;
+  });
+  if (!hasMeaningfulChanges) {
+    const fullPath = path.join(pricesPath, 'psx_full_dataset.csv');
+    if (fs.existsSync(fullPath)) {
+      const fullRows = await readCSV(fullPath);
+      const parseNum = (s) => {
+        if (!s) return 0;
+        const v = String(s).replace(/,/g, '').replace('%', '').trim();
+        return parseFloat(v) || 0;
+      };
+      const withChange = fullRows
+        .map(r => ({
+          Company: r.symbol || r.Symbol || '',
+          Price: parseNum(r.close || r.Close),
+          Change: parseNum(r.change || r.Change),
+          ChangePct: parseNum(r.change_pct || r['change_pct']),
+          Date: r.date || r.Date,
+        }))
+        .filter(x => x.Company && x.Price > 0 && x.ChangePct !== 0);
+      if (withChange.length > 0) {
+        priceChanges = withChange.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
+      }
+    }
+  }
+  if (fs.existsSync(path.join(newsPath, 'price_commentary.csv'))) {
+    priceCommentary = await readCSV(path.join(newsPath, 'price_commentary.csv'));
+  }
+  return { news, commentary, priceChanges, priceCommentary };
+}
+
+function buildMarketChatContextText(payload) {
+  const lines = [];
+  const pc = payload.priceChanges || [];
+  const parsePct = (r) => parseFloat(r.ChangePct || r.changePct || r.Change_pct) || 0;
+  const gainers = [...pc].filter((r) => parsePct(r) > 0).sort((a, b) => parsePct(b) - parsePct(a)).slice(0, 15);
+  const losers = [...pc].filter((r) => parsePct(r) < 0).sort((a, b) => parsePct(a) - parsePct(b)).slice(0, 15);
+  lines.push('=== PRICE MOVES (latest automated scrape; not live intraday) ===');
+  if (gainers.length === 0 && losers.length === 0) {
+    lines.push('(No non-zero price changes in the current file.)');
+  } else {
+    gainers.forEach((r) => {
+      lines.push(`UP: ${r.Company} +${parsePct(r)}%  date:${r.Date || ''}`);
+    });
+    losers.forEach((r) => {
+      lines.push(`DOWN: ${r.Company} ${parsePct(r)}%  date:${r.Date || ''}`);
+    });
+  }
+  lines.push('');
+  lines.push('=== RECENT NEWS ROWS (headlines / text from daily_news.csv, last rows first) ===');
+  const newsRows = (payload.news || []).slice(-35);
+  newsRows.forEach((row) => {
+    const flat = Object.entries(row)
+      .map(([k, v]) => `${k}:${String(v).slice(0, 120)}`)
+      .join(' | ');
+    if (flat.trim()) lines.push(flat.slice(0, 400));
+  });
+  lines.push('');
+  lines.push('=== AI COMMENTARY FILE (snippets) ===');
+  (payload.commentary || []).slice(-12).forEach((row) => {
+    const flat = Object.entries(row)
+      .map(([k, v]) => `${k}:${String(v).slice(0, 160)}`)
+      .join(' | ');
+    if (flat.trim()) lines.push(flat.slice(0, 450));
+  });
+  lines.push('');
+  lines.push('=== PRICE COMMENTARY FILE (snippets) ===');
+  (payload.priceCommentary || []).slice(-10).forEach((row) => {
+    const flat = Object.entries(row)
+      .map(([k, v]) => `${k}:${String(v).slice(0, 160)}`)
+      .join(' | ');
+    if (flat.trim()) lines.push(flat.slice(0, 450));
+  });
+  return lines.join('\n').slice(0, 14000);
+}
+
+const chatRateByIp = new Map();
+const CHAT_MIN_INTERVAL_MS = 5000;
+
+async function groqMarketChat(systemPrompt, userBlock) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey || apiKey === 'your_api_key_here') {
+    return { ok: false, reply: 'Chat needs GROQ_API_KEY on the server. Ask an adult to check settings.' };
+  }
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userBlock },
+        ],
+        max_tokens: 900,
+        temperature: 0.35,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 25000,
+      }
+    );
+    const text = (response.data.choices[0]?.message?.content || '').trim();
+    return { ok: true, reply: text || 'I could not form an answer from the files just now. Try asking in simpler words.' };
+  } catch (err) {
+    console.error('Groq market chat error:', err.response?.data || err.message);
+    return { ok: false, reply: 'The AI helper is busy or offline. Please try again in a minute.' };
+  }
+}
+
 // GET /api/daily-news - Scraped news + prices + AI commentary for PSX companies
 app.get('/api/daily-news', async (req, res) => {
   try {
-    const newsPath = path.join(DATA_PATH, 'news');
-    const pricesPath = path.join(DATA_PATH, 'prices');
-    let news = [];
-    let commentary = [];
-    let priceChanges = [];
-    let priceCommentary = [];
-    if (fs.existsSync(path.join(newsPath, 'daily_news.csv'))) {
-      news = await readCSV(path.join(newsPath, 'daily_news.csv'));
-    }
-    if (fs.existsSync(path.join(newsPath, 'ai_commentary.csv'))) {
-      commentary = await readCSV(path.join(newsPath, 'ai_commentary.csv'));
-    }
-    priceChanges = await computePriceChangesFromDailyPrices();
-    if (priceChanges.length === 0 && fs.existsSync(path.join(pricesPath, 'price_changes.csv'))) {
-      priceChanges = await readCSV(path.join(pricesPath, 'price_changes.csv'));
-    }
-    // Check if we have meaningful changes (non-zero); if all flat, try other sources
-    const hasMeaningfulChanges = priceChanges.some(p => {
-      const pct = parseFloat(p.ChangePct || p.changePct || p.Change_pct) || 0;
-      return pct !== 0;
-    });
-    // Fallback: use psx_full_dataset.csv when no data or all changes are zero
-    if (!hasMeaningfulChanges) {
-      const fullPath = path.join(pricesPath, 'psx_full_dataset.csv');
-      if (fs.existsSync(fullPath)) {
-        const fullRows = await readCSV(fullPath);
-        const parseNum = (s) => {
-          if (!s) return 0;
-          const v = String(s).replace(/,/g, '').replace('%', '').trim();
-          return parseFloat(v) || 0;
-        };
-        const withChange = fullRows
-          .map(r => ({
-            Company: r.symbol || r.Symbol || '',
-            Price: parseNum(r.close || r.Close),
-            Change: parseNum(r.change || r.Change),
-            ChangePct: parseNum(r.change_pct || r['change_pct']),
-            Date: r.date || r.Date,
-          }))
-          .filter(x => x.Company && x.Price > 0 && x.ChangePct !== 0);
-        if (withChange.length > 0) {
-          priceChanges = withChange.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
-        }
-      }
-    }
-    if (fs.existsSync(path.join(newsPath, 'price_commentary.csv'))) {
-      priceCommentary = await readCSV(path.join(newsPath, 'price_commentary.csv'));
-    }
-    res.json({ news, commentary, priceChanges, priceCommentary });
+    const payload = await fetchDailyNewsPayload();
+    res.json(payload);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/market-chat — kid-friendly Q&A from latest scrape + news files (Groq); heavy disclaimer
+app.post('/api/market-chat', async (req, res) => {
+  try {
+    const rawIp = req.headers['x-forwarded-for'];
+    const ip = typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : rawIp?.[0] || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const prev = chatRateByIp.get(ip) || 0;
+    if (now - prev < CHAT_MIN_INTERVAL_MS) {
+      return res.status(429).json({
+        ok: false,
+        reply: 'Please wait a few seconds between questions so everyone can use the helper.',
+      });
+    }
+    chatRateByIp.set(ip, now);
+
+    const message = String(req.body?.message || '').trim().slice(0, 2000);
+    if (!message) {
+      return res.status(400).json({ ok: false, reply: 'Type a question first.' });
+    }
+
+    const payload = await fetchDailyNewsPayload();
+    const dataBlock = buildMarketChatContextText(payload);
+    const digest = buildSiteDataDigest();
+
+    const systemPrompt = `You are the friendly "Market Buddy" helper on DividendFlow PK, a Pakistan Stock Exchange (PSX) learning site.
+
+Audience: include curious kids and beginners — use short sentences, simple words, and tiny examples when helpful. No slang that confuses.
+
+Rules you MUST follow:
+1) ONLY use facts that appear in the user's DATA block below. Never invent stock symbols, percentages, or headlines. If something is not in the data, say you do not see it in today's file.
+2) For winners/losers, "could go up", or "might struggle", use careful language: "might", "could", "based on this headline" — never "will", "guaranteed", or "you should buy/sell".
+3) You are NOT a financial adviser. Do not give personal orders (buy, sell, how much to invest).
+4) If asked for something outside PSX or outside the data, say politely that you only read what DividendFlow saved from its latest scrape.
+5) Keep answers under about 180 words unless the user asks for a list — then use short bullet lines.
+
+Data freshness (when files were last written on the server — not the same as "right now on the exchange"):
+${digest}
+
+End every reply with one short line starting exactly with: "Remember: " then one sentence that this is AI guesswork from saved files, not 100% right, and not investment advice — always check with a parent, teacher, or licensed adviser before real money."`;
+
+    const userBlock = `DATA FROM OUR LATEST SCRAPE (may be from last trading day; do not claim live prices):
+---
+${dataBlock}
+---
+
+USER QUESTION:
+${message}`;
+
+    const out = await groqMarketChat(systemPrompt, userBlock);
+    res.json({
+      ok: out.ok,
+      reply: out.reply,
+      disclaimer:
+        'This reply is generated by AI from DividendFlow’s last saved news and price files. It is not a prediction, not 100% accurate, and not investment, legal, or tax advice. Markets change; always verify facts and talk to a qualified professional before investing.',
+    });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      reply: err.message || 'Server error',
+      disclaimer:
+        'This tool is for learning only. It is not investment advice.',
+    });
   }
 });
 
