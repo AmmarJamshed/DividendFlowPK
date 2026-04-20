@@ -186,7 +186,10 @@ export default function Layout({ children }) {
             )}
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-transparent">
+        <div
+          data-app-scroll-root
+          className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-transparent"
+        >
           <div className="animate-fade-in max-w-7xl mx-auto">
             {children}
           </div>

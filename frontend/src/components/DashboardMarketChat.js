@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import { api } from '../api';
 
 const SUGGESTIONS = [
@@ -22,38 +22,56 @@ export default function DashboardMarketChat() {
     },
   ]);
   const [loading, setLoading] = useState(false);
-  /** Scroll only inside the chat panel — never scrollIntoView (that pulls the whole page). */
+  /** Inner message list scroll */
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  /** Snapshot main content scroller + window so Ask / Enter does not yank the page */
+  const scrollLockRef = useRef(null);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      });
-    });
-    return () => cancelAnimationFrame(id);
+  function capturePageScroll() {
+    const main = document.querySelector('[data-app-scroll-root]');
+    scrollLockRef.current = {
+      mainTop: main ? main.scrollTop : null,
+      winY: window.scrollY,
+    };
+  }
+
+  useLayoutEffect(() => {
+    const snap = scrollLockRef.current;
+    if (snap) {
+      const main = document.querySelector('[data-app-scroll-root]');
+      if (main != null && snap.mainTop != null) main.scrollTop = snap.mainTop;
+      if (typeof snap.winY === 'number') window.scrollTo(0, snap.winY);
+      scrollLockRef.current = null;
+    }
+    const inner = scrollRef.current;
+    if (inner) inner.scrollTop = inner.scrollHeight;
   }, [messages, loading]);
 
   const send = async (text) => {
     const q = (text || input).trim();
     if (!q || loading) return;
+    capturePageScroll();
     setInput('');
     setMessages((m) => [...m, { role: 'user', text: q }]);
     setLoading(true);
     try {
       const { data } = await api.postMarketChat({ message: q });
       const reply = data.reply || 'No answer came back.';
+      capturePageScroll();
       setMessages((m) => [...m, { role: 'assistant', text: reply, disclaimer: data.disclaimer }]);
     } catch (err) {
       const msg =
         err.response?.data?.reply ||
         err.response?.data?.message ||
         (err.response?.status === 429 ? 'Too fast — wait a few seconds and try again.' : 'Something went wrong. Try again.');
+      capturePageScroll();
       setMessages((m) => [...m, { role: 'assistant', text: String(msg) }]);
     } finally {
       setLoading(false);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus({ preventScroll: true });
+      });
     }
   };
 
@@ -92,6 +110,7 @@ export default function DashboardMarketChat() {
             <button
               key={s}
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => send(s)}
               disabled={loading}
               className="text-left text-xs sm:text-sm px-3 py-2 rounded-xl bg-teal-50 text-teal-900 border border-teal-200 hover:bg-teal-100 transition-colors disabled:opacity-50 max-w-full"
@@ -129,10 +148,16 @@ export default function DashboardMarketChat() {
 
         <div className="flex flex-col sm:flex-row gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
             placeholder="e.g. Top advancers vs decliners in the last file?"
             className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50 text-sm"
             disabled={loading}
@@ -141,6 +166,7 @@ export default function DashboardMarketChat() {
           />
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => send()}
             disabled={loading || !input.trim()}
             className="btn-primary shrink-0 px-6 py-3 sm:py-2.5 disabled:opacity-50"
