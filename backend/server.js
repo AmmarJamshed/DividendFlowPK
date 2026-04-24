@@ -58,8 +58,8 @@ async function getCompanyNews(companyName) {
 
 // Groq AI Analysis
 async function analyzeWithGroq(prompt) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey || apiKey === 'your_api_key_here') {
+  const apiKey = getGroqKey();
+  if (!apiKey) {
     return {
       riskScore: 50,
       riskCategory: 'Moderate',
@@ -70,7 +70,7 @@ async function analyzeWithGroq(prompt) {
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: GROQ_MODEL,
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 500,
         temperature: 0.3
@@ -80,7 +80,7 @@ async function analyzeWithGroq(prompt) {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         },
-        timeout: 15000
+        timeout: 25000
       }
     );
     const content = response.data.choices[0]?.message?.content || '';
@@ -124,12 +124,49 @@ function buildSiteDataDigest() {
   return lines.join('\n');
 }
 
+/** Groq chat model (override on Render if Groq deprecates defaults). */
+const GROQ_MODEL = (process.env.GROQ_MODEL || 'llama-3.1-8b-instant').trim();
+
+function getGroqKey() {
+  const k = (process.env.GROQ_API_KEY || '').trim();
+  if (!k || k === 'your_api_key_here') return null;
+  return k;
+}
+
+/** Plain-language cause when Groq HTTP fails (no secrets). */
+function groqHttpErrorMessage(err) {
+  const status = err.response?.status;
+  const body = err.response?.data;
+  const groqErr = body?.error?.message || body?.message || '';
+  const low = String(groqErr).toLowerCase();
+  if (status === 401) {
+    return 'Groq returned 401 (invalid API key). In Render → dividendflow-backend → Environment: set GROQ_API_KEY exactly as from console.groq.com (no quotes, no spaces), then redeploy.';
+  }
+  if (status === 403) {
+    return 'Groq returned 403 (forbidden). Check the key and project settings on console.groq.com.';
+  }
+  if (status === 429) {
+    return 'Groq rate limit (429). Wait a minute or check quotas on console.groq.com.';
+  }
+  if (status === 400 && (low.includes('model') || low.includes('decommission') || low.includes('invalid'))) {
+    const hint = groqErr ? ` ${groqErr.slice(0, 160)}` : '';
+    return `Groq rejected the request (400).${hint} You can set GROQ_MODEL on the backend to a current model from console.groq.com/docs/models.`;
+  }
+  if (err.code === 'ECONNABORTED' || String(err.message || '').toLowerCase().includes('timeout')) {
+    return 'Groq request timed out. Try again; slow or unstable mobile data can cause this.';
+  }
+  if (!err.response) {
+    return 'No response from Groq (network or DNS). Render may be unable to reach api.groq.com — retry or check Render / Groq status pages.';
+  }
+  return `Groq error (${status || 'unknown'}). Try again shortly.`;
+}
+
 const guideRateByIp = new Map();
 const GUIDE_MIN_INTERVAL_MS = 2200;
 
 async function groqAmmarGuide(systemPrompt, userContent) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey || apiKey === 'your_api_key_here') {
+  const apiKey = getGroqKey();
+  if (!apiKey) {
     return {
       ok: false,
       message:
@@ -140,7 +177,7 @@ async function groqAmmarGuide(systemPrompt, userContent) {
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: GROQ_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userContent },
@@ -153,7 +190,7 @@ async function groqAmmarGuide(systemPrompt, userContent) {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        timeout: 20000,
+        timeout: 32000,
       }
     );
     const text = (response.data.choices[0]?.message?.content || '').trim();
@@ -162,10 +199,10 @@ async function groqAmmarGuide(systemPrompt, userContent) {
       message: text || "I'm Ammar — pause on any widget and I'll walk you through it.",
     };
   } catch (err) {
-    console.error('Groq Ammar guide error:', err.response?.data || err.message);
+    console.error('Groq Ammar guide error:', err.response?.status, err.response?.data || err.message);
     return {
       ok: false,
-      message: 'I could not reach the AI service just now. Please try again in a few seconds.',
+      message: groqHttpErrorMessage(err),
     };
   }
 }
@@ -884,15 +921,15 @@ const chatRateByIp = new Map();
 const CHAT_MIN_INTERVAL_MS = 5000;
 
 async function groqMarketChat(systemPrompt, userBlock) {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey || apiKey === 'your_api_key_here') {
-    return { ok: false, reply: 'Chat needs GROQ_API_KEY on the server. Ask an adult to check settings.' };
+  const apiKey = getGroqKey();
+  if (!apiKey) {
+    return { ok: false, reply: 'Chat needs GROQ_API_KEY on the server. Configure it on Render for dividendflow-backend.' };
   }
   try {
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: GROQ_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userBlock },
@@ -905,14 +942,14 @@ async function groqMarketChat(systemPrompt, userBlock) {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        timeout: 25000,
+        timeout: 32000,
       }
     );
     const text = (response.data.choices[0]?.message?.content || '').trim();
     return { ok: true, reply: text || 'I could not form an answer from the files just now. Try asking in simpler words.' };
   } catch (err) {
-    console.error('Groq market chat error:', err.response?.data || err.message);
-    return { ok: false, reply: 'The AI helper is busy or offline. Please try again in a minute.' };
+    console.error('Groq market chat error:', err.response?.status, err.response?.data || err.message);
+    return { ok: false, reply: groqHttpErrorMessage(err) };
   }
 }
 
