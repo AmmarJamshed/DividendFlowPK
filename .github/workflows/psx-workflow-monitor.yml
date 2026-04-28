@@ -1,0 +1,116 @@
+name: PSX Workflow Monitor
+
+on:
+  workflow_run:
+    workflows: ["PSX Market Closing Prices"]
+    types: [completed]
+  schedule:
+    - cron: "15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PSX workflow health and notify
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const alertTitle = "[Alert] PSX Market Closing Prices failing";
+            const runFromEvent = context.payload.workflow_run || null;
+
+            async function findAlertIssue() {
+              const issues = await github.paginate(github.rest.issues.listForRepo, {
+                owner,
+                repo,
+                state: "open",
+                per_page: 100
+              });
+              return issues.find(i => i.title === alertTitle) || null;
+            }
+
+            async function getLatestPsxRun() {
+              const workflows = await github.paginate(github.rest.actions.listRepoWorkflows, {
+                owner,
+                repo,
+                per_page: 100
+              });
+              const psx = workflows.find(w => w.name === "PSX Market Closing Prices");
+              if (!psx) {
+                core.setFailed("Could not find workflow: PSX Market Closing Prices");
+                return null;
+              }
+
+              const runs = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id: psx.id,
+                per_page: 1,
+                branch: "main",
+                status: "completed"
+              });
+              return runs.data.workflow_runs?.[0] || null;
+            }
+
+            const run = runFromEvent || await getLatestPsxRun();
+            if (!run) {
+              core.warning("No PSX run found to evaluate.");
+              return;
+            }
+
+            if (run.conclusion === "success") {
+              const existing = await findAlertIssue();
+              if (existing) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  body: `Recovery detected. Latest run succeeded: ${run.html_url}`
+                });
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  state: "closed"
+                });
+              }
+              core.info(`PSX workflow healthy (${run.conclusion})`);
+              return;
+            }
+
+            const body = [
+              "PSX Market Closing Prices workflow is failing.",
+              "",
+              `- Conclusion: \`${run.conclusion || "unknown"}\``,
+              `- Run: ${run.html_url}`,
+              `- Event: \`${run.event}\``,
+              `- Updated: ${run.updated_at}`,
+              "",
+              "Please inspect logs and fix promptly."
+            ].join("\n");
+
+            const existing = await findAlertIssue();
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: existing.number,
+                body
+              });
+              core.info(`Updated existing alert issue #${existing.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner,
+                repo,
+                title: alertTitle,
+                body
+              });
+              core.info(`Created alert issue #${created.data.number}`);
+            }
