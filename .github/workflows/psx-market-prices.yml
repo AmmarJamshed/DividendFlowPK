@@ -12,8 +12,12 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: write
+    concurrency:
+      group: psx-market-prices-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
@@ -21,15 +25,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           playwright install chromium
           playwright install-deps chromium
 
       - name: Run PSX scraper
         env:
+          CI: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

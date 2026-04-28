@@ -25,6 +25,14 @@ DIVIDEND_CSV = os.path.join(DIVIDEND_DIR, "psx_dividend_calendar.csv")
 PAYOUTS_CSV = os.path.join(DIVIDEND_DIR, "psx_payouts.csv")
 
 
+def _launch_chromium(p):
+    """Headless Chromium on GitHub Actions needs sandbox disabled (Linux CI)."""
+    extra = []
+    if os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true":
+        extra = ["--no-sandbox", "--disable-dev-shm-usage", "--disable-setuid-sandbox"]
+    return p.chromium.launch(headless=True, args=extra)
+
+
 def _parse_book_closure_payment(book_closure_raw):
     """Use last DD/MM/YYYY in book closure as register end; payment month ≈ following month."""
     text = (book_closure_raw or "").replace("\n", " ").strip()
@@ -100,10 +108,14 @@ def scrape_psx_payouts():
     payouts = []
     seen = set()
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = _launch_chromium(p)
         page = browser.new_page()
-        page.goto(PAYOUTS_URL, timeout=90000)
-        page.wait_for_load_state("networkidle")
+        page.goto(PAYOUTS_URL, timeout=90000, wait_until="domcontentloaded")
+        # networkidle often never settles on SPAs / analytics; don't hang the whole workflow
+        try:
+            page.wait_for_load_state("networkidle", timeout=20000)
+        except Exception:
+            pass
         time.sleep(2)
 
         page.wait_for_selector("#announcementsTable tbody tr", timeout=30000)
@@ -205,11 +217,11 @@ def load_tracked_companies():
 def scrape_psx():
     dataset = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = _launch_chromium(p)
         page = browser.new_page()
 
         print("Opening PSX historical page...")
-        page.goto(URL, timeout=60000)
+        page.goto(URL, timeout=90000, wait_until="domcontentloaded")
 
         page.wait_for_selector("#historicalTable", timeout=30000)
         page.select_option("select[name='historicalTable_length']", "100")
@@ -335,13 +347,20 @@ def push_to_github(token, repo):
         ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
         msg = f"PSX price scraped: {ts}"
 
+        gh_headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "DividendFlowPK-psx-scraper",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+
         def get_sha(path):
             try:
                 req = urllib.request.Request(
                     f"https://api.github.com/repos/{repo}/contents/{path}",
-                    headers={"Authorization": f"Bearer {token}"},
+                    headers=gh_headers,
                 )
-                with urllib.request.urlopen(req, timeout=10) as r:
+                with urllib.request.urlopen(req, timeout=30) as r:
                     return json.loads(r.read())["sha"]
             except Exception:
                 return None
@@ -354,10 +373,10 @@ def push_to_github(token, repo):
             req = urllib.request.Request(
                 f"https://api.github.com/repos/{repo}/contents/{path}",
                 data=json.dumps(payload).encode(),
-                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                headers={**gh_headers, "Content-Type": "application/json"},
                 method="PUT",
             )
-            urllib.request.urlopen(req, timeout=30)
+            urllib.request.urlopen(req, timeout=90)
 
         for path in ["data/prices/daily_prices.csv", "data/prices/price_changes.csv", "data/prices/psx_full_dataset.csv", "data/dividends/psx_payouts.csv"]:
             fp = os.path.join(os.path.dirname(__file__), path)
@@ -372,7 +391,11 @@ def push_to_github(token, repo):
 if __name__ == "__main__":
     from send_email import send_email
     try:
-        payouts_count = len(scrape_psx_payouts())
+        payouts_count = 0
+        try:
+            payouts_count = len(scrape_psx_payouts())
+        except Exception as pe:
+            print(f"[WARN] Payout scrape failed (continuing with historical prices): {pe}")
         prices_count = scrape_psx()
         summary = f"{payouts_count} payouts, {prices_count} prices scraped"
         send_email(success=True, summary=summary)
