@@ -8,7 +8,9 @@ from playwright.sync_api import sync_playwright
 import csv
 import os
 import time
-import subprocess
+import json
+import base64
+import urllib.request
 from datetime import datetime
 
 URL = "https://www.nccpl.com.pk/market-information"
@@ -193,44 +195,54 @@ def scrape_nccpl_risk():
 
 
 def push_to_github():
-    """Commit and push updated CSV to GitHub"""
-    github_token = os.getenv('GITHUB_TOKEN')
-    github_repo = os.getenv('GITHUB_REPO', 'AmmarJamshed/DividendFlowPK')
-    
-    if not github_token:
+    """Upload updated CSV via GitHub Contents API (same pattern as psx.py — reliable on Render cron)."""
+    token = os.getenv("GITHUB_TOKEN")
+    repo = os.getenv("GITHUB_REPO", "AmmarJamshed/DividendFlowPK")
+    if not token:
         print("[NCCPL] No GITHUB_TOKEN, skipping push")
         return
-    
+
+    remote_path = "data/risk/nccpl_risk_metrics.csv"
+    msg = f"Update NCCPL risk data - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+
+    def get_sha(path):
+        try:
+            req = urllib.request.Request(
+                f"https://api.github.com/repos/{repo}/contents/{path}",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github+json",
+                },
+            )
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.loads(r.read().decode())["sha"]
+        except Exception:
+            return None
+
     try:
-        print("[NCCPL] Committing changes to GitHub...")
-        
-        # Configure git
-        subprocess.run(['git', 'config', 'user.name', 'NCCPL Scraper Bot'], check=True)
-        subprocess.run(['git', 'config', 'user.email', 'bot@dividendflow.pk'], check=True)
-        
-        # Add the CSV file
-        subprocess.run(['git', 'add', 'data/risk/nccpl_risk_metrics.csv'], check=True)
-        
-        # Check if there are changes
-        result = subprocess.run(['git', 'diff', '--cached', '--quiet'], capture_output=True)
-        if result.returncode == 0:
-            print("[NCCPL] No changes to commit")
-            return
-        
-        # Commit
-        commit_msg = f"Update NCCPL risk data - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-        subprocess.run(['git', 'commit', '-m', commit_msg], check=True)
-        
-        # Push with token
-        repo_url = f"https://{github_token}@github.com/{github_repo}.git"
-        subprocess.run(['git', 'push', repo_url, 'main'], check=True)
-        
-        print("[NCCPL] ✓ Pushed to GitHub")
-        
-    except subprocess.CalledProcessError as e:
-        print(f"[NCCPL] Git error: {e}")
+        with open(OUTPUT_CSV, "r", encoding="utf-8") as f:
+            body = f.read()
+        payload = {
+            "message": msg,
+            "content": base64.b64encode(body.encode("utf-8")).decode("ascii"),
+        }
+        sha = get_sha(remote_path)
+        if sha:
+            payload["sha"] = sha
+        req = urllib.request.Request(
+            f"https://api.github.com/repos/{repo}/contents/{remote_path}",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "Accept": "application/vnd.github+json",
+            },
+            method="PUT",
+        )
+        urllib.request.urlopen(req, timeout=90)
+        print("[NCCPL] ✓ Pushed to GitHub (Contents API)")
     except Exception as e:
-        print(f"[NCCPL] Push error: {e}")
+        print(f"[NCCPL] GitHub API push failed: {e}")
 
 
 if __name__ == "__main__":
@@ -239,8 +251,8 @@ if __name__ == "__main__":
         if result:
             print(f"\n[NCCPL] ✓ Success: {len(result)} symbols scraped")
             
-            # Push to GitHub if running on Render
-            if os.getenv('RENDER'):
+            # Push from Render cron or GitHub Actions (Contents API; avoid git push on ephemeral workers)
+            if os.getenv("RENDER") or os.getenv("GITHUB_ACTIONS"):
                 push_to_github()
         else:
             print("\n[NCCPL] ✗ Warning: No data was scraped")
