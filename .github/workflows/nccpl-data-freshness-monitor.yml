@@ -107,7 +107,7 @@ jobs:
                 `- Age (days): ${ageDays.toFixed(2)}`,
                 `- Allowed max age (days): ${maxAgeDays}`,
                 "",
-                "Check Render cron `dividendflow-nccpl-scraper` and Browserless/GitHub token settings."
+                "Check GitHub Action `NCCPL Risk Scraper` and `BROWSERLESS_TOKEN` secret settings."
               ].join("\n");
 
               if (existing) {
