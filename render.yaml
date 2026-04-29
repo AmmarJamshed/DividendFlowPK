@@ -39,22 +39,6 @@ services:
       - key: GNEWS_API_KEY
         sync: false
 
-  # Cron: NCCPL risk data scraper (5:30pm PKT = 12:30pm UTC)
-  - type: cron
-    runtime: python
-    name: dividendflow-nccpl-scraper
-    schedule: "30 12 * * 1-5"
-    rootDir: .
-    buildCommand: pip install -r requirements-scraper.txt && playwright install chromium
-    startCommand: python scripts/scrape-nccpl-browserless.py
-    envVars:
-      - key: BROWSERLESS_TOKEN
-        sync: false
-      - key: GITHUB_TOKEN
-        sync: false
-      - key: GITHUB_REPO
-        value: AmmarJamshed/DividendFlowPK
-
   # Cron: Health check - ping backend 4×/day on weekdays only (00,06,12,18 UTC)
   - type: cron
     runtime: node
