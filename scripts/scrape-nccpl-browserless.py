@@ -28,12 +28,16 @@ if not BROWSERLESS_TOKEN:
 
 # REST host (HTTPS) for Unblock API — same hostname as WS regions.
 # https://docs.browserless.io/rest-apis/unblock
-_WS_HOST = os.getenv("BROWSERLESS_WS_HOST", "production-ams.browserless.io")
+# Default US-West; override with BROWSERLESS_WS_HOST if needed.
+_WS_HOST = os.getenv("BROWSERLESS_WS_HOST", "production-sfo.browserless.io")
 
 
 def _browserless_unblock_ws_endpoint():
     """Ask Browserless to open NCCPL and return a live CDP WebSocket (bypasses Cloudflare)."""
-    q = urllib.parse.urlencode({"token": BROWSERLESS_TOKEN})
+    q = urllib.parse.urlencode({
+        "token": BROWSERLESS_TOKEN,
+        "timeout": "600000",
+    })
     api_url = f"https://{_WS_HOST}/unblock?{q}"
     payload = json.dumps({
         "url": URL,
@@ -50,7 +54,7 @@ def _browserless_unblock_ws_endpoint():
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
+        with urllib.request.urlopen(req, timeout=420) as resp:
             body = json.loads(resp.read().decode())
     except urllib.error.HTTPError as e:
         err_body = e.read().decode(errors="replace")[:1200]
