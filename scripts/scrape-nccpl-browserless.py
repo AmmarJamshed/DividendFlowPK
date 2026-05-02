@@ -24,9 +24,11 @@ if not BROWSERLESS_TOKEN:
     print("[NCCPL] Get a free token from https://www.browserless.io/")
     exit(1)
 
-# Managed Stealth over CDP (recommended route for bot detection). See:
+# Managed Stealth over CDP. Region: pick endpoint closer to target (PK → Amsterdam).
+# Override with env BROWSERLESS_WS_HOST e.g. production-sfo.browserless.io
 # https://docs.browserless.io/baas/bot-detection/stealth
-BROWSERLESS_CDP_URL = f"wss://production-sfo.browserless.io/stealth?token={BROWSERLESS_TOKEN}"
+_WS_HOST = os.getenv("BROWSERLESS_WS_HOST", "production-ams.browserless.io")
+BROWSERLESS_CDP_URL = f"wss://{_WS_HOST}/stealth?token={BROWSERLESS_TOKEN}"
 
 
 def clean_symbol(symbol):
@@ -40,7 +42,7 @@ def clean_symbol(symbol):
 def scrape_nccpl_risk():
     """Scrape NCCPL VAR Margins using Browserless.io"""
     
-    print(f"[NCCPL] Connecting to Browserless.io...")
+    print(f"[NCCPL] Connecting to Browserless.io (host={_WS_HOST})...")
     
     metrics = []
     with sync_playwright() as p:
@@ -59,21 +61,28 @@ def scrape_nccpl_risk():
             except Exception:
                 pass
             time.sleep(8)
-            # If still on a Cloudflare interstitial, wait briefly or reload once (datacenter IPs can be slow to pass).
-            ttl = (page.title() or "").lower()
-            if "cloudflare" in ttl or "attention required" in ttl:
-                print("[NCCPL] Cloudflare challenge detected; waiting / reload once…")
+            # If still on a Cloudflare interstitial, wait or re-navigate (avoid reload — session can drop).
+            for _attempt in range(4):
+                ttl = (page.title() or "").lower()
+                if "cloudflare" not in ttl and "attention required" not in ttl:
+                    break
+                print(f"[NCCPL] Cloudflare interstitial (attempt {_attempt + 1}/4); waiting…")
                 try:
                     page.wait_for_function(
                         """() => {
                           const t = (document.title || '').toLowerCase();
                           return !t.includes('cloudflare') && !t.includes('attention required');
                         }""",
-                        timeout=60000,
+                        timeout=45000,
                     )
+                    break
                 except Exception:
-                    page.reload(wait_until="domcontentloaded", timeout=90000)
-                    time.sleep(10)
+                    try:
+                        page.goto(URL, wait_until="domcontentloaded", timeout=90000)
+                        time.sleep(10)
+                    except Exception as e2:
+                        print(f"[NCCPL] Re-goto after CF wait failed: {e2}")
+                        break
             
             title = page.title()
             print(f"[NCCPL] Page loaded: {title}")
