@@ -34,9 +34,10 @@ _WS_HOST = os.getenv("BROWSERLESS_WS_HOST", "production-sfo.browserless.io")
 
 def _browserless_unblock_ws_endpoint():
     """Ask Browserless to open NCCPL and return a live CDP WebSocket (bypasses Cloudflare)."""
+    # Server-side max wait for unblocking (seconds; plan limits apply — free tier is modest).
     q = urllib.parse.urlencode({
         "token": BROWSERLESS_TOKEN,
-        "timeout": "600000",
+        "timeout": "180",
     })
     api_url = f"https://{_WS_HOST}/unblock?{q}"
     payload = json.dumps({
