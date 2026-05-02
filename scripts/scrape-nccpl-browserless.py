@@ -24,7 +24,8 @@ if not BROWSERLESS_TOKEN:
     print("[NCCPL] Get a free token from https://www.browserless.io/")
     exit(1)
 
-BROWSERLESS_URL = f'wss://production-sfo.browserless.io?token={BROWSERLESS_TOKEN}'
+# Playwright native connect (see https://docs.browserless.io/baas/connection-url-patterns)
+BROWSERLESS_URL = f"wss://production-sfo.browserless.io/chromium/playwright?token={BROWSERLESS_TOKEN}"
 
 
 def clean_symbol(symbol):
