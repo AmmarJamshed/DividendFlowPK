@@ -40,10 +40,11 @@ def scrape_nccpl_risk():
     
     print(f"[NCCPL] Connecting to Browserless.io...")
     
+    metrics = []
     with sync_playwright() as p:
         try:
             # Connect to remote browser (bypasses Cloudflare)
-            browser = p.chromium.connect(BROWSERLESS_URL)
+            browser = p.chromium.connect(BROWSERLESS_URL, timeout=120000)
             page = browser.new_page()
             
             print("[NCCPL] Opening market-information page...")
@@ -51,7 +52,10 @@ def scrape_nccpl_risk():
             
             # Wait for page to load (Browserless handles Cloudflare)
             print("[NCCPL] Waiting for page to load...")
-            page.wait_for_load_state('networkidle', timeout=60000)
+            try:
+                page.wait_for_load_state('networkidle', timeout=25000)
+            except Exception:
+                pass
             time.sleep(3)
             
             title = page.title()
@@ -76,7 +80,6 @@ def scrape_nccpl_risk():
             rows = page.query_selector_all("table tbody tr")
             print(f"[NCCPL] Found {len(rows)} rows")
             
-            metrics = []
             for row in rows:
                 cols = row.query_selector_all("td")
                 if len(cols) < 5:
@@ -205,14 +208,18 @@ def push_to_github():
     remote_path = "data/risk/nccpl_risk_metrics.csv"
     msg = f"Update NCCPL risk data - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
+    gh_headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "DividendFlowPK-nccpl-scraper",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
     def get_sha(path):
         try:
             req = urllib.request.Request(
                 f"https://api.github.com/repos/{repo}/contents/{path}",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Accept": "application/vnd.github+json",
-                },
+                headers=gh_headers,
             )
             with urllib.request.urlopen(req, timeout=30) as r:
                 return json.loads(r.read().decode())["sha"]
@@ -232,11 +239,7 @@ def push_to_github():
         req = urllib.request.Request(
             f"https://api.github.com/repos/{repo}/contents/{remote_path}",
             data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-                "Accept": "application/vnd.github+json",
-            },
+            headers={**gh_headers, "Content-Type": "application/json"},
             method="PUT",
         )
         urllib.request.urlopen(req, timeout=90)
