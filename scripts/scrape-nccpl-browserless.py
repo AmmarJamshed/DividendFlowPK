@@ -24,9 +24,9 @@ if not BROWSERLESS_TOKEN:
     print("[NCCPL] Get a free token from https://www.browserless.io/")
     exit(1)
 
-# Chromium Stealth over CDP — NCCPL sits behind Cloudflare; plain /chromium/playwright often shows the challenge page.
-# See https://docs.browserless.io/baas/bot-detection/stealth
-BROWSERLESS_CDP_URL = f"wss://production-sfo.browserless.io/chromium/stealth?token={BROWSERLESS_TOKEN}"
+# Managed Stealth over CDP (recommended route for bot detection). See:
+# https://docs.browserless.io/baas/bot-detection/stealth
+BROWSERLESS_CDP_URL = f"wss://production-sfo.browserless.io/stealth?token={BROWSERLESS_TOKEN}"
 
 
 def clean_symbol(symbol):
@@ -47,7 +47,7 @@ def scrape_nccpl_risk():
         try:
             browser = p.chromium.connect_over_cdp(BROWSERLESS_CDP_URL, timeout=120000)
             ctx = browser.contexts[0] if browser.contexts else browser.new_context()
-            page = ctx.pages[0] if ctx.pages else ctx.new_page()
+            page = ctx.new_page()
             
             print("[NCCPL] Opening market-information page...")
             page.goto(URL, wait_until='domcontentloaded', timeout=90000)
@@ -59,6 +59,21 @@ def scrape_nccpl_risk():
             except Exception:
                 pass
             time.sleep(8)
+            # If still on a Cloudflare interstitial, wait briefly or reload once (datacenter IPs can be slow to pass).
+            ttl = (page.title() or "").lower()
+            if "cloudflare" in ttl or "attention required" in ttl:
+                print("[NCCPL] Cloudflare challenge detected; waiting / reload once…")
+                try:
+                    page.wait_for_function(
+                        """() => {
+                          const t = (document.title || '').toLowerCase();
+                          return !t.includes('cloudflare') && !t.includes('attention required');
+                        }""",
+                        timeout=60000,
+                    )
+                except Exception:
+                    page.reload(wait_until="domcontentloaded", timeout=90000)
+                    time.sleep(10)
             
             title = page.title()
             print(f"[NCCPL] Page loaded: {title}")
