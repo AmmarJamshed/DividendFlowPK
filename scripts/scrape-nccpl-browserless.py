@@ -24,8 +24,9 @@ if not BROWSERLESS_TOKEN:
     print("[NCCPL] Get a free token from https://www.browserless.io/")
     exit(1)
 
-# Playwright native connect (see https://docs.browserless.io/baas/connection-url-patterns)
-BROWSERLESS_URL = f"wss://production-sfo.browserless.io/chromium/playwright?token={BROWSERLESS_TOKEN}"
+# Chromium Stealth over CDP — NCCPL sits behind Cloudflare; plain /chromium/playwright often shows the challenge page.
+# See https://docs.browserless.io/baas/bot-detection/stealth
+BROWSERLESS_CDP_URL = f"wss://production-sfo.browserless.io/chromium/stealth?token={BROWSERLESS_TOKEN}"
 
 
 def clean_symbol(symbol):
@@ -44,9 +45,9 @@ def scrape_nccpl_risk():
     metrics = []
     with sync_playwright() as p:
         try:
-            # Connect to remote browser (bypasses Cloudflare)
-            browser = p.chromium.connect(BROWSERLESS_URL, timeout=120000)
-            page = browser.new_page()
+            browser = p.chromium.connect_over_cdp(BROWSERLESS_CDP_URL, timeout=120000)
+            ctx = browser.contexts[0] if browser.contexts else browser.new_context()
+            page = ctx.pages[0] if ctx.pages else ctx.new_page()
             
             print("[NCCPL] Opening market-information page...")
             page.goto(URL, wait_until='domcontentloaded', timeout=90000)
@@ -57,7 +58,7 @@ def scrape_nccpl_risk():
                 page.wait_for_load_state('networkidle', timeout=25000)
             except Exception:
                 pass
-            time.sleep(3)
+            time.sleep(8)
             
             title = page.title()
             print(f"[NCCPL] Page loaded: {title}")
@@ -65,7 +66,7 @@ def scrape_nccpl_risk():
             # Click VAR Margins tab
             print("[NCCPL] Clicking VAR Margins tab...")
             var_tab = page.locator("a[role='tab']:has-text('VAR Margins')").first
-            var_tab.wait_for(state='visible', timeout=30000)
+            var_tab.wait_for(state='visible', timeout=90000)
             var_tab.click()
             print("[NCCPL] Clicked VAR Margins tab")
             time.sleep(5)
