@@ -11,6 +11,8 @@ import time
 import json
 import base64
 import urllib.request
+import urllib.parse
+import urllib.error
 from datetime import datetime
 
 URL = "https://www.nccpl.com.pk/market-information"
@@ -24,11 +26,43 @@ if not BROWSERLESS_TOKEN:
     print("[NCCPL] Get a free token from https://www.browserless.io/")
     exit(1)
 
-# Managed Stealth over CDP. Region: pick endpoint closer to target (PK → Amsterdam).
-# Override with env BROWSERLESS_WS_HOST e.g. production-sfo.browserless.io
-# https://docs.browserless.io/baas/bot-detection/stealth
+# REST host (HTTPS) for Unblock API — same hostname as WS regions.
+# https://docs.browserless.io/rest-apis/unblock
 _WS_HOST = os.getenv("BROWSERLESS_WS_HOST", "production-ams.browserless.io")
-BROWSERLESS_CDP_URL = f"wss://{_WS_HOST}/stealth?token={BROWSERLESS_TOKEN}"
+
+
+def _browserless_unblock_ws_endpoint():
+    """Ask Browserless to open NCCPL and return a live CDP WebSocket (bypasses Cloudflare)."""
+    q = urllib.parse.urlencode({"token": BROWSERLESS_TOKEN})
+    api_url = f"https://{_WS_HOST}/unblock?{q}"
+    payload = json.dumps({
+        "url": URL,
+        "browserWSEndpoint": True,
+        "cookies": True,
+        "content": False,
+        "screenshot": False,
+        "ttl": 300000,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        api_url,
+        data=payload,
+        headers={"Content-Type": "application/json", "User-Agent": "DividendFlowPK-nccpl-scraper"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=180) as resp:
+            body = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode(errors="replace")[:1200]
+        print(f"[NCCPL] Browserless /unblock HTTP {e.code}: {err_body}")
+        raise
+    ws = body.get("browserWSEndpoint")
+    if not ws:
+        raise RuntimeError(f"Browserless /unblock did not return browserWSEndpoint: {str(body)[:400]}")
+    if "token=" not in ws:
+        sep = "&" if "?" in ws else "?"
+        ws = f"{ws}{sep}token={urllib.parse.quote(BROWSERLESS_TOKEN)}"
+    return ws
 
 
 def clean_symbol(symbol):
@@ -42,47 +76,26 @@ def clean_symbol(symbol):
 def scrape_nccpl_risk():
     """Scrape NCCPL VAR Margins using Browserless.io"""
     
-    print(f"[NCCPL] Connecting to Browserless.io (host={_WS_HOST})...")
+    print(f"[NCCPL] Unblock + connect via Browserless (host={_WS_HOST})...")
     
     metrics = []
     with sync_playwright() as p:
         try:
-            browser = p.chromium.connect_over_cdp(BROWSERLESS_CDP_URL, timeout=120000)
+            ws_url = _browserless_unblock_ws_endpoint()
+            print("[NCCPL] Unblock OK; connecting Playwright over CDP…")
+            browser = p.chromium.connect_over_cdp(ws_url, timeout=120000)
             ctx = browser.contexts[0] if browser.contexts else browser.new_context()
-            page = ctx.new_page()
+            page = ctx.pages[0] if ctx.pages else ctx.new_page()
+            if URL not in (page.url or ""):
+                print("[NCCPL] Opening market-information page...")
+                page.goto(URL, wait_until='domcontentloaded', timeout=90000)
             
-            print("[NCCPL] Opening market-information page...")
-            page.goto(URL, wait_until='domcontentloaded', timeout=90000)
-            
-            # Wait for page to load (Browserless handles Cloudflare)
-            print("[NCCPL] Waiting for page to load...")
+            print("[NCCPL] Waiting for page to settle...")
             try:
                 page.wait_for_load_state('networkidle', timeout=25000)
             except Exception:
                 pass
-            time.sleep(8)
-            # If still on a Cloudflare interstitial, wait or re-navigate (avoid reload — session can drop).
-            for _attempt in range(4):
-                ttl = (page.title() or "").lower()
-                if "cloudflare" not in ttl and "attention required" not in ttl:
-                    break
-                print(f"[NCCPL] Cloudflare interstitial (attempt {_attempt + 1}/4); waiting…")
-                try:
-                    page.wait_for_function(
-                        """() => {
-                          const t = (document.title || '').toLowerCase();
-                          return !t.includes('cloudflare') && !t.includes('attention required');
-                        }""",
-                        timeout=45000,
-                    )
-                    break
-                except Exception:
-                    try:
-                        page.goto(URL, wait_until="domcontentloaded", timeout=90000)
-                        time.sleep(10)
-                    except Exception as e2:
-                        print(f"[NCCPL] Re-goto after CF wait failed: {e2}")
-                        break
+            time.sleep(4)
             
             title = page.title()
             print(f"[NCCPL] Page loaded: {title}")
