@@ -25,6 +25,6 @@ jobs:
 
       - name: Ping backend health
         env:
-          BACKEND_URL: https://dividendflow-backend.onrender.com
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
         working-directory: scripts
         run: node health-check.js
