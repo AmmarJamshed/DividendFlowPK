@@ -36,7 +36,7 @@ jobs:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
         run: |
           npm install
-          npm run build
+          CI=false npm run build
           cp build/index.html build/404.html
 
       - name: Upload Pages artifact
