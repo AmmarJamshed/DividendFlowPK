@@ -2,55 +2,6 @@
 # Deploy both backend and frontend from GitHub
 
 services:
-  # Cron: Scrape PSX payout data, update dividend CSVs, push to GitHub
-  # Weekdays only (Mon–Fri UTC): PSX closed Sat/Sun — saves cron runs with no new market data
-  - type: cron
-    runtime: node
-    name: dividendflow-scraper
-    schedule: "0 11 * * 1-5"
-    rootDir: .
-    buildCommand: cd scripts && npm install
-    startCommand: cd scripts && node run-all.js
-    envVars:
-      - key: GITHUB_TOKEN
-        sync: false
-      - key: GITHUB_REPO
-        value: AmmarJamshed/DividendFlowPK
-      - key: SCRAPER_EMAIL_TO
-        sync: false
-      - key: RESEND_API_KEY
-        sync: false
-
-  # Cron: Daily news + price scraper (5pm PKT). Use run-news.js (Node) - psx.py runs via GitHub Actions (see .github/workflows/psx-market-prices.yml)
-  - type: cron
-    runtime: node
-    name: dividendflow-news
-    schedule: "0 12 * * 1-5"
-    rootDir: .
-    buildCommand: cd scripts && npm install
-    startCommand: cd scripts && node run-news.js
-    envVars:
-      - key: GITHUB_TOKEN
-        sync: false
-      - key: GITHUB_REPO
-        value: AmmarJamshed/DividendFlowPK
-      - key: GROQ_API_KEY
-        sync: false
-      - key: GNEWS_API_KEY
-        sync: false
-
-  # Cron: Health check - ping backend 4×/day on weekdays only (00,06,12,18 UTC)
-  - type: cron
-    runtime: node
-    name: dividendflow-health-check
-    schedule: "0 0,6,12,18 * * 1-5"
-    rootDir: .
-    buildCommand: cd scripts && npm install
-    startCommand: cd scripts && node health-check.js
-    envVars:
-      - key: BACKEND_URL
-        value: https://dividendflow-backend.onrender.com
-
   # Backend API (Node.js + Express)
   - type: web
     runtime: node

@@ -1,0 +1,30 @@
+name: DividendFlow Health Check
+
+on:
+  schedule:
+    - cron: "0 0,6,12,18 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Install dependencies
+        working-directory: scripts
+        run: npm install
+
+      - name: Ping backend health
+        env:
+          BACKEND_URL: https://dividendflow-backend.onrender.com
+        working-directory: scripts
+        run: node health-check.js
