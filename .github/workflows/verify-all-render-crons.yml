@@ -1,5 +1,6 @@
-# Manual smoke test for the four suspended Render crons (same steps as the scheduled workflows).
-# Actions → Verify all Render cron replacements → Run workflow
+# Manual smoke test for the four suspended Render crons (same steps + retries as scheduled workflows).
+# GitHub: Actions → "Verify all Render cron replacements" → Run workflow
+# After pushing workflow changes, run this once to confirm secrets and upstream APIs work.
 
 name: Verify all Render cron replacements
 

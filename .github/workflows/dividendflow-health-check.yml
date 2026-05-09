@@ -9,9 +9,6 @@ jobs:
   health:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    concurrency:
-      group: dividendflow-health-check-${{ github.ref }}
-      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
