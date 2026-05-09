@@ -1,0 +1,32 @@
+# One-click manual test of the four jobs that replaced suspended Render crons.
+# Actions → this workflow → Run workflow. All four run in parallel; fix secrets if any job fails.
+
+name: Verify all Render cron replacements
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: verify-render-crons-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dividendflow-scraper:
+    name: dividendflow-scraper
+    uses: ./.github/workflows/dividendflow-scraper.yml
+    secrets: inherit
+
+  dividendflow-news:
+    name: dividendflow-news
+    uses: ./.github/workflows/dividendflow-news.yml
+    secrets: inherit
+
+  dividendflow-health-check:
+    name: dividendflow-health-check
+    uses: ./.github/workflows/dividendflow-health-check.yml
+    secrets: inherit
+
+  nccpl-risk-scraper:
+    name: dividendflow-nccpl-scraper
+    uses: ./.github/workflows/nccpl-risk-scraper.yml
+    secrets: inherit

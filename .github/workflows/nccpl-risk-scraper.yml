@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: "30 12 * * 1-5"
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: write
@@ -11,7 +12,7 @@ permissions:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     concurrency:
       group: nccpl-risk-scraper-${{ github.ref }}
       cancel-in-progress: true
@@ -31,8 +32,13 @@ jobs:
           pip install -r requirements-scraper.txt
 
       - name: Run NCCPL scraper
+        uses: nick-fields/retry@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
           BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}
-        run: python scripts/scrape-nccpl-browserless.py
+        with:
+          timeout_minutes: 38
+          max_attempts: 2
+          retry_wait_seconds: 90
+          command: python scripts/scrape-nccpl-browserless.py

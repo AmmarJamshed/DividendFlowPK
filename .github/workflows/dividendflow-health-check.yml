@@ -4,11 +4,15 @@ on:
   schedule:
     - cron: "0 0,6,12,18 * * 1-5"
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   health:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: dividendflow-health-check-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +28,11 @@ jobs:
         run: npm install
 
       - name: Ping backend health
+        uses: nick-fields/retry@v3
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
-        working-directory: scripts
-        run: node health-check.js
+        with:
+          timeout_minutes: 5
+          max_attempts: 4
+          retry_wait_seconds: 20
+          command: cd scripts && node health-check.js

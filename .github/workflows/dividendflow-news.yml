@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: "0 12 * * 1-5"
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: write
@@ -11,7 +12,7 @@ permissions:
 jobs:
   news:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 75
     concurrency:
       group: dividendflow-news-${{ github.ref }}
       cancel-in-progress: true
@@ -30,6 +31,7 @@ jobs:
         run: npm install
 
       - name: Run news pipeline
+        uses: nick-fields/retry@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
@@ -37,5 +39,8 @@ jobs:
           GNEWS_API_KEY: ${{ secrets.GNEWS_API_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SCRAPER_EMAIL_TO: ${{ secrets.SCRAPER_EMAIL_TO }}
-        working-directory: scripts
-        run: node run-news.js
+        with:
+          timeout_minutes: 25
+          max_attempts: 3
+          retry_wait_seconds: 45
+          command: cd scripts && node run-news.js
