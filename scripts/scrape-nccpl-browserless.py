@@ -32,6 +32,7 @@ if not BROWSERLESS_TOKEN:
 _DEFAULT_UNBLOCK_HOSTS = (
     "production-sfo.browserless.io",
     "production-ams.browserless.io",
+    "production-lon.browserless.io",
 )
 
 
@@ -110,113 +111,142 @@ def _acquire_unblock_ws_url():
     raise RuntimeError(f"Browserless /unblock failed on all hosts: {last_err}")
 
 
-def scrape_nccpl_risk():
-    """Scrape NCCPL VAR Margins using Browserless.io"""
+def _cdp_attempt_urls_ordered():
+    """Prefer /unblock CDP URL when available; then try managed stealth per region."""
+    attempts = []
+    try:
+        u, h = _acquire_unblock_ws_url()
+        attempts.append((f"unblock({h})", u))
+    except RuntimeError as e:
+        print(f"[NCCPL] /unblock not available; will try stealth CDP only: {e}")
+    tok = urllib.parse.quote(BROWSERLESS_TOKEN)
+    for h in _unblock_hosts_ordered():
+        attempts.append((f"stealth({h})", f"wss://{h}/chromium/stealth?token={tok}"))
+    seen = set()
+    out = []
+    for label, url in attempts:
+        if url in seen:
+            continue
+        seen.add(url)
+        out.append((label, url))
+    return out
+
+
+def _collect_table_rows_cdp(p, ws_url, label):
+    """Connect over CDP and return raw metric rows (list of dicts). Raises on hard failures."""
+    print(f"[NCCPL] CDP session ({label})…")
     metrics = []
-    with sync_playwright() as p:
+    browser = None
+    try:
+        browser = p.chromium.connect_over_cdp(ws_url, timeout=120000)
+        ctx = browser.contexts[0] if browser.contexts else browser.new_context()
+        page = ctx.pages[0] if ctx.pages else ctx.new_page()
+        if URL not in (page.url or ""):
+            print("[NCCPL] Opening market-information page...")
+            page.goto(URL, wait_until='domcontentloaded', timeout=90000)
+
+        print("[NCCPL] Waiting for page to settle...")
         try:
-            ws_url, ws_host = _acquire_unblock_ws_url()
-            print(f"[NCCPL] Unblock OK ({ws_host}); connecting Playwright over CDP…")
-            browser = p.chromium.connect_over_cdp(ws_url, timeout=120000)
-            ctx = browser.contexts[0] if browser.contexts else browser.new_context()
-            page = ctx.pages[0] if ctx.pages else ctx.new_page()
-            if URL not in (page.url or ""):
-                print("[NCCPL] Opening market-information page...")
-                page.goto(URL, wait_until='domcontentloaded', timeout=90000)
-            
-            print("[NCCPL] Waiting for page to settle...")
+            page.wait_for_load_state('networkidle', timeout=25000)
+        except Exception:
+            pass
+        time.sleep(4)
+
+        title = page.title()
+        print(f"[NCCPL] Page loaded: {title}")
+
+        print("[NCCPL] Clicking VAR Margins tab...")
+        var_tab = page.locator("a[role='tab']:has-text('VAR Margins')").first
+        var_tab.wait_for(state='visible', timeout=90000)
+        var_tab.click()
+        print("[NCCPL] Clicked VAR Margins tab")
+        time.sleep(5)
+
+        print("[NCCPL] Waiting for table to load...")
+        page.wait_for_selector("table tbody tr", timeout=30000)
+        print("[NCCPL] Table loaded")
+        time.sleep(2)
+
+        print("[NCCPL] Extracting table data...")
+        rows = page.query_selector_all("table tbody tr")
+        print(f"[NCCPL] Found {len(rows)} rows")
+
+        for row in rows:
+            cols = row.query_selector_all("td")
+            if len(cols) < 5:
+                continue
+
             try:
-                page.wait_for_load_state('networkidle', timeout=25000)
-            except Exception:
-                pass
-            time.sleep(4)
-            
-            title = page.title()
-            print(f"[NCCPL] Page loaded: {title}")
-            
-            # Click VAR Margins tab
-            print("[NCCPL] Clicking VAR Margins tab...")
-            var_tab = page.locator("a[role='tab']:has-text('VAR Margins')").first
-            var_tab.wait_for(state='visible', timeout=90000)
-            var_tab.click()
-            print("[NCCPL] Clicked VAR Margins tab")
-            time.sleep(5)
-            
-            # Wait for table
-            print("[NCCPL] Waiting for table to load...")
-            page.wait_for_selector("table tbody tr", timeout=30000)
-            print("[NCCPL] Table loaded")
-            time.sleep(2)
-            
-            # Get table data directly (instead of downloading)
-            print("[NCCPL] Extracting table data...")
-            rows = page.query_selector_all("table tbody tr")
-            print(f"[NCCPL] Found {len(rows)} rows")
-            
-            for row in rows:
-                cols = row.query_selector_all("td")
-                if len(cols) < 5:
+                symbol_full = cols[1].inner_text().strip()
+                var_value = float(cols[2].inner_text().strip() or 0)
+                haircut = float(cols[3].inner_text().strip() or 0)
+                week_26_avg = float(cols[4].inner_text().strip() or 0)
+
+                free_float = 0
+                half_hour_rate = 0
+
+                if len(cols) > 7:
+                    try:
+                        free_float_str = cols[7].inner_text().strip().replace(',', '')
+                        free_float = float(free_float_str) if free_float_str and free_float_str != '-' else 0
+                    except Exception:
+                        pass
+
+                if len(cols) > 6:
+                    try:
+                        half_hour_rate = float(cols[6].inner_text().strip() or 0)
+                    except Exception:
+                        pass
+
+                base_symbol = clean_symbol(symbol_full)
+                if not base_symbol:
                     continue
-                
-                try:
-                    symbol_full = cols[1].inner_text().strip()
-                    var_value = float(cols[2].inner_text().strip() or 0)
-                    haircut = float(cols[3].inner_text().strip() or 0)
-                    week_26_avg = float(cols[4].inner_text().strip() or 0)
-                    
-                    # Get additional columns
-                    free_float = 0
-                    half_hour_rate = 0
-                    
-                    if len(cols) > 7:
-                        try:
-                            free_float_str = cols[7].inner_text().strip().replace(',', '')
-                            free_float = float(free_float_str) if free_float_str and free_float_str != '-' else 0
-                        except:
-                            pass
-                    
-                    if len(cols) > 6:
-                        try:
-                            half_hour_rate = float(cols[6].inner_text().strip() or 0)
-                        except:
-                            pass
-                    
-                    base_symbol = clean_symbol(symbol_full)
-                    if not base_symbol:
-                        continue
-                    
-                    # Skip futures/options
-                    if base_symbol in ['KSE30', 'OGTI', 'BKTI']:
-                        continue
-                    
-                    # Skip derivatives with 0 haircut
-                    if haircut == 0:
-                        continue
-                    
-                    metrics.append({
-                        'symbol': base_symbol,
-                        'symbol_full': symbol_full,
-                        'var_value': var_value,
-                        'haircut': haircut,
-                        'week_26_avg': week_26_avg,
-                        'free_float': free_float,
-                        'half_hour_avg_rate': half_hour_rate,
-                    })
-                
-                except Exception as e:
-                    print(f"[NCCPL] Error parsing row: {e}")
+
+                if base_symbol in ['KSE30', 'OGTI', 'BKTI']:
                     continue
-            
-            browser.close()
-            
-        except Exception as e:
-            print(f"[NCCPL] Error during scraping: {e}")
+
+                if haircut == 0:
+                    continue
+
+                metrics.append({
+                    'symbol': base_symbol,
+                    'symbol_full': symbol_full,
+                    'var_value': var_value,
+                    'haircut': haircut,
+                    'week_26_avg': week_26_avg,
+                    'free_float': free_float,
+                    'half_hour_avg_rate': half_hour_rate,
+                })
+
+            except Exception as e:
+                print(f"[NCCPL] Error parsing row: {e}")
+                continue
+
+        return metrics
+    finally:
+        if browser:
             try:
                 browser.close()
-            except:
+            except Exception:
                 pass
-            return []
-    
+
+
+def scrape_nccpl_risk():
+    """Scrape NCCPL VAR Margins using Browserless.io"""
+    min_rows = max(1, int(os.getenv("NCCPL_MIN_SCRAPED_ROWS", "15")))
+    metrics = []
+    with sync_playwright() as p:
+        for label, ws_url in _cdp_attempt_urls_ordered():
+            try:
+                metrics = _collect_table_rows_cdp(p, ws_url, label)
+            except Exception as e:
+                print(f"[NCCPL] {label} failed: {e}")
+                metrics = []
+            if len(metrics) >= min_rows:
+                print(f"[NCCPL] ✓ {label}: {len(metrics)} candidate rows (≥{min_rows})")
+                break
+            print(f"[NCCPL] {label}: only {len(metrics)} usable rows (need ≥{min_rows}); trying next…")
+
     if not metrics:
         print("[NCCPL] No data extracted")
         return []
