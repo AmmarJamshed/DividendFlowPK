@@ -28,18 +28,32 @@ if not BROWSERLESS_TOKEN:
 
 # REST host (HTTPS) for Unblock API — same hostname as WS regions.
 # https://docs.browserless.io/rest-apis/unblock
-# Default US-West; override with BROWSERLESS_WS_HOST if needed.
-_WS_HOST = os.getenv("BROWSERLESS_WS_HOST", "production-sfo.browserless.io")
+# Try primary (BROWSERLESS_WS_HOST) then fallbacks; Cloudflare/unblock often succeeds on a different region.
+_DEFAULT_UNBLOCK_HOSTS = (
+    "production-sfo.browserless.io",
+    "production-ams.browserless.io",
+)
 
 
-def _browserless_unblock_ws_endpoint():
+def _unblock_hosts_ordered():
+    primary = (os.getenv("BROWSERLESS_WS_HOST") or "").strip()
+    extra = os.getenv("BROWSERLESS_UNBLOCK_HOSTS", "")
+    hosts = []
+    for part in [primary, *extra.split(","), *_DEFAULT_UNBLOCK_HOSTS]:
+        h = (part or "").strip()
+        if h and h not in hosts:
+            hosts.append(h)
+    return hosts
+
+
+def _browserless_unblock_ws_endpoint(ws_host: str):
     """Ask Browserless to open NCCPL and return a live CDP WebSocket (bypasses Cloudflare)."""
     # Server-side max wait for unblocking (seconds; plan limits apply — free tier is modest).
     q = urllib.parse.urlencode({
         "token": BROWSERLESS_TOKEN,
         "timeout": "180",
     })
-    api_url = f"https://{_WS_HOST}/unblock?{q}"
+    api_url = f"https://{ws_host}/unblock?{q}"
     payload = json.dumps({
         "url": URL,
         "browserWSEndpoint": True,
@@ -78,16 +92,31 @@ def clean_symbol(symbol):
     return parts[0] if parts else symbol
 
 
+def _acquire_unblock_ws_url():
+    """Call /unblock across regions with per-host retries (reduces HTTP 408 flakiness)."""
+    per_host_attempts = max(1, int(os.getenv("NCCPL_UNBLOCK_ATTEMPTS_PER_HOST", "2")))
+    pause_s = float(os.getenv("NCCPL_UNBLOCK_RETRY_PAUSE", "30"))
+    last_err = None
+    for ws_host in _unblock_hosts_ordered():
+        for attempt in range(1, per_host_attempts + 1):
+            try:
+                print(f"[NCCPL] Unblock via Browserless (host={ws_host}, attempt {attempt}/{per_host_attempts})...")
+                return _browserless_unblock_ws_endpoint(ws_host), ws_host
+            except Exception as e:
+                last_err = e
+                print(f"[NCCPL] Unblock failed on {ws_host}: {e}")
+                if attempt < per_host_attempts:
+                    time.sleep(pause_s)
+    raise RuntimeError(f"Browserless /unblock failed on all hosts: {last_err}")
+
+
 def scrape_nccpl_risk():
     """Scrape NCCPL VAR Margins using Browserless.io"""
-    
-    print(f"[NCCPL] Unblock + connect via Browserless (host={_WS_HOST})...")
-    
     metrics = []
     with sync_playwright() as p:
         try:
-            ws_url = _browserless_unblock_ws_endpoint()
-            print("[NCCPL] Unblock OK; connecting Playwright over CDP…")
+            ws_url, ws_host = _acquire_unblock_ws_url()
+            print(f"[NCCPL] Unblock OK ({ws_host}); connecting Playwright over CDP…")
             browser = p.chromium.connect_over_cdp(ws_url, timeout=120000)
             ctx = browser.contexts[0] if browser.contexts else browser.new_context()
             page = ctx.pages[0] if ctx.pages else ctx.new_page()

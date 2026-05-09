@@ -99,7 +99,7 @@ jobs:
   dividendflow-nccpl-scraper:
     name: dividendflow-nccpl-scraper
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     permissions:
       contents: write
     steps:
@@ -120,7 +120,7 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
           BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}
         with:
-          timeout_minutes: 38
+          timeout_minutes: 55
           max_attempts: 2
-          retry_wait_seconds: 90
+          retry_wait_seconds: 120
           command: python scripts/scrape-nccpl-browserless.py
