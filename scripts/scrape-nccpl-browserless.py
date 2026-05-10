@@ -112,16 +112,39 @@ def _acquire_unblock_ws_url():
 
 
 def _cdp_attempt_urls_ordered():
-    """Prefer /unblock CDP URL when available; then try managed stealth per region."""
-    attempts = []
-    try:
-        u, h = _acquire_unblock_ws_url()
-        attempts.append((f"unblock({h})", u))
-    except RuntimeError as e:
-        print(f"[NCCPL] /unblock not available; will try stealth CDP only: {e}")
+    """
+    Browserless /unblock often returns HTTP 408 from GitHub-hosted runners on free tier.
+    On GITHUB_ACTIONS we try managed stealth CDP first; set NCCPL_TRY_UNBLOCK=1 to also
+    attempt /unblock after stealth. Locally, /unblock is tried first (best bypass when it works).
+    """
     tok = urllib.parse.quote(BROWSERLESS_TOKEN)
-    for h in _unblock_hosts_ordered():
-        attempts.append((f"stealth({h})", f"wss://{h}/chromium/stealth?token={tok}"))
+    hosts = _unblock_hosts_ordered()
+    stealth_pairs = [
+        (f"stealth({h})", f"wss://{h}/chromium/stealth?token={tok}")
+        for h in hosts
+    ]
+
+    attempts = []
+    on_actions = os.getenv("GITHUB_ACTIONS") == "true"
+    try_unblock_after = os.getenv("NCCPL_TRY_UNBLOCK", "").lower() in ("1", "true", "yes")
+
+    if on_actions:
+        print("[NCCPL] GitHub Actions: stealth CDP first (avoid slow /unblock 408s).")
+        attempts.extend(stealth_pairs)
+        if try_unblock_after:
+            try:
+                u, h = _acquire_unblock_ws_url()
+                attempts.append((f"unblock({h})", u))
+            except RuntimeError as e:
+                print(f"[NCCPL] /unblock skipped after stealth attempts: {e}")
+    else:
+        try:
+            u, h = _acquire_unblock_ws_url()
+            attempts.append((f"unblock({h})", u))
+        except RuntimeError as e:
+            print(f"[NCCPL] /unblock not available; will try stealth CDP only: {e}")
+        attempts.extend(stealth_pairs)
+
     seen = set()
     out = []
     for label, url in attempts:
