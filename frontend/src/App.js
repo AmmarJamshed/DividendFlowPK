@@ -10,6 +10,14 @@ import ReportingCycles from './pages/ReportingCycles';
 import MarketClosingPrices from './pages/MarketClosingPrices';
 import { AIAssistanceProvider } from './context/AIAssistanceContext';
 
+/** GitHub project Pages live under /RepoName/; match react-router to that prefix. */
+function routerBasename() {
+  const raw = process.env.PUBLIC_URL;
+  if (!raw || raw === '/') return undefined;
+  const b = String(raw).replace(/\/$/, '');
+  return b || undefined;
+}
+
 function Analytics() {
   const location = useLocation();
   
@@ -26,7 +34,7 @@ function Analytics() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename()}>
       <Analytics />
       <AIAssistanceProvider>
         <Layout>
