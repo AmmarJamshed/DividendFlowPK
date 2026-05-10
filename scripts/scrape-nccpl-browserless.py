@@ -119,24 +119,27 @@ def _cdp_attempt_urls_ordered():
     """
     tok = urllib.parse.quote(BROWSERLESS_TOKEN)
     hosts = _unblock_hosts_ordered()
-    stealth_pairs = [
-        (f"stealth({h})", f"wss://{h}/chromium/stealth?token={tok}")
-        for h in hosts
-    ]
+    stealth_pairs = []
+    for h in hosts:
+        stealth_pairs.append(
+            (f"chromium-stealth({h})", f"wss://{h}/chromium/stealth?token={tok}")
+        )
+        stealth_pairs.append(
+            (f"stealth({h})", f"wss://{h}/stealth?token={tok}")
+        )
 
     attempts = []
     on_actions = os.getenv("GITHUB_ACTIONS") == "true"
-    try_unblock_after = os.getenv("NCCPL_TRY_UNBLOCK", "").lower() in ("1", "true", "yes")
 
     if on_actions:
-        print("[NCCPL] GitHub Actions: stealth CDP first (avoid slow /unblock 408s).")
+        # Stealth often still sees Cloudflare from CI; /unblock is the reliable bypass when it succeeds.
+        print("[NCCPL] GitHub Actions: stealth CDP attempts first, then Browserless /unblock.")
         attempts.extend(stealth_pairs)
-        if try_unblock_after:
-            try:
-                u, h = _acquire_unblock_ws_url()
-                attempts.append((f"unblock({h})", u))
-            except RuntimeError as e:
-                print(f"[NCCPL] /unblock skipped after stealth attempts: {e}")
+        try:
+            u, h = _acquire_unblock_ws_url()
+            attempts.append((f"unblock({h})", u))
+        except RuntimeError as e:
+            print(f"[NCCPL] /unblock unavailable after stealth: {e}")
     else:
         try:
             u, h = _acquire_unblock_ws_url()
@@ -177,6 +180,9 @@ def _collect_table_rows_cdp(p, ws_url, label):
 
         title = page.title()
         print(f"[NCCPL] Page loaded: {title}")
+        tl = (title or "").lower()
+        if "cloudflare" in tl or "attention required" in tl:
+            raise RuntimeError("Blocked by Cloudflare interstitial (try next CDP session)")
 
         print("[NCCPL] Clicking VAR Margins tab...")
         var_tab = page.locator("a[role='tab']:has-text('VAR Margins')").first

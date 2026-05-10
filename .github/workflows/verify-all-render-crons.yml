@@ -119,6 +119,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
           BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}
+          NCCPL_UNBLOCK_ATTEMPTS_PER_HOST: "1"
+          NCCPL_UNBLOCK_RETRY_PAUSE: "15"
         with:
           timeout_minutes: 55
           max_attempts: 2
