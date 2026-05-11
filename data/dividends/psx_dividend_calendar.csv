@@ -15,8 +15,8 @@ BAHL,Commercial Banks,6,2025-11-04,3.8,155.99,2025
 CHCC,Cement,2,2026-03-02,2.0,100,2025
 COLG,Food & Personal Care,70,2026-03-10,2.2,3200,2024
 COLG,Food & Personal Care,80,2026-03-10,2.5,3200,2025
-DGKC,Cement,6,4,3.15,190.31,2024
-DGKC,Cement,8,10,4.2,190.31,2025
+DGKC,Cement,6,4,3.22,186.62,2024
+DGKC,Cement,8,10,4.29,186.62,2025
 EFERT,Fertilizer,10,2025-10-29,4.62,216.28,2024
 EFERT,Fertilizer,12,2025-10-29,5.55,216.28,2025
 ENGRO,Investment Banks,40,10,2.1,1880.4,2024
@@ -39,7 +39,7 @@ ISL,Steel,7,4,3.3,211.6,2024
 ISL,Steel,8,10,3.8,211.6,2025
 KAPCO,Power Generation,2.2,2025-10-24,7.5,29.39,2024
 KAPCO,Power Generation,2.5,2025-10-24,8.5,29.39,2025
-KEL,Power Distribution,0.5,10,6.16,8.12,2025
+KEL,Power Distribution,0.5,10,5.59,8.95,2025
 LPL,Power Generation,2.5,10,5.5,45,2025
 LUCK,Cement,3,10,0.75,398.83,2024
 LUCK,Cement,4,10,1.0,398.83,2025
@@ -47,27 +47,27 @@ MARI,Oil & Gas Exploration,40,4,6.48,617.65,2024
 MARI,Oil & Gas Exploration,45,10,7.29,617.65,2025
 MCB,Commercial Banks,22,2025-11-05,5.89,373.87,2024
 MCB,Commercial Banks,24,2025-11-05,6.42,373.87,2025
-MLCF,Cement,3,10,3.37,88.96,2025
+MLCF,Cement,3,10,3.44,87.27,2025
 NCL,Textiles,3.5,2025-03-11,2.4,145.93,2024
 NCL,Textiles,4,2025-03-11,2.7,145.93,2025
-NCPL,Power Generation,8,4,11.6,68.99,2025
+NCPL,Power Generation,8,4,11.8,67.79,2025
 NESTLE,Food & Personal Care,120,2025-10-29,1.53,7830.4,2024
 NESTLE,Food & Personal Care,150,2025-10-29,1.92,7830.4,2025
-NPL,Power Generation,3,10,3.95,75.99,2025
-OGDC,Oil & Gas Exploration,6,2025-11-12,1.82,329.68,2024
-OGDC,Oil & Gas Exploration,7.75,2025-11-12,2.35,329.68,2026
+NPL,Power Generation,3,10,4.01,74.85,2025
+OGDC,Oil & Gas Exploration,6,2025-11-12,1.83,327.22,2024
+OGDC,Oil & Gas Exploration,7.75,2025-11-12,2.37,327.22,2026
 PNSC,Transport,10,2025-10-28,4.2,240,2024
 PNSC,Transport,12,2025-10-28,5.0,240,2025
 POL,Oil & Gas Marketing,55,2025-03-11,8.49,647.5,2025
-PPL,Oil & Gas Exploration,10,2025-11-14,4.35,229.93,2024
-PPL,Oil & Gas Exploration,12,2025-11-14,5.22,229.93,2025
+PPL,Oil & Gas Exploration,10,2025-11-14,4.31,231.84,2024
+PPL,Oil & Gas Exploration,12,2025-11-14,5.18,231.84,2025
 PSO,Oil & Gas Marketing,22,4,5.6,393.46,2024
 PSO,Oil & Gas Marketing,25,10,6.35,393.46,2025
-SYS,Technology,5,10,4.01,124.61,2025
+SYS,Technology,5,10,3.22,155.3,2025
 TGL,Glass,2.5,2025-03-09,3.3,75.78,2024
 TGL,Glass,3,2025-03-09,4.0,75.78,2025
-TRG,Technology,2,10,3.6,55.51,2025
+TRG,Technology,2,10,3.28,61.06,2025
 UBL,Commercial Banks,16,2025-10-29,3.84,416.07,2024
 UBL,Commercial Banks,18,2025-10-29,4.33,416.07,2025
-UNITY,Food & Personal Care,0.35,4,2.71,12.91,2024
-UNITY,Food & Personal Care,0.4,10,3.1,12.91,2025
+UNITY,Food & Personal Care,0.35,4,2.75,12.74,2024
+UNITY,Food & Personal Care,0.4,10,3.14,12.74,2025
