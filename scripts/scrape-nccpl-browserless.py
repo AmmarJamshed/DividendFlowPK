@@ -33,6 +33,7 @@ _DEFAULT_UNBLOCK_HOSTS = (
     "production-sfo.browserless.io",
     "production-ams.browserless.io",
     "production-lon.browserless.io",
+    "production-iad.browserless.io",
 )
 
 
@@ -52,7 +53,7 @@ def _browserless_unblock_ws_endpoint(ws_host: str):
     # Server-side max wait for unblocking (seconds; plan limits apply — free tier is modest).
     q = urllib.parse.urlencode({
         "token": BROWSERLESS_TOKEN,
-        "timeout": "180",
+        "timeout": "300",
     })
     api_url = f"https://{ws_host}/unblock?{q}"
     payload = json.dumps({
@@ -93,29 +94,36 @@ def clean_symbol(symbol):
     return parts[0] if parts else symbol
 
 
-def _acquire_unblock_ws_url():
-    """Call /unblock across regions with per-host retries (reduces HTTP 408 flakiness)."""
+def _collect_unblock_cdp_attempts():
+    """
+    Try Browserless /unblock once per region (with per-host retries).
+    Returns a list of (label, ws_url) for each successful unblock — these must be
+    tried before stealth CDP, which usually hits Cloudflare from CI.
+    """
+    out = []
     per_host_attempts = max(1, int(os.getenv("NCCPL_UNBLOCK_ATTEMPTS_PER_HOST", "2")))
-    pause_s = float(os.getenv("NCCPL_UNBLOCK_RETRY_PAUSE", "30"))
-    last_err = None
+    pause_s = float(os.getenv("NCCPL_UNBLOCK_RETRY_PAUSE", "25"))
     for ws_host in _unblock_hosts_ordered():
         for attempt in range(1, per_host_attempts + 1):
             try:
-                print(f"[NCCPL] Unblock via Browserless (host={ws_host}, attempt {attempt}/{per_host_attempts})...")
-                return _browserless_unblock_ws_endpoint(ws_host), ws_host
+                print(
+                    f"[NCCPL] Unblock via Browserless (host={ws_host}, attempt {attempt}/{per_host_attempts})..."
+                )
+                ws = _browserless_unblock_ws_endpoint(ws_host)
+                out.append((f"unblock({ws_host})", ws))
+                break
             except Exception as e:
-                last_err = e
                 print(f"[NCCPL] Unblock failed on {ws_host}: {e}")
                 if attempt < per_host_attempts:
                     time.sleep(pause_s)
-    raise RuntimeError(f"Browserless /unblock failed on all hosts: {last_err}")
+    return out
 
 
 def _cdp_attempt_urls_ordered():
     """
-    Browserless /unblock often returns HTTP 408 from GitHub-hosted runners on free tier.
-    On GITHUB_ACTIONS we try managed stealth CDP first; set NCCPL_TRY_UNBLOCK=1 to also
-    attempt /unblock after stealth. Locally, /unblock is tried first (best bypass when it works).
+    Order matters: Browserless /unblock must run before plain stealth CDP from GitHub
+    runners, or NCCPL stays behind Cloudflare. Collect every successful per-region
+    unblock, then append stealth fallbacks.
     """
     tok = urllib.parse.quote(BROWSERLESS_TOKEN)
     hosts = _unblock_hosts_ordered()
@@ -128,25 +136,14 @@ def _cdp_attempt_urls_ordered():
             (f"stealth({h})", f"wss://{h}/stealth?token={tok}")
         )
 
-    attempts = []
     on_actions = os.getenv("GITHUB_ACTIONS") == "true"
-
     if on_actions:
-        # Stealth often still sees Cloudflare from CI; /unblock is the reliable bypass when it succeeds.
-        print("[NCCPL] GitHub Actions: stealth CDP attempts first, then Browserless /unblock.")
-        attempts.extend(stealth_pairs)
-        try:
-            u, h = _acquire_unblock_ws_url()
-            attempts.append((f"unblock({h})", u))
-        except RuntimeError as e:
-            print(f"[NCCPL] /unblock unavailable after stealth: {e}")
+        print("[NCCPL] GitHub Actions: /unblock per region first, then stealth CDP fallback.")
     else:
-        try:
-            u, h = _acquire_unblock_ws_url()
-            attempts.append((f"unblock({h})", u))
-        except RuntimeError as e:
-            print(f"[NCCPL] /unblock not available; will try stealth CDP only: {e}")
-        attempts.extend(stealth_pairs)
+        print("[NCCPL] /unblock per region first, then stealth CDP fallback.")
+
+    attempts = _collect_unblock_cdp_attempts()
+    attempts.extend(stealth_pairs)
 
     seen = set()
     out = []
