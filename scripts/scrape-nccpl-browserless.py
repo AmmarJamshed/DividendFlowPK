@@ -33,7 +33,6 @@ _DEFAULT_UNBLOCK_HOSTS = (
     "production-sfo.browserless.io",
     "production-ams.browserless.io",
     "production-lon.browserless.io",
-    "production-iad.browserless.io",
 )
 
 
