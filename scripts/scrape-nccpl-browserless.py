@@ -3,8 +3,16 @@
 NCCPL Risk Scraper using Browserless.io
 Bypasses Cloudflare using remote browser service
 Requires: BROWSERLESS_TOKEN environment variable
+
+Optional env:
+  BROWSERLESS_WS_HOST, BROWSERLESS_UNBLOCK_HOSTS — region override
+  BROWSERLESS_UNBLOCK_TIMEOUT — /unblock server wait seconds (default 300)
+  NCCPL_UNBLOCK_ATTEMPTS_PER_HOST, NCCPL_UNBLOCK_RETRY_PAUSE
+  NCCPL_MIN_SCRAPED_ROWS — minimum parsed rows to accept (default 15)
+  NCCPL_CF_WAIT_SECONDS — max wait for Cloudflare to clear per CDP session (default 240)
 """
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from bs4 import BeautifulSoup
 import csv
 import os
 import time
@@ -47,42 +55,56 @@ def _unblock_hosts_ordered():
     return hosts
 
 
-def _browserless_unblock_ws_endpoint(ws_host: str):
-    """Ask Browserless to open NCCPL and return a live CDP WebSocket (bypasses Cloudflare)."""
-    # Server-side max wait for unblocking (seconds; plan limits apply — free tier is modest).
-    q = urllib.parse.urlencode({
-        "token": BROWSERLESS_TOKEN,
-        "timeout": "300",
-    })
-    api_url = f"https://{ws_host}/unblock?{q}"
-    payload = json.dumps({
-        "url": URL,
-        "browserWSEndpoint": True,
-        "cookies": True,
-        "content": False,
-        "screenshot": False,
-        "ttl": 300000,
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        api_url,
-        data=payload,
-        headers={"Content-Type": "application/json", "User-Agent": "DividendFlowPK-nccpl-scraper"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=420) as resp:
-            body = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode(errors="replace")[:1200]
-        print(f"[NCCPL] Browserless /unblock HTTP {e.code}: {err_body}")
-        raise
-    ws = body.get("browserWSEndpoint")
+def _normalize_ws_endpoint(ws: str) -> str:
     if not ws:
-        raise RuntimeError(f"Browserless /unblock did not return browserWSEndpoint: {str(body)[:400]}")
+        return ws
     if "token=" not in ws:
         sep = "&" if "?" in ws else "?"
         ws = f"{ws}{sep}token={urllib.parse.quote(BROWSERLESS_TOKEN)}"
     return ws
+
+
+def _browserless_unblock_json(ws_host: str) -> dict:
+    """
+    POST /unblock — request CDP endpoint and optionally rendered HTML.
+    Some plans reject content+ws together; fall back to ws-only on HTTP 400.
+    """
+    timeout_q = (os.getenv("BROWSERLESS_UNBLOCK_TIMEOUT", "300") or "300").strip()
+    q = urllib.parse.urlencode({
+        "token": BROWSERLESS_TOKEN,
+        "timeout": timeout_q,
+    })
+    api_url = f"https://{ws_host}/unblock?{q}"
+    last_err = None
+    for include_content in (True, False):
+        payload_obj = {
+            "url": URL,
+            "browserWSEndpoint": True,
+            "cookies": True,
+            "screenshot": False,
+            "ttl": 300000,
+        }
+        if include_content:
+            payload_obj["content"] = True
+        payload = json.dumps(payload_obj).encode("utf-8")
+        req = urllib.request.Request(
+            api_url,
+            data=payload,
+            headers={"Content-Type": "application/json", "User-Agent": "DividendFlowPK-nccpl-scraper"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=480) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode(errors="replace")[:800]
+            last_err = e
+            if e.code == 400 and include_content:
+                print(f"[NCCPL] /unblock content=true not accepted; retrying ws-only: {err_body[:200]}")
+                continue
+            print(f"[NCCPL] Browserless /unblock HTTP {e.code}: {err_body}")
+            raise
+    raise last_err or RuntimeError("unblock failed")
 
 
 def clean_symbol(symbol):
@@ -93,11 +115,94 @@ def clean_symbol(symbol):
     return parts[0] if parts else symbol
 
 
+def _parse_var_margin_rows_from_html(html: str):
+    """Parse VaR / haircut table rows from rendered HTML (Browserless /unblock content)."""
+    metrics = []
+    soup = BeautifulSoup(html, "html.parser")
+    for table in soup.find_all("table"):
+        tbody = table.find("tbody")
+        rows = tbody.find_all("tr") if tbody else table.find_all("tr")
+        for tr in rows:
+            tds = tr.find_all("td")
+            if len(tds) < 5:
+                continue
+            try:
+                symbol_full = tds[1].get_text(strip=True)
+                var_value = float((tds[2].get_text(strip=True) or "0").replace(",", "") or 0)
+                haircut = float((tds[3].get_text(strip=True) or "0").replace(",", "") or 0)
+                week_26_avg = float((tds[4].get_text(strip=True) or "0").replace(",", "") or 0)
+                free_float = 0
+                half_hour_rate = 0
+                if len(tds) > 7:
+                    try:
+                        ff = tds[7].get_text(strip=True).replace(",", "")
+                        free_float = float(ff) if ff and ff != "-" else 0
+                    except (ValueError, TypeError):
+                        pass
+                if len(tds) > 6:
+                    try:
+                        half_hour_rate = float((tds[6].get_text(strip=True) or "0").replace(",", "") or 0)
+                    except (ValueError, TypeError):
+                        pass
+                base_symbol = clean_symbol(symbol_full)
+                if not base_symbol or base_symbol in ("KSE30", "OGTI", "BKTI"):
+                    continue
+                if haircut == 0:
+                    continue
+                metrics.append({
+                    "symbol": base_symbol,
+                    "symbol_full": symbol_full,
+                    "var_value": var_value,
+                    "haircut": haircut,
+                    "week_26_avg": week_26_avg,
+                    "free_float": free_float,
+                    "half_hour_avg_rate": half_hour_rate,
+                })
+            except (ValueError, TypeError, IndexError) as e:
+                print(f"[NCCPL] HTML row parse skip: {e}")
+                continue
+    return metrics
+
+
+def _wait_cloudflare_then_ready(page, max_wait_s: float = None):
+    """Wait for Cloudflare interstitial to clear; one reload retry."""
+    if max_wait_s is None:
+        max_wait_s = float(os.getenv("NCCPL_CF_WAIT_SECONDS", "240"))
+    max_ms = int(max_wait_s * 1000)
+    for round_idx in range(2):
+        try:
+            page.wait_for_function(
+                """() => {
+                    const t = (document.title || '').toLowerCase();
+                    if (t.includes('cloudflare') || t.includes('attention required')) return false;
+                    if (t.includes('just a moment')) return false;
+                    return true;
+                }""",
+                timeout=max_ms if round_idx == 0 else max(60_000, max_ms // 2),
+            )
+            return True
+        except PlaywrightTimeoutError:
+            pass
+        try:
+            tl = (page.title() or "").lower()
+            if "cloudflare" not in tl and "attention required" not in tl and "just a moment" not in tl:
+                return True
+        except Exception:
+            pass
+        if round_idx == 0:
+            print("[NCCPL] Cloudflare wait timed out; reloading once…")
+            try:
+                page.reload(wait_until="domcontentloaded", timeout=90000)
+            except Exception as e:
+                print(f"[NCCPL] Reload failed: {e}")
+    return False
+
+
 def _collect_unblock_cdp_attempts():
     """
-    Try Browserless /unblock once per region (with per-host retries).
-    Returns a list of (label, ws_url) for each successful unblock — these must be
-    tried before stealth CDP, which usually hits Cloudflare from CI.
+    Try Browserless /unblock per region (with per-host retries).
+    Returns list of (label, ws_url, html_or_none). HTML may include the VaR table
+    without Playwright; ws_url may be empty if only HTML was returned (rare).
     """
     out = []
     per_host_attempts = max(1, int(os.getenv("NCCPL_UNBLOCK_ATTEMPTS_PER_HOST", "2")))
@@ -108,8 +213,19 @@ def _collect_unblock_cdp_attempts():
                 print(
                     f"[NCCPL] Unblock via Browserless (host={ws_host}, attempt {attempt}/{per_host_attempts})..."
                 )
-                ws = _browserless_unblock_ws_endpoint(ws_host)
-                out.append((f"unblock({ws_host})", ws))
+                body = _browserless_unblock_json(ws_host)
+                ws_raw = body.get("browserWSEndpoint")
+                html = body.get("content") or body.get("data") or body.get("html")
+                if isinstance(html, str) and "<" in html and len(html.strip()) > 200:
+                    html = html.strip()
+                else:
+                    html = None
+                ws = _normalize_ws_endpoint(ws_raw) if ws_raw else ""
+                if not ws and not html:
+                    raise RuntimeError(
+                        f"No browserWSEndpoint or HTML in response keys={list(body.keys())[:12]}"
+                    )
+                out.append((f"unblock({ws_host})", ws, html))
                 break
             except Exception as e:
                 print(f"[NCCPL] Unblock failed on {ws_host}: {e}")
@@ -129,38 +245,40 @@ def _cdp_attempt_urls_ordered():
     stealth_pairs = []
     for h in hosts:
         stealth_pairs.append(
-            (f"chromium-stealth({h})", f"wss://{h}/chromium/stealth?token={tok}")
+            (f"chromium-stealth({h})", f"wss://{h}/chromium/stealth?token={tok}", None)
         )
         stealth_pairs.append(
-            (f"stealth({h})", f"wss://{h}/stealth?token={tok}")
+            (f"stealth({h})", f"wss://{h}/stealth?token={tok}", None)
         )
 
-    on_actions = os.getenv("GITHUB_ACTIONS") == "true"
-    if on_actions:
+    if os.getenv("GITHUB_ACTIONS") == "true":
         print("[NCCPL] GitHub Actions: /unblock per region first, then stealth CDP fallback.")
     else:
         print("[NCCPL] /unblock per region first, then stealth CDP fallback.")
 
-    attempts = _collect_unblock_cdp_attempts()
+    attempts = list(_collect_unblock_cdp_attempts())
     attempts.extend(stealth_pairs)
 
     seen = set()
     out = []
-    for label, url in attempts:
-        if url in seen:
+    for label, url, html_frag in attempts:
+        key = (url or "", (html_frag or "")[:160])
+        if key in seen:
             continue
-        seen.add(url)
-        out.append((label, url))
+        seen.add(key)
+        out.append((label, url, html_frag))
     return out
 
 
 def _collect_table_rows_cdp(p, ws_url, label):
     """Connect over CDP and return raw metric rows (list of dicts). Raises on hard failures."""
+    if not ws_url:
+        raise ValueError("missing WebSocket URL for CDP")
     print(f"[NCCPL] CDP session ({label})…")
     metrics = []
     browser = None
     try:
-        browser = p.chromium.connect_over_cdp(ws_url, timeout=120000)
+        browser = p.chromium.connect_over_cdp(ws_url, timeout=180000)
         ctx = browser.contexts[0] if browser.contexts else browser.new_context()
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
         if URL not in (page.url or ""):
@@ -172,7 +290,14 @@ def _collect_table_rows_cdp(p, ws_url, label):
             page.wait_for_load_state('networkidle', timeout=25000)
         except Exception:
             pass
-        time.sleep(4)
+        time.sleep(2)
+
+        if not _wait_cloudflare_then_ready(page):
+            title = page.title()
+            print(f"[NCCPL] Page title after CF wait: {title}")
+            tl = (title or "").lower()
+            if "cloudflare" in tl or "attention required" in tl:
+                raise RuntimeError("Blocked by Cloudflare interstitial (try next CDP session)")
 
         title = page.title()
         print(f"[NCCPL] Page loaded: {title}")
@@ -181,14 +306,29 @@ def _collect_table_rows_cdp(p, ws_url, label):
             raise RuntimeError("Blocked by Cloudflare interstitial (try next CDP session)")
 
         print("[NCCPL] Clicking VAR Margins tab...")
-        var_tab = page.locator("a[role='tab']:has-text('VAR Margins')").first
-        var_tab.wait_for(state='visible', timeout=90000)
-        var_tab.click()
+        var_selectors = [
+            "a[role='tab']:has-text('VAR Margins')",
+            "button[role='tab']:has-text('VAR Margins')",
+            "[role='tab']:has-text('VAR Margins')",
+            "text=VAR Margins",
+        ]
+        clicked = False
+        for sel in var_selectors:
+            loc = page.locator(sel).first
+            try:
+                loc.wait_for(state="visible", timeout=15000)
+                loc.click(timeout=10000)
+                clicked = True
+                break
+            except Exception:
+                continue
+        if not clicked:
+            raise RuntimeError("VAR Margins tab not found")
         print("[NCCPL] Clicked VAR Margins tab")
-        time.sleep(5)
+        time.sleep(4)
 
         print("[NCCPL] Waiting for table to load...")
-        page.wait_for_selector("table tbody tr", timeout=30000)
+        page.wait_for_selector("table tbody tr", timeout=120000)
         print("[NCCPL] Table loaded")
         time.sleep(2)
 
@@ -261,12 +401,18 @@ def scrape_nccpl_risk():
     min_rows = max(1, int(os.getenv("NCCPL_MIN_SCRAPED_ROWS", "15")))
     metrics = []
     with sync_playwright() as p:
-        for label, ws_url in _cdp_attempt_urls_ordered():
-            try:
-                metrics = _collect_table_rows_cdp(p, ws_url, label)
-            except Exception as e:
-                print(f"[NCCPL] {label} failed: {e}")
-                metrics = []
+        for label, ws_url, html_frag in _cdp_attempt_urls_ordered():
+            metrics = []
+            if html_frag:
+                metrics = _parse_var_margin_rows_from_html(html_frag)
+                print(f"[NCCPL] HTML parse ({label}): {len(metrics)} candidate rows")
+            if len(metrics) < min_rows and ws_url:
+                try:
+                    cdp_rows = _collect_table_rows_cdp(p, ws_url, label)
+                    if len(cdp_rows) > len(metrics):
+                        metrics = cdp_rows
+                except Exception as e:
+                    print(f"[NCCPL] {label} CDP failed: {e}")
             if len(metrics) >= min_rows:
                 print(f"[NCCPL] ✓ {label}: {len(metrics)} candidate rows (≥{min_rows})")
                 break

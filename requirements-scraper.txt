@@ -1,3 +1,4 @@
 # Pin to same Playwright as psx.py / GitHub Actions PSX workflow — avoids Browserless WS protocol bugs seen with 1.55.x
 playwright==1.49.0
 requests==2.32.3
+beautifulsoup4==4.12.3

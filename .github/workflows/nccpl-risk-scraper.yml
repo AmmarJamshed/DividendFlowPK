@@ -11,7 +11,7 @@ permissions:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     concurrency:
       group: nccpl-risk-scraper-${{ github.ref }}
       cancel-in-progress: true
@@ -39,7 +39,7 @@ jobs:
           NCCPL_UNBLOCK_ATTEMPTS_PER_HOST: "2"
           NCCPL_UNBLOCK_RETRY_PAUSE: "25"
         with:
-          timeout_minutes: 55
+          timeout_minutes: 70
           max_attempts: 2
           retry_wait_seconds: 120
           command: python scripts/scrape-nccpl-browserless.py

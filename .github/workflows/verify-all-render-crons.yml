@@ -99,7 +99,7 @@ jobs:
   dividendflow-nccpl-scraper:
     name: dividendflow-nccpl-scraper
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 130
     permissions:
       contents: write
     steps:
@@ -122,7 +122,7 @@ jobs:
           NCCPL_UNBLOCK_ATTEMPTS_PER_HOST: "2"
           NCCPL_UNBLOCK_RETRY_PAUSE: "25"
         with:
-          timeout_minutes: 55
+          timeout_minutes: 70
           max_attempts: 2
           retry_wait_seconds: 120
           command: python scripts/scrape-nccpl-browserless.py
