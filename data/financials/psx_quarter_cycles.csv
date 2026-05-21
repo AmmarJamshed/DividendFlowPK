@@ -1,7 +1,7 @@
 Company,Sector,Fiscal_Year_End,Quarter_End_Months,Dividend_Announcement_Period,Book_Closure_Month,Estimated_Payment_Month
 AABS,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",September,October
 ABL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",September,October
-ABOT,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+ABOT,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 ACPL,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 AGIC,Insurance,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 AGIL,Pharmaceuticals,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
@@ -29,15 +29,15 @@ MARI,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,Oc
 MCB,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",September,October
 MLCF,Cement,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
 NCL,Textiles,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-NCPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+NCPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 NESTLE,Food & Personal Care,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",September,October
-NPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+NPL,Power Generation,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 OGDC,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 PNSC,Transport,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 POL,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 PPL,Oil & Gas Exploration,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 PSO,Oil & Gas Marketing,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
-SYS,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
+SYS,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 TGL,Glass,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",September,October
 TRG,Technology,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",October,October
 UBL,Commercial Banks,December,"Mar,Jun,Sep,Dec","Feb,May,Aug,Nov",September,October
