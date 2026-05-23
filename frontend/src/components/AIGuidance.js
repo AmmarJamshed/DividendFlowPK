@@ -18,6 +18,7 @@ const ROUTE_TIPS = {
   ],
   '/salary-simulator': [
     'Use the Salary Replacement Simulator to plan passive income goals.',
+    'After Calculate, AI suggests how many PSX stocks and how to split your portfolio using today\'s news.',
     'Set your target monthly income and expected yield.',
   ],
   '/reporting-cycles': [

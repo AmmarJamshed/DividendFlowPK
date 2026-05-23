@@ -9,6 +9,8 @@ export const api = {
   getForecast: (company, asOf) => axios.get(`${API_BASE}/forecast`, { params: { company, asOf } }),
   getSalarySimulator: (targetMonthlyIncome, expectedDividendYield) =>
     axios.post(`${API_BASE}/salary-simulator`, { targetMonthlyIncome, expectedDividendYield }),
+  postSalaryAiRecommendations: (body) =>
+    axios.post(`${API_BASE}/salary-simulator/ai-recommendations`, body, { timeout: 60000 }),
   getReportingCycles: () => axios.get(`${API_BASE}/reporting-cycles`),
   getCapitalGain: (company) => axios.get(`${API_BASE}/capital-gain`, { params: { company } }),
   getDataStatus: () => axios.get(`${API_BASE}/data-status`),

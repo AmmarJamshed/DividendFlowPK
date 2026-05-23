@@ -629,6 +629,200 @@ app.get('/api/forecast', async (req, res) => {
   }
 });
 
+function parseGroqJsonBlock(text) {
+  const t = String(text || '').trim();
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const raw = fence ? fence[1].trim() : t;
+  try {
+    return JSON.parse(raw);
+  } catch (_) {
+    const start = raw.indexOf('{');
+    const end = raw.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(raw.slice(start, end + 1));
+      } catch (e2) {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+async function buildDividendYieldContext(limit = 28) {
+  const dividends = await getEnrichedDividends();
+  const byCompany = new Map();
+  for (const d of dividends) {
+    const c = (d.Company || d.company || '').trim();
+    const y = parseFloat(d.Dividend_yield || d.dividend_yield) || 0;
+    if (!c || y <= 0) continue;
+    const prev = byCompany.get(c);
+    if (!prev || y > prev.yield) {
+      byCompany.set(c, {
+        symbol: c,
+        yield: y,
+        price: parseFloat(d.Price || d.price) || null,
+        type: d.Type || d.dividendType || '',
+      });
+    }
+  }
+  return [...byCompany.values()]
+    .sort((a, b) => b.yield - a.yield)
+    .slice(0, limit);
+}
+
+const salaryAiRateByIp = new Map();
+const SALARY_AI_MIN_INTERVAL_MS = 12000;
+
+async function groqSalaryPortfolioAdvice({
+  monthly,
+  yieldPct,
+  requiredPortfolio,
+  shariahOnly,
+}) {
+  const apiKey = getGroqKey();
+  if (!apiKey) {
+    return {
+      ok: false,
+      error: 'GROQ_API_KEY is not set on the server. Add it in Render → dividendflow-backend → Environment.',
+    };
+  }
+
+  let shariahSet = null;
+  if (shariahOnly) {
+    try {
+      const shariahPath = path.join(DATA_PATH, 'reference', 'psx_shariah_compliant.json');
+      if (fs.existsSync(shariahPath)) {
+        const shariahData = JSON.parse(fs.readFileSync(shariahPath, 'utf-8'));
+        shariahSet = new Set((shariahData.symbols || []).map((s) => String(s).toUpperCase()));
+      }
+    } catch (e) {
+      console.warn('[Salary AI] Shariah list load failed:', e.message);
+    }
+  }
+
+  let yieldRows = await buildDividendYieldContext(35);
+  if (shariahSet && shariahSet.size > 0) {
+    yieldRows = yieldRows.filter((r) => shariahSet.has(r.symbol.toUpperCase()));
+  }
+
+  const newsPayload = await fetchDailyNewsPayload();
+  const marketBlock = buildMarketChatContextText(newsPayload);
+  const digest = buildSiteDataDigest();
+
+  const yieldLines = yieldRows.length
+    ? yieldRows.map((r) => `${r.symbol}: indicated yield ~${r.yield}%  price:${r.price ?? 'n/a'}  type:${r.type || 'n/a'}`).join('\n')
+    : '(No dividend yield rows in calendar files.)';
+
+  const systemPrompt = `You are a PSX dividend-income research assistant on DividendFlow PK.
+
+The user is building a hypothetical dividend portfolio to replace salary. You receive:
+- Their target monthly income and required portfolio size (math already done).
+- Top indicated dividend yields from DividendFlow's calendar CSVs (not live prices).
+- Today's saved news and price-move scrape (may be last trading session).
+
+Rules:
+1) Respond with ONLY valid JSON (no markdown outside JSON) matching this schema:
+{
+  "suggestedNumberOfStocks": number (integer 5-12),
+  "overview": "2-4 sentences on diversification and income focus",
+  "todayMarketRead": "2-3 sentences tying news/movers to context — only facts from DATA",
+  "holdings": [
+    {
+      "symbol": "PSX ticker",
+      "weightPercent": number (0-100, all holdings should sum to ~100),
+      "why": "one sentence — dividend + diversification rationale",
+      "newsNote": "optional — only if supported in DATA, else empty string"
+    }
+  ],
+  "cautions": ["bullet 1", "bullet 2"]
+}
+2) Pick symbols ONLY from the DIVIDEND YIELD LIST unless explaining why you cannot include a mover not on that list.
+3) Use probabilistic language. No guaranteed returns. No "buy now" — frame as "illustrative allocation" for learning.
+4) weightPercent should reflect sensible diversification (no single name above ~20% unless justified).
+5) suggestedNumberOfStocks must match holdings.length.
+
+Data freshness:
+${digest}`;
+
+  const userBlock = `USER GOAL
+- Target monthly income: Rs ${monthly.toLocaleString('en-PK')}
+- Assumed portfolio dividend yield: ${yieldPct}%
+- Required portfolio value (user math): Rs ${Math.round(requiredPortfolio).toLocaleString('en-PK')}
+- Shariah-only filter requested: ${shariahOnly ? 'yes' : 'no'}
+
+DIVIDEND YIELD LIST (indicated yields from DividendFlow files — pick from here):
+${yieldLines}
+
+MARKET / NEWS SCRAPE:
+---
+${marketBlock}
+---
+
+Return JSON only.`;
+
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userBlock },
+        ],
+        max_tokens: 1200,
+        temperature: 0.35,
+        response_format: { type: 'json_object' },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 45000,
+      }
+    );
+    const raw = (response.data.choices[0]?.message?.content || '').trim();
+    const parsed = parseGroqJsonBlock(raw);
+    if (!parsed || !Array.isArray(parsed.holdings)) {
+      return { ok: false, error: 'AI returned an unexpected format. Try again.' };
+    }
+
+    const holdings = parsed.holdings
+      .map((h) => ({
+        symbol: String(h.symbol || '').toUpperCase().trim(),
+        weightPercent: Math.round((parseFloat(h.weightPercent) || 0) * 100) / 100,
+        why: String(h.why || '').slice(0, 500),
+        newsNote: String(h.newsNote || '').slice(0, 300),
+      }))
+      .filter((h) => h.symbol && h.weightPercent > 0);
+
+    const totalWt = holdings.reduce((s, h) => s + h.weightPercent, 0);
+    const normalized = holdings.map((h) => {
+      const pct = totalWt > 0 ? (h.weightPercent / totalWt) * 100 : h.weightPercent;
+      const allocationRs = Math.round((requiredPortfolio * pct) / 100);
+      return {
+        ...h,
+        weightPercent: Math.round(pct * 100) / 100,
+        allocationRs,
+      };
+    });
+
+    return {
+      ok: true,
+      suggestedNumberOfStocks: parsed.suggestedNumberOfStocks || normalized.length,
+      overview: String(parsed.overview || ''),
+      todayMarketRead: String(parsed.todayMarketRead || ''),
+      holdings: normalized,
+      cautions: Array.isArray(parsed.cautions) ? parsed.cautions.map((c) => String(c).slice(0, 300)) : [],
+      model: GROQ_MODEL,
+    };
+  } catch (err) {
+    console.error('Groq salary portfolio advice error:', err.response?.status, err.response?.data || err.message);
+    return { ok: false, error: groqHttpErrorMessage(err) };
+  }
+}
+
 // POST /api/salary-simulator - Salary replacement calculator
 app.post('/api/salary-simulator', async (req, res) => {
   try {
@@ -653,6 +847,55 @@ app.post('/api/salary-simulator', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/salary-simulator/ai-recommendations — Groq allocation ideas from news + dividend data
+app.post('/api/salary-simulator/ai-recommendations', async (req, res) => {
+  try {
+    const rawIp = req.headers['x-forwarded-for'];
+    const ip = typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : rawIp?.[0] || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const prev = salaryAiRateByIp.get(ip) || 0;
+    if (now - prev < SALARY_AI_MIN_INTERVAL_MS) {
+      return res.status(429).json({
+        ok: false,
+        error: 'Please wait about 12 seconds before requesting another AI allocation.',
+      });
+    }
+    salaryAiRateByIp.set(ip, now);
+
+    const monthly = parseFloat(req.body?.targetMonthlyIncome) || 0;
+    const yieldPct = parseFloat(req.body?.expectedDividendYield) || 0;
+    let requiredPortfolio = parseFloat(req.body?.requiredPortfolioValue) || 0;
+    const shariahOnly = Boolean(req.body?.shariahOnly);
+
+    if (monthly <= 0 || yieldPct <= 0) {
+      return res.status(400).json({ ok: false, error: 'Run the calculator first with valid income and yield.' });
+    }
+    if (requiredPortfolio <= 0) {
+      requiredPortfolio = (monthly * 12) / (yieldPct / 100);
+    }
+
+    const advice = await groqSalaryPortfolioAdvice({
+      monthly,
+      yieldPct,
+      requiredPortfolio,
+      shariahOnly,
+    });
+
+    if (!advice.ok) {
+      return res.status(advice.error?.includes('429') ? 429 : 503).json(advice);
+    }
+
+    res.json({
+      ...advice,
+      requiredPortfolioValue: Math.round(requiredPortfolio * 100) / 100,
+      disclaimer:
+        'Illustrative AI allocation from DividendFlow’s saved dividend calendar and news files — not live prices, not Shariah fatwa, and not investment advice. Verify every symbol, payout, and compliance rule with your broker and a qualified professional before investing.',
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message || 'Server error' });
   }
 });
 
