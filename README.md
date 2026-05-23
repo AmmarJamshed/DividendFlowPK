@@ -128,7 +128,7 @@ See **[DEPLOYMENT_CALENDAR.md](./DEPLOYMENT_CALENDAR.md)** for all Render crons,
 .\deploy-render.ps1
 ```
 
-Targets: **dividendflow-frontend**, **dividendflow-backend**, **dividendflow-scraper**, **dividendflow-news**, **dividendflow-nccpl-scraper**, **dividendflow-health-check**. Uses `RENDER_API_KEY` (env or `api-keys.txt`) or the Render CLI fallback. Set secrets (e.g. `GROQ_API_KEY`, `GITHUB_TOKEN`, `BROWSERLESS_TOKEN`) in the Render Dashboard per service.
+Targets: **dividendflow-frontend**, **dividendflow-backend**, **dividendflow-scraper**, **dividendflow-news**, **dividendflow-health-check**. Uses `RENDER_API_KEY` (env or `api-keys.txt`) or the Render CLI fallback. Set secrets (e.g. `GROQ_API_KEY`, `GITHUB_TOKEN`, `BROWSERLESS_TOKEN`) in the Render Dashboard per service. PSX closing prices run on **GitHub Actions** (psx-market-prices.yml).
 
 ## Future Deployment
 

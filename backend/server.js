@@ -111,7 +111,6 @@ function buildSiteDataDigest() {
     ['psx_full_dataset', path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv')],
     ['daily_news', path.join(DATA_PATH, 'news', 'daily_news.csv')],
     ['ai_commentary', path.join(DATA_PATH, 'news', 'ai_commentary.csv')],
-    ['nccpl_risk_metrics', path.join(DATA_PATH, 'risk', 'nccpl_risk_metrics.csv')],
     ['reporting_cycles', path.join(DATA_PATH, 'financials', 'psx_quarter_cycles.csv')],
   ];
   for (const [label, fp] of watch) {
@@ -303,69 +302,6 @@ async function buildWeekAgoPriceMap(sessionDateStr) {
     if (bestP != null) map.set(sym.toUpperCase(), bestP);
   }
   return map;
-}
-
-/**
- * Heuristic label from ~7d return + NCCPL VaR/haircut. Not investment advice.
- * Good buy: solid week, clearing risk not extreme.
- * Safe buy: calmer week + lower VaR.
- * Risk buy: strong week with elevated margin risk, or very hot week, or weak week with stress.
- */
-function classifyBuySignal(weekChgPct, varVal, haircutVal) {
-  if (weekChgPct == null || Number.isNaN(weekChgPct)) {
-    return { buySignal: '—', buySignalDetail: 'Add daily price history (7d) to classify.' };
-  }
-  const v = varVal != null && varVal > 0 ? varVal : null;
-  const h = haircutVal != null && haircutVal > 0 ? haircutVal : null;
-  const highRisk = (v != null && v >= 26) || (h != null && h >= 38);
-  const lowRisk = v != null && v <= 18 && (h == null || h <= 32);
-
-  if (weekChgPct >= 5 && highRisk) {
-    return {
-      buySignal: 'Risk buy',
-      buySignalDetail: `Week ${weekChgPct >= 0 ? '+' : ''}${weekChgPct.toFixed(1)}% with elevated VaR/haircut (NCCPL).`,
-    };
-  }
-  if (weekChgPct >= 8) {
-    return {
-      buySignal: 'Risk buy',
-      buySignalDetail: `Week +${weekChgPct.toFixed(1)}% — strong move; often higher volatility.`,
-    };
-  }
-  if (weekChgPct >= 3 && v != null && v <= 25 && (h == null || h < 38)) {
-    return {
-      buySignal: 'Good buy',
-      buySignalDetail: `Week +${weekChgPct.toFixed(1)}% with moderate NCCPL risk.`,
-    };
-  }
-  if (weekChgPct > -2.5 && weekChgPct < 5 && lowRisk) {
-    return {
-      buySignal: 'Safe buy',
-      buySignalDetail: `Week ${weekChgPct >= 0 ? '+' : ''}${weekChgPct.toFixed(1)}%, lower VaR — steadier profile.`,
-    };
-  }
-  if (weekChgPct >= 1 && weekChgPct < 5 && v != null && v <= 22) {
-    return {
-      buySignal: 'Safe buy',
-      buySignalDetail: `Week +${weekChgPct.toFixed(1)}%, contained VaR.`,
-    };
-  }
-  if (weekChgPct <= -3 || highRisk) {
-    return {
-      buySignal: 'Risk buy',
-      buySignalDetail:
-        weekChgPct <= -3
-          ? `Week ${weekChgPct.toFixed(1)}% — weaker tape; higher uncertainty.`
-          : `Elevated clearing risk (VaR/haircut) vs week ${weekChgPct >= 0 ? '+' : ''}${weekChgPct.toFixed(1)}%.`,
-    };
-  }
-  if (weekChgPct >= 2) {
-    return { buySignal: 'Good buy', buySignalDetail: `Week +${weekChgPct.toFixed(1)}%.` };
-  }
-  return {
-    buySignal: 'Safe buy',
-    buySignalDetail: `Week ${weekChgPct >= 0 ? '+' : ''}${weekChgPct.toFixed(1)}% — neutral-to-soft risk read.`,
-  };
 }
 
 // Infer Interim vs Final from Fiscal_Year_End and Payment_month
@@ -1028,12 +964,12 @@ ${message}`;
   }
 });
 
-// GET /api/market-closing-prices - Full PSX dataset from psx_full_dataset.csv + NCCPL VaR/haircut merge
+// GET /api/market-closing-prices - Full PSX dataset from psx_full_dataset.csv
 app.get('/api/market-closing-prices', async (req, res) => {
   try {
     const fp = path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv');
     if (!fs.existsSync(fp)) {
-      return res.json({ rows: [], date: null, summary: null, riskAsOf: null, buySignalNote: null });
+      return res.json({ rows: [], date: null, summary: null });
     }
     const rows = await readCSV(fp);
     const date = rows[0]?.date || rows[0]?.Date || null;
@@ -1043,27 +979,8 @@ app.get('/api/market-closing-prices', async (req, res) => {
       return parseFloat(v) || 0;
     };
 
-    const riskFile = path.join(DATA_PATH, 'risk', 'nccpl_risk_metrics.csv');
-    const riskBySymbol = new Map();
-    let riskAsOf = null;
-    if (fs.existsSync(riskFile)) {
-      const riskRows = await readCSV(riskFile);
-      for (const r of riskRows) {
-        const sym = (r.symbol || '').toUpperCase().trim();
-        if (!sym) continue;
-        const lu = (r.last_updated || '').trim();
-        if (lu && (!riskAsOf || lu > riskAsOf)) riskAsOf = lu;
-        riskBySymbol.set(sym, {
-          var: parseFloat(r.var_value || 0) || null,
-          haircut: parseFloat(r.haircut || 0) || null,
-        });
-      }
-    }
-
     const parsed = rows.map(r => {
       const symbol = (r.symbol || r.Symbol || '').trim();
-      const up = symbol.toUpperCase();
-      const risk = riskBySymbol.get(up);
       return {
         symbol,
         company: symbol,
@@ -1074,38 +991,29 @@ app.get('/api/market-closing-prices', async (req, res) => {
         open: parseNum(r.open || r.Open),
         high: parseNum(r.high || r.High),
         low: parseNum(r.low || r.Low),
-        var: risk && risk.var != null && risk.var > 0 ? Math.round(risk.var * 100) / 100 : null,
-        haircut: risk && risk.haircut != null && risk.haircut > 0 ? Math.round(risk.haircut * 100) / 100 : null,
       };
     }).filter(x => x.symbol && x.close > 0);
+
     const weekAgoMap = await buildWeekAgoPriceMap(date);
-    const withSignals = parsed.map((x) => {
+    const withWeek = parsed.map((x) => {
       const up = x.symbol.toUpperCase();
       const w0 = weekAgoMap.get(up);
       let weekChgPct = null;
       if (w0 != null && w0 > 0 && x.close > 0) {
         weekChgPct = Math.round(((x.close - w0) / w0) * 10000) / 100;
       }
-      const sig = classifyBuySignal(weekChgPct, x.var, x.haircut);
-      return { ...x, weekChgPct, buySignal: sig.buySignal, buySignalDetail: sig.buySignalDetail };
+      return { ...x, weekChgPct };
     });
 
-    const topGainer = withSignals.filter(p => p.changePct > 0).sort((a, b) => b.changePct - a.changePct)[0];
-    const topLoser = withSignals.filter(p => p.changePct < 0).sort((a, b) => a.changePct - b.changePct)[0];
+    const topGainer = withWeek.filter(p => p.changePct > 0).sort((a, b) => b.changePct - a.changePct)[0];
+    const topLoser = withWeek.filter(p => p.changePct < 0).sort((a, b) => a.changePct - b.changePct)[0];
     const summary = {
-      totalCompanies: withSignals.length,
+      totalCompanies: withWeek.length,
       topGainer: topGainer ? { symbol: topGainer.symbol, changePct: topGainer.changePct } : null,
       topLoser: topLoser ? { symbol: topLoser.symbol, changePct: topLoser.changePct } : null,
       date,
     };
-    res.json({
-      rows: withSignals,
-      date,
-      summary,
-      riskAsOf,
-      buySignalNote:
-        'Good buy / Safe buy / Risk buy are heuristic labels from ~7 calendar day change (daily_prices.csv) plus NCCPL VaR & haircut — not investment advice.',
-    });
+    res.json({ rows: withWeek, date, summary });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1137,7 +1045,7 @@ Behavior:
 - Reply in 2–4 short sentences, warm and clear, first person as Ammar.
 - Use the "Site data freshness" lines below when the user asks about how current data is, or when it helps explain scrapers/cron updates.
 - Describe what the user is likely looking at from the browser context. If context is thin, give a useful tip for their current route.
-- Explain metrics (dividend yield, VaR, haircut, price change, calendar entries) in plain language.
+- Explain metrics (dividend yield, price change, calendar entries) in plain language.
 - Do not give personalized buy/sell recommendations or promise returns. Remind that nothing here is investment advice.
 
 Current route: ${routePath}
@@ -1186,128 +1094,6 @@ app.get('/api/data-status', (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Risk Score Calculation Helper
-function calculateRiskScore(varValue, haircut, volatility = null) {
-  // Risk score formula based on NCCPL data
-  if (volatility !== null && volatility > 0) {
-    return (0.4 * varValue) + (0.3 * haircut) + (0.3 * volatility);
-  }
-  return (0.6 * varValue) + (0.4 * haircut);
-}
-
-function getRiskLabel(riskScore) {
-  if (riskScore <= 8) return 'Low';
-  if (riskScore <= 15) return 'Moderate';
-  return 'High';
-}
-
-function getRiskInsight(riskLabel, varValue, haircut) {
-  if (riskLabel === 'Low') {
-    return `Low downside risk with ~${varValue}% VaR and ${haircut}% haircut. Suitable for conservative portfolios.`;
-  } else if (riskLabel === 'Moderate') {
-    return `Moderate downside risk with ~${varValue}% VaR and ${haircut}% haircut. Standard risk profile.`;
-  } else {
-    return `High downside risk with ~${varValue}% VaR and ${haircut}% haircut. Higher volatility expected.`;
-  }
-}
-
-// GET /api/stock-risk/:symbol - Risk metrics for a specific stock
-app.get('/api/stock-risk/:symbol', async (req, res) => {
-  try {
-    const { symbol } = req.params;
-    if (!symbol) {
-      return res.status(400).json({ error: 'Symbol is required' });
-    }
-
-    const riskFile = path.join(DATA_PATH, 'risk', 'nccpl_risk_metrics.csv');
-    if (!fs.existsSync(riskFile)) {
-      return res.status(404).json({ error: 'Risk data not available' });
-    }
-
-    const riskData = await readCSV(riskFile);
-    const searchSymbol = symbol.toUpperCase();
-    const stockRisk = riskData.find(r => 
-      (r.symbol || '').toUpperCase() === searchSymbol
-    );
-
-    if (!stockRisk) {
-      return res.status(404).json({ error: 'Risk data not found for symbol' });
-    }
-
-    const varValue = parseFloat(stockRisk.var_value || 0);
-    const haircut = parseFloat(stockRisk.haircut || 0);
-    const week26Avg = parseFloat(stockRisk.week_26_avg || 0);
-    const freeFloat = parseFloat(stockRisk.free_float || 0);
-    const halfHourRate = parseFloat(stockRisk.half_hour_avg_rate || 0);
-    
-    // Calculate risk score (using week26Avg as volatility proxy if > 0)
-    const volatility = week26Avg > 0 ? week26Avg : null;
-    const riskScore = calculateRiskScore(varValue, haircut, volatility);
-    const riskLabel = getRiskLabel(riskScore);
-    const insight = getRiskInsight(riskLabel, varValue, haircut);
-
-    res.json({
-      symbol: searchSymbol,
-      var: varValue,
-      haircut: haircut,
-      week_26_avg: week26Avg,
-      free_float: freeFloat,
-      half_hour_avg_rate: halfHourRate,
-      risk_score: Math.round(riskScore * 100) / 100,
-      risk_label: riskLabel,
-      insight: insight,
-      last_updated: stockRisk.last_updated || null,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// GET /api/stock-risk - All risk metrics
-app.get('/api/stock-risk', async (req, res) => {
-  try {
-    const riskFile = path.join(DATA_PATH, 'risk', 'nccpl_risk_metrics.csv');
-    if (!fs.existsSync(riskFile)) {
-      return res.json({ stocks: [], summary: null });
-    }
-
-    const riskData = await readCSV(riskFile);
-    const stocks = riskData.map(r => {
-      const varValue = parseFloat(r.var_value || 0);
-      const haircut = parseFloat(r.haircut || 0);
-      const week26Avg = parseFloat(r.week_26_avg || 0);
-      const volatility = week26Avg > 0 ? week26Avg : null;
-      const riskScore = calculateRiskScore(varValue, haircut, volatility);
-      const riskLabel = getRiskLabel(riskScore);
-
-      return {
-        symbol: (r.symbol || '').toUpperCase(),
-        var: varValue,
-        haircut: haircut,
-        risk_score: Math.round(riskScore * 100) / 100,
-        risk_label: riskLabel,
-      };
-    });
-
-    const lowRisk = stocks.filter(s => s.risk_label === 'Low').length;
-    const moderateRisk = stocks.filter(s => s.risk_label === 'Moderate').length;
-    const highRisk = stocks.filter(s => s.risk_label === 'High').length;
-    const avgVar = stocks.reduce((sum, s) => sum + s.var, 0) / stocks.length || 0;
-
-    const summary = {
-      total_stocks: stocks.length,
-      low_risk_pct: Math.round((lowRisk / stocks.length) * 100),
-      moderate_risk_pct: Math.round((moderateRisk / stocks.length) * 100),
-      high_risk_pct: Math.round((highRisk / stocks.length) * 100),
-      avg_var: Math.round(avgVar * 100) / 100,
-    };
-
-    res.json({ stocks, summary });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 if (require.main === module) {

@@ -5,10 +5,7 @@ import { Bar } from 'react-chartjs-2';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 import DashboardMarketChat from '../components/DashboardMarketChat';
-import axios from 'axios';
 import { buildDashboardRiskAlerts, getPktDateString, MIN_PRICE_MOVE_PCT } from '../utils/dashboardRiskAlerts';
-
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -47,7 +44,6 @@ export default function Dashboard() {
     priceCommentary: [],
   });
   const [loading, setLoading] = useState(true);
-  const [stockRisks, setStockRisks] = useState({});
   /** Full headline + AI text for a selected alert */
   const [alertDetailOpen, setAlertDetailOpen] = useState(null);
 
@@ -86,24 +82,6 @@ export default function Dashboard() {
           })
         );
         
-        // Same top-5 as on-screen (dedupe by company); previously used raw rows so 5th ticker could miss risk (e.g. KAPCO).
-        const topYieldStocks = getTopYieldRows(divRes.data || []);
-        
-        const riskPromises = topYieldStocks.map(d => {
-          const symbol = (d.Company || d.company || '').trim();
-          return axios.get(`${API_BASE}/stock-risk/${symbol}`)
-            .then(res => ({ symbol, data: res.data }))
-            .catch(() => ({ symbol, data: null }));
-        });
-        
-        const risks = await Promise.all(riskPromises);
-        const riskMap = {};
-        risks.forEach(r => {
-          if (r.data && !r.data.error) {
-            riskMap[r.symbol] = r.data;
-          }
-        });
-        setStockRisks(riskMap);
       } catch (err) {
         console.error(err);
       } finally {
@@ -181,33 +159,15 @@ export default function Dashboard() {
         <div className="card p-6 animate-slide-up border-l-4 border-l-emerald-500 lg:col-span-3" style={{ animationDelay: '50ms' }}>
           <h3 className="card-header">Top indicated dividend yields</h3>
           <p className="card-subtitle">
-            Ranked by yield; each row includes <strong>NCCPL-style risk</strong> (VaR &amp; haircut) where available — high yield and high risk often
-            travel together.
+            Ranked by indicated dividend yield from the PSX calendar — informational only, not a recommendation.
           </p>
           <ul className="mt-4 space-y-3">
             {topYield.map((d, i) => {
               const symbol = (d.Company || d.company || '').trim();
-              const risk = stockRisks[symbol];
-              const riskBadge = risk ? (
-                risk.risk_label === 'Low' ? <span className="text-xs px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-300 ml-2">Low risk</span> :
-                risk.risk_label === 'Moderate' ? <span className="text-xs px-2 py-1 rounded-lg bg-amber-100 text-amber-700 border border-amber-300 ml-2">Moderate</span> :
-                <span className="text-xs px-2 py-1 rounded-lg bg-rose-100 text-rose-700 border border-rose-300 ml-2">High risk</span>
-              ) : null;
-              
               return (
-                <li key={i} className="flex flex-col py-2 border-b border-slate-200 last:border-0">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <span className="font-medium text-slate-700">{symbol}</span>
-                      {riskBadge}
-                    </div>
-                    <span className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-700 font-bold">{(d.Dividend_yield || d.dividend_yield || 0)}%</span>
-                  </div>
-                  {risk && (
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      VaR: {risk.var}% • Haircut: {risk.haircut}%
-                    </div>
-                  )}
+                <li key={i} className="flex justify-between items-center py-2 border-b border-slate-200 last:border-0">
+                  <span className="font-medium text-slate-700">{symbol}</span>
+                  <span className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-700 font-bold">{(d.Dividend_yield || d.dividend_yield || 0)}%</span>
                 </li>
               );
             })}
@@ -235,7 +195,7 @@ export default function Dashboard() {
                   {MIN_PRICE_MOVE_PCT}% for that company (or a major market/policy story tied to a large decliner). Check back after the next session — coverage depends on what&apos;s in the public press and how stocks moved.
                 </p>
                 <p>
-                  <Link to="/ai-risk-dashboard" className="text-teal-600 font-medium underline">AI Risk Dashboard</Link> — dig deeper on any ticker.
+                  <Link to="/market-closing-prices" className="text-teal-600 font-medium underline">Market Closing Prices</Link> — see session moves for more tickers.
                 </p>
               </li>
             ) : (

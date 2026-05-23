@@ -13,7 +13,6 @@ $toDeploy = @(
     "dividendflow-backend",
     "dividendflow-scraper",
     "dividendflow-news",
-    "dividendflow-nccpl-scraper",
     "dividendflow-health-check"
 )
 $deployed = 0
@@ -22,7 +21,6 @@ $deployed = 0
 $cronSchedules = @(
     @{ Name = "dividendflow-scraper";       Schedule = "0 11 * * 1-5" }
     @{ Name = "dividendflow-news";          Schedule = "0 12 * * 1-5" }
-    @{ Name = "dividendflow-nccpl-scraper"; Schedule = "30 12 * * 1-5" }
     @{ Name = "dividendflow-health-check";  Schedule = "0 0,6,12,18 * * 1-5" }
 )
 

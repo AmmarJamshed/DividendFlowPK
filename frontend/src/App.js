@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import DividendCalendar from './pages/DividendCalendar';
-import AIRiskDashboard from './pages/AIRiskDashboard';
 import ForecastEngine from './pages/ForecastEngine';
 import SalarySimulator from './pages/SalarySimulator';
 import ReportingCycles from './pages/ReportingCycles';
@@ -43,7 +42,7 @@ function App() {
             <Route path="/dividend-calendar" element={<DividendCalendar />} />
             <Route path="/market-closing-prices" element={<MarketClosingPrices />} />
             <Route path="/weak-month-optimizer" element={<Navigate to="/dividend-calendar" replace />} />
-            <Route path="/ai-risk-dashboard" element={<AIRiskDashboard />} />
+            <Route path="/ai-risk-dashboard" element={<Navigate to="/" replace />} />
             <Route path="/forecast-engine" element={<ForecastEngine />} />
             <Route path="/salary-simulator" element={<SalarySimulator />} />
             <Route path="/reporting-cycles" element={<ReportingCycles />} />

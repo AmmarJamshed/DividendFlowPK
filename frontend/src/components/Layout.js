@@ -10,7 +10,6 @@ const navItems = [
   { path: '/', label: 'Dashboard' },
   { path: '/dividend-calendar', label: 'Dividend Calendar' },
   { path: '/market-closing-prices', label: 'Market Closing Prices' },
-  { path: '/ai-risk-dashboard', label: 'AI Risk Dashboard' },
   { path: '/forecast-engine', label: 'Forecast Engine' },
   { path: '/salary-simulator', label: 'Salary Replacement Simulator' },
   { path: '/reporting-cycles', label: 'PSX Reporting Cycles' },

@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
+import { isShariahCompliant, SHARIAH_LIST_META } from '../utils/psxShariah';
 
 const PAGE_SIZE = 25;
-
-const BUY_SIGNAL_RANK = { 'Good buy': 4, 'Safe buy': 3, 'Risk buy': 2, '—': 0 };
 
 function formatNum(n) {
   if (n == null || isNaN(n)) return '—';
@@ -45,42 +44,45 @@ function AICommentary({ summary }) {
 }
 
 export default function MarketClosingPrices() {
-  const [data, setData] = useState({ rows: [], date: null, summary: null, riskAsOf: null, buySignalNote: null });
+  const [data, setData] = useState({ rows: [], date: null, summary: null });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [shariahOnly, setShariahOnly] = useState(false);
   const [sort, setSort] = useState({ key: 'changePct', dir: 'desc' });
   const [page, setPage] = useState(0);
 
   useEffect(() => {
     api.getMarketClosingPrices()
       .then(res => setData(res.data))
-      .catch(() => setData({ rows: [], date: null, summary: null, riskAsOf: null, buySignalNote: null }))
+      .catch(() => setData({ rows: [], date: null, summary: null }))
       .finally(() => setLoading(false));
   }, []);
 
+  const shariahInDataset = useMemo(() => {
+    let n = 0;
+    for (const r of data.rows || []) {
+      if (isShariahCompliant(r.symbol)) n += 1;
+    }
+    return n;
+  }, [data.rows]);
+
   const filtered = useMemo(() => {
     let list = data.rows || [];
+    if (shariahOnly) {
+      list = list.filter((r) => isShariahCompliant(r.symbol));
+    }
     const q = (search || '').trim().toLowerCase();
-    if (q) list = list.filter(r => (r.symbol || '').toLowerCase().includes(q) || (r.company || '').toLowerCase().includes(q));
+    if (q) {
+      list = list.filter(
+        (r) => (r.symbol || '').toLowerCase().includes(q) || (r.company || '').toLowerCase().includes(q)
+      );
+    }
     const k = sort.key;
     const d = sort.dir === 'asc' ? 1 : -1;
     list = [...list].sort((a, b) => {
       const va = a[k];
       const vb = b[k];
-      if (k === 'buySignal') {
-        const ra = BUY_SIGNAL_RANK[va] ?? 1;
-        const rb = BUY_SIGNAL_RANK[vb] ?? 1;
-        return d * (ra - rb);
-      }
       if (k === 'weekChgPct') {
-        const na = typeof va === 'number' && !Number.isNaN(va) ? va : null;
-        const nb = typeof vb === 'number' && !Number.isNaN(vb) ? vb : null;
-        if (na == null && nb == null) return 0;
-        if (na == null) return 1;
-        if (nb == null) return -1;
-        return d * (na - nb);
-      }
-      if (k === 'var' || k === 'haircut') {
         const na = typeof va === 'number' && !Number.isNaN(va) ? va : null;
         const nb = typeof vb === 'number' && !Number.isNaN(vb) ? vb : null;
         if (na == null && nb == null) return 0;
@@ -92,7 +94,7 @@ export default function MarketClosingPrices() {
       return d * String(va || '').localeCompare(String(vb || ''));
     });
     return list;
-  }, [data.rows, search, sort]);
+  }, [data.rows, search, sort, shariahOnly]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -114,23 +116,50 @@ export default function MarketClosingPrices() {
     <div>
       <AICommentary summary={data.summary} />
       <div className="rounded-2xl bg-white/90 border border-slate-200 shadow-lg shadow-slate-300/20 overflow-hidden backdrop-blur-sm">
-        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-          <input
-            type="search"
-            placeholder="Search by stock or symbol..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300 w-full sm:w-64"
-          />
-          <span className="text-sm text-slate-500 self-center text-right sm:text-left">
-            {filtered.length} stocks
-            {data.date && ` • Close ${data.date}`}
-            {data.riskAsOf && (
-              <span className="block sm:inline sm:ml-1 text-xs text-slate-400">
-                {' '}• NCCPL VaR/Haircut as of {data.riskAsOf}
-              </span>
-            )}
-          </span>
+        <div className="p-4 border-b border-slate-200 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+            <input
+              type="search"
+              placeholder="Search by stock or symbol..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300 w-full sm:w-64"
+            />
+            <span className="text-sm text-slate-500 self-center text-right sm:text-left">
+              {filtered.length} stocks
+              {shariahOnly && ` (Shariah list)`}
+              {data.date && ` • Close ${data.date}`}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-1">Filter</span>
+            <button
+              type="button"
+              onClick={() => { setShariahOnly(false); setPage(0); }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                !shariahOnly
+                  ? 'bg-teal-600 text-white border-teal-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-teal-300'
+              }`}
+            >
+              All PSX (in dataset)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShariahOnly(true); setPage(0); }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                shariahOnly
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
+              }`}
+              title={`PSX Annexure A: ${SHARIAH_LIST_META.symbolCount} symbols (${SHARIAH_LIST_META.asOf})`}
+            >
+              Shariah compliant only
+            </button>
+            <span className="text-xs text-slate-500">
+              {shariahInDataset} of {(data.rows || []).length} rows match PSX list
+            </span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -142,90 +171,61 @@ export default function MarketClosingPrices() {
                 <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('changePct')}>Daily %</th>
                 <th
                   className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600"
-                  onClick={() => toggleSort('var')}
-                  title="NCCPL-style downside risk (VaR %). Updated with daily risk scrape."
-                >
-                  VaR %
-                </th>
-                <th
-                  className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600"
-                  onClick={() => toggleSort('haircut')}
-                  title="NCCPL margin haircut % for the scrip. Updated with daily risk scrape."
-                >
-                  Haircut %
-                </th>
-                <th
-                  className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600"
                   onClick={() => toggleSort('weekChgPct')}
                   title="Approx. change vs price ~7 calendar days ago (daily_prices.csv)."
                 >
                   Week %
-                </th>
-                <th
-                  className="text-left px-4 py-3 font-medium cursor-pointer hover:text-teal-600 min-w-[108px]"
-                  onClick={() => toggleSort('buySignal')}
-                  title="Heuristic from week % + VaR + haircut. Not investment advice."
-                >
-                  Buy view
                 </th>
                 <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600 rounded-tr-2xl" onClick={() => toggleSort('volume')}>Shares Traded</th>
               </tr>
             </thead>
             <tbody>
               {pageRows.length === 0 ? (
-                <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-500">No data available</td></tr>
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                    {shariahOnly
+                      ? 'No Shariah-listed symbols in today’s closing dataset (or none match your search).'
+                      : 'No data available'}
+                  </td>
+                </tr>
               ) : (
-                pageRows.map((r, i) => (
-                  <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
-                    <td className="px-4 py-3 font-medium text-slate-700">{r.symbol || r.company}</td>
-                    <td className="px-4 py-3 text-right text-slate-600">{formatNum(r.close)}</td>
-                    <td className={`px-4 py-3 text-right font-medium ${(r.change || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                      {(r.change || 0) >= 0 ? '+' : ''}{formatNum(r.change)}
-                    </td>
-                    <td className={`px-4 py-3 text-right font-medium ${(r.changePct || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                      {(r.changePct || 0) >= 0 ? '+' : ''}{formatNum(r.changePct)}%
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600 tabular-nums" title="Clearing-house style VaR (NCCPL)">
-                      {typeof r.var === 'number' ? (
-                        <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 text-xs font-medium">{formatNum(r.var)}%</span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600 tabular-nums" title="Margin haircut (NCCPL)">
-                      {typeof r.haircut === 'number' ? (
-                        <span className="px-2 py-0.5 rounded-lg bg-violet-50 text-violet-800 text-xs font-medium">{formatNum(r.haircut)}%</span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-right text-xs font-medium tabular-nums ${(r.weekChgPct || 0) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}
-                      title={r.buySignalDetail || ''}
-                    >
-                      {typeof r.weekChgPct === 'number' ? (
-                        <>{(r.weekChgPct >= 0 ? '+' : '')}{formatNum(r.weekChgPct)}%</>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-4 py-3" title={r.buySignalDetail || ''}>
-                      {r.buySignal === 'Good buy' && (
-                        <span className="inline-flex px-2 py-1 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-semibold border border-emerald-200">Good buy</span>
-                      )}
-                      {r.buySignal === 'Safe buy' && (
-                        <span className="inline-flex px-2 py-1 rounded-lg bg-sky-100 text-sky-900 text-xs font-semibold border border-sky-200">Safe buy</span>
-                      )}
-                      {r.buySignal === 'Risk buy' && (
-                        <span className="inline-flex px-2 py-1 rounded-lg bg-orange-100 text-orange-900 text-xs font-semibold border border-orange-200">Risk buy</span>
-                      )}
-                      {(r.buySignal === '—' || !r.buySignal) && (
-                        <span className="text-slate-400 text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-500">{formatNum(r.volume)}</td>
-                  </tr>
-                ))
+                pageRows.map((r, i) => {
+                  const shariah = isShariahCompliant(r.symbol);
+                  return (
+                    <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
+                      <td className="px-4 py-3 font-medium text-slate-700">
+                        <span className="inline-flex items-center gap-2 flex-wrap">
+                          {r.symbol || r.company}
+                          {shariah && (
+                            <span
+                              className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200"
+                              title="On PSX Shariah disclosure list (nature of business)"
+                            >
+                              Shariah
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-600">{formatNum(r.close)}</td>
+                      <td className={`px-4 py-3 text-right font-medium ${(r.change || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {(r.change || 0) >= 0 ? '+' : ''}{formatNum(r.change)}
+                      </td>
+                      <td className={`px-4 py-3 text-right font-medium ${(r.changePct || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {(r.changePct || 0) >= 0 ? '+' : ''}{formatNum(r.changePct)}%
+                      </td>
+                      <td
+                        className={`px-4 py-3 text-right text-xs font-medium tabular-nums ${(r.weekChgPct || 0) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}
+                      >
+                        {typeof r.weekChgPct === 'number' ? (
+                          <>{(r.weekChgPct >= 0 ? '+' : '')}{formatNum(r.weekChgPct)}%</>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500">{formatNum(r.volume)}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -251,14 +251,21 @@ export default function MarketClosingPrices() {
         )}
         <p className="px-4 py-3 text-xs text-slate-500 border-t border-slate-100 bg-slate-50/80 space-y-1">
           <span className="block">
-            <strong className="text-slate-600">VaR</strong> and <strong className="text-slate-600">Haircut</strong> come from NCCPL market data (
-            <code className="text-[11px] bg-slate-200/80 px-1 rounded">data/risk/nccpl_risk_metrics.csv</code>
-            ), refreshed by the daily <strong>dividendflow-nccpl-scraper</strong> after market close.
+            <strong className="text-slate-600">Week %</strong> uses{' '}
+            <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices.csv</code>, updated by the PSX market closing prices workflow after each session.
           </span>
           <span className="block">
-            <strong className="text-slate-600">Week %</strong> uses <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices.csv</code> (updated by <strong>dividendflow-news</strong> / pipeline).{' '}
-            <strong className="text-slate-600">Buy view</strong> combines week move + VaR + haircut — heuristic only, not investment advice.
-            {data.buySignalNote && <span className="block mt-1 text-slate-400">{data.buySignalNote}</span>}
+            <strong className="text-slate-600">Shariah filter</strong> uses the PSX list of companies required to file Shariah disclosures (
+            {SHARIAH_LIST_META.symbolCount} symbols, notice dated {SHARIAH_LIST_META.asOf}).{' '}
+            <a
+              href={SHARIAH_LIST_META.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-teal-700 font-medium hover:underline"
+            >
+              View PSX notice (PDF)
+            </a>
+            . This reflects PSX &quot;nature of business&quot; classification, not personal fatwa or full Islamic finance screening.
           </span>
         </p>
       </div>

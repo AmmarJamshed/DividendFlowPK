@@ -95,34 +95,3 @@ jobs:
           max_attempts: 4
           retry_wait_seconds: 20
           command: cd scripts && node health-check.js
-
-  dividendflow-nccpl-scraper:
-    name: dividendflow-nccpl-scraper
-    runs-on: ubuntu-latest
-    timeout-minutes: 130
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-          cache-dependency-path: requirements-scraper.txt
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-scraper.txt
-      - name: Run NCCPL scraper
-        uses: nick-fields/retry@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPO: ${{ github.repository }}
-          BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}
-          NCCPL_UNBLOCK_ATTEMPTS_PER_HOST: "2"
-          NCCPL_UNBLOCK_RETRY_PAUSE: "25"
-        with:
-          timeout_minutes: 70
-          max_attempts: 2
-          retry_wait_seconds: 120
-          command: python scripts/scrape-nccpl-browserless.py

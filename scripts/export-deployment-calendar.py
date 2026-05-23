@@ -61,14 +61,6 @@ ROWS = [
     ),
     (
         "7",
-        "dividendflow-nccpl-scraper",
-        "Scheduled",
-        "Daily 12:30 UTC → 17:30 PKT",
-        "Render Cron",
-        "NCCPL risk (Browserless) → CSV / GitHub",
-    ),
-    (
-        "8",
         "dividendflow-health-check",
         "Scheduled",
         "Every 6 h: 00:00 06:00 12:00 18:00 UTC → 05/11/17/23 PKT",
@@ -130,9 +122,8 @@ SUMMARY_ROWS = [
     ("Continuous", "2", "dividendflow-backend; dividendflow-frontend"),
     (
         "Scheduled",
-        "5",
-        "dividendflow-scraper; dividendflow-news; dividendflow-nccpl-scraper; "
-        "dividendflow-health-check; GitHub PSX cron",
+        "4",
+        "dividendflow-scraper; dividendflow-news; dividendflow-health-check; GitHub PSX cron",
     ),
     (
         "On demand",
@@ -147,7 +138,6 @@ SUMMARY_HEADERS = ["Schedule or demand", "Count", "Items"]
 CRON_ROWS = [
     ("dividendflow-scraper", "0 11 * * *", "Daily 11:00 UTC"),
     ("dividendflow-news", "0 12 * * *", "Daily 12:00 UTC"),
-    ("dividendflow-nccpl-scraper", "30 12 * * *", "Daily 12:30 UTC"),
     ("dividendflow-health-check", "0 */6 * * *", "Every 6 hours on the hour"),
     ("GitHub: PSX Market Closing Prices", "0 12 * * *", "Daily 12:00 UTC"),
 ]

@@ -1,6 +1,5 @@
 ﻿Service / workflow,Cron (UTC),Human readable
 dividendflow-scraper,0 11 * * *,Daily 11:00 UTC
 dividendflow-news,0 12 * * *,Daily 12:00 UTC
-dividendflow-nccpl-scraper,30 12 * * *,Daily 12:30 UTC
 dividendflow-health-check,0 */6 * * *,Every 6 hours on the hour
 GitHub: PSX Market Closing Prices,0 12 * * *,Daily 12:00 UTC

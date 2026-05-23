@@ -12,10 +12,6 @@ const ROUTE_TIPS = {
     'Weak months show ideas to spread dividend income across the year.',
     'Check Interim vs Final in the table for each payment.',
   ],
-  '/ai-risk-dashboard': [
-    'Review AI risk scores before adding new positions.',
-    'Compare risk levels across your portfolio.',
-  ],
   '/forecast-engine': [
     'Use Forecast Engine to project future dividend income.',
     'Select a company and date range for estimates.',
@@ -30,6 +26,7 @@ const ROUTE_TIPS = {
   ],
   '/market-closing-prices': [
     'Check Market Closing Prices to see today\'s PSX performance.',
+    'Use Shariah compliant only to filter against the official PSX disclosure list.',
     'Sort columns to find top gainers and losers.',
     'Use the search bar to find a stock quickly.',
   ],
