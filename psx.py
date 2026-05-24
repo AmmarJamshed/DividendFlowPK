@@ -214,45 +214,160 @@ def load_tracked_companies():
     return companies if companies else None
 
 
+def _parse_historical_row(row):
+    cols = row.query_selector_all("td")
+    if len(cols) < 9:
+        return None
+    symbol = cols[0].inner_text().strip()
+    if not symbol or len(symbol) > 24 or "\n" in symbol:
+        return None
+    low = symbol.lower()
+    if low in ("symbol", "company", "sr", "#", "no.", "no"):
+        return None
+    return {
+        "date": datetime.today().strftime("%Y-%m-%d"),
+        "symbol": symbol,
+        "ldcp": cols[1].inner_text().strip(),
+        "open": cols[2].inner_text().strip(),
+        "high": cols[3].inner_text().strip(),
+        "low": cols[4].inner_text().strip(),
+        "close": cols[5].inner_text().strip(),
+        "change": cols[6].inner_text().strip(),
+        "change_pct": cols[7].inner_text().strip(),
+        "volume": cols[8].inner_text().strip(),
+    }
+
+
+def _set_historical_page_size(page):
+    """Prefer 'All' rows; else largest numeric page size (DataTables)."""
+    sel = "select[name='historicalTable_length']"
+    page.wait_for_selector(sel, timeout=30000)
+    options = page.eval_on_selector(
+        sel,
+        "el => [...el.options].map(o => ({ value: o.value, text: (o.textContent || '').trim() }))",
+    )
+    pick = None
+    for candidate in ("-1", "500", "250", "100"):
+        if any(o.get("value") == candidate for o in options):
+            pick = candidate
+            break
+    if not pick:
+        nums = []
+        for o in options:
+            v = str(o.get("value", ""))
+            if v.isdigit():
+                nums.append(int(v))
+        if nums:
+            pick = str(max(nums))
+    if pick:
+        page.select_option(sel, pick)
+        print(f"historicalTable page size set to {pick!r}")
+        time.sleep(3)
+        try:
+            page.wait_for_function(
+                "() => { const p = document.querySelector('#historicalTable_processing'); "
+                "return !p || p.style.display === 'none' || getComputedStyle(p).display === 'none'; }",
+                timeout=20000,
+            )
+        except Exception:
+            time.sleep(2)
+    return pick
+
+
+def _historical_total_entries(page):
+    try:
+        info_el = page.query_selector("#historicalTable_info")
+        if not info_el:
+            return None
+        m = re.search(r"of\s+([\d,]+)\s+entries", info_el.inner_text() or "")
+        if m:
+            return int(m.group(1).replace(",", ""))
+    except Exception:
+        pass
+    return None
+
+
+def _click_historical_next(page):
+    selectors = [
+        "#historicalTable_next:not(.disabled)",
+        "#historicalTable_wrapper li.paginate_button.next:not(.disabled)",
+        "#historicalTable_wrapper .paginate_button.next:not(.disabled)",
+    ]
+    for sel in selectors:
+        loc = page.locator(sel).first
+        if loc.count() == 0:
+            continue
+        try:
+            loc.click(timeout=10000)
+            return True
+        except Exception:
+            continue
+    return False
+
+
 def scrape_psx():
     dataset = []
+    seen = set()
     with sync_playwright() as p:
         browser = _launch_chromium(p)
         page = browser.new_page()
 
         print("Opening PSX historical page...")
         page.goto(URL, timeout=90000, wait_until="domcontentloaded")
+        try:
+            page.wait_for_load_state("networkidle", timeout=20000)
+        except Exception:
+            pass
 
         page.wait_for_selector("#historicalTable", timeout=30000)
-        page.select_option("select[name='historicalTable_length']", "100")
-        time.sleep(3)
+        _set_historical_page_size(page)
 
-        while True:
+        total_expected = _historical_total_entries(page)
+        if total_expected:
+            print(f"PSX historical table reports {total_expected} entries")
+
+        for page_idx in range(80):
             rows = page.query_selector_all("#historicalTable tbody tr")
+            added = 0
             for row in rows:
-                cols = row.query_selector_all("td")
-                if len(cols) < 9:
+                rec = _parse_historical_row(row)
+                if not rec:
                     continue
-                dataset.append({
-                    "date": datetime.today().strftime("%Y-%m-%d"),
-                    "symbol": cols[0].inner_text().strip(),
-                    "ldcp": cols[1].inner_text().strip(),
-                    "open": cols[2].inner_text().strip(),
-                    "high": cols[3].inner_text().strip(),
-                    "low": cols[4].inner_text().strip(),
-                    "close": cols[5].inner_text().strip(),
-                    "change": cols[6].inner_text().strip(),
-                    "change_pct": cols[7].inner_text().strip(),
-                    "volume": cols[8].inner_text().strip(),
-                })
+                sym = rec["symbol"]
+                if sym in seen:
+                    continue
+                seen.add(sym)
+                dataset.append(rec)
+                added += 1
 
-            next_li = page.locator("#historicalTable_wrapper li.paginate_button.next:not(.disabled)").first
-            if next_li.count() == 0:
+            print(f"Page {page_idx + 1}: +{added} symbols (total {len(seen)})")
+
+            if total_expected and len(seen) >= total_expected:
                 break
-            next_li.locator("a").click(timeout=10000)
+            if added == 0:
+                break
+            if not _click_historical_next(page):
+                break
             time.sleep(2)
+            try:
+                page.wait_for_function(
+                    "() => { const p = document.querySelector('#historicalTable_processing'); "
+                    "return !p || p.style.display === 'none' || getComputedStyle(p).display === 'none'; }",
+                    timeout=20000,
+                )
+            except Exception:
+                time.sleep(2)
 
         browser.close()
+
+    min_expected = 350
+    if len(seen) < min_expected:
+        print(
+            f"[WARN] Only {len(seen)} symbols scraped (< {min_expected}); "
+            "pagination or page layout may have changed"
+        )
+    else:
+        print(f"Scraped full PSX board: {len(seen)} symbols")
 
     df = pd.DataFrame(dataset)
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -260,12 +375,8 @@ def scrape_psx():
     df.to_csv(full_path, index=False)
     print(f"Saved {len(df)} rows to {full_path}")
 
-    # Filter to tracked companies and build daily_prices + price_changes
-    tracked = load_tracked_companies()
-    if tracked:
-        df_tracked = df[df["symbol"].isin(tracked)].copy()
-    else:
-        df_tracked = df
+    # Full market board — all symbols from historical scrape (not dividend-calendar subset)
+    df_tracked = df.copy()
 
     def clean_num(s):
         if pd.isna(s):
