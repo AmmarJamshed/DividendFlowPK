@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
+import DividendCalculator from '../components/DividendCalculator';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_LONG = [
@@ -38,6 +39,11 @@ export default function DividendCalendar() {
     return m;
   }, [weakMonths]);
 
+  const symbolList = useMemo(() => {
+    if (!dividends?.length) return [];
+    return [...new Set(dividends.map((d) => (d.Company || d.company || '').trim()).filter(Boolean))];
+  }, [dividends]);
+
   const dividendsForSelected = useMemo(() => {
     if (!selectedMonth || !dividends?.length) return [];
     return dividends.filter((d) => {
@@ -71,6 +77,8 @@ export default function DividendCalendar() {
 
   return (
     <div className="space-y-6">
+      <DividendCalculator symbolList={symbolList} />
+
       <div className="card p-6">
         <h3 className="card-header text-lg">Dividend calendar &amp; monthly coverage</h3>
         <p className="card-subtitle mb-2">

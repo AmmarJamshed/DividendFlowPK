@@ -8,6 +8,8 @@ const ROUTE_TIPS = {
     'Add holdings in Portfolio to estimate dividend income.',
   ],
   '/dividend-calendar': [
+    'Use the Dividend Calculator to enter holdings or upload a portfolio PDF.',
+    'See estimated dividend cash by payment month for your stocks.',
     'Click a month on the calendar to see every payout and weak-month analysis.',
     'Weak months show ideas to spread dividend income across the year.',
     'Check Interim vs Final in the table for each payment.',

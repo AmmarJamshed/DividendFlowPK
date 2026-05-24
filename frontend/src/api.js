@@ -18,4 +18,14 @@ export const api = {
   getMarketClosingPrices: () => axios.get(`${API_BASE}/market-closing-prices`),
   postSiteGuide: (body, config) => axios.post(`${API_BASE}/ai-site-guide`, body, config),
   postMarketChat: (body) => axios.post(`${API_BASE}/market-chat`, body),
+  postDividendCalculator: (holdings) =>
+    axios.post(`${API_BASE}/dividend-calculator`, { holdings }),
+  postDividendCalculatorPdf: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axios.post(`${API_BASE}/dividend-calculator/pdf`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
+    });
+  },
 };

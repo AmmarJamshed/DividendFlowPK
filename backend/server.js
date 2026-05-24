@@ -5,10 +5,23 @@ const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
 const axios = require('axios');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const DATA_PATH = path.join(__dirname, '..', 'data');
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/pdf' || file.originalname?.toLowerCase().endsWith('.pdf')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'));
+    }
+  },
+});
 
 app.use(cors());
 app.use(express.json());
@@ -489,6 +502,270 @@ app.get('/api/month-coverage', async (req, res) => {
     }
 
     res.json({ monthCoverage, weakMonths, dividends });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const MONTH_NAMES_LONG = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function normalizePsxSymbol(sym) {
+  return String(sym || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function parsePaymentMonthNum(raw) {
+  if (raw == null || raw === '') return null;
+  const s = String(raw).trim();
+  const asInt = parseInt(s, 10);
+  if (asInt >= 1 && asInt <= 12) return asInt;
+  const iso = s.match(/^(\d{4})-(\d{2})/);
+  if (iso) {
+    const m = parseInt(iso[2], 10);
+    return m >= 1 && m <= 12 ? m : null;
+  }
+  const dmy = s.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+  if (dmy) {
+    const m = parseInt(dmy[2], 10);
+    return m >= 1 && m <= 12 ? m : null;
+  }
+  return null;
+}
+
+async function getKnownPsxSymbols() {
+  const dividends = await getEnrichedDividends();
+  const set = new Set();
+  for (const d of dividends) {
+    const sym = normalizePsxSymbol(d.Company || d.company);
+    if (sym) set.add(sym);
+  }
+  return [...set].sort();
+}
+
+async function computeDividendProjection(rawHoldings) {
+  const holdings = (rawHoldings || [])
+    .map((h) => ({
+      symbol: normalizePsxSymbol(h.symbol || h.Symbol),
+      shares: parseFloat(h.shares ?? h.Shares ?? 0) || 0,
+    }))
+    .filter((h) => h.symbol && h.shares > 0);
+
+  const dividends = await getEnrichedDividends();
+  const bySymbol = new Map();
+  for (const d of dividends) {
+    const sym = normalizePsxSymbol(d.Company || d.company);
+    if (!sym) continue;
+    if (!bySymbol.has(sym)) bySymbol.set(sym, []);
+    bySymbol.get(sym).push(d);
+  }
+
+  const monthly = {};
+  for (let m = 1; m <= 12; m++) monthly[m] = { amount: 0, items: [] };
+
+  const lineItems = [];
+  const matched = [];
+  const unmatched = [];
+  let totalAnnual = 0;
+
+  for (const h of holdings) {
+    const divRows = bySymbol.get(h.symbol);
+    if (!divRows?.length) {
+      unmatched.push({ symbol: h.symbol, shares: h.shares });
+      continue;
+    }
+
+    let stockAnnual = 0;
+    for (const d of divRows) {
+      const month = parsePaymentMonthNum(d.Payment_month || d.payment_month);
+      const dps = parseFloat(d.Dividend_per_share || d.dividend_per_share || 0);
+      if (!month || dps <= 0) continue;
+      const cash = Math.round(h.shares * dps * 100) / 100;
+      stockAnnual += cash;
+      totalAnnual += cash;
+      monthly[month].amount = Math.round((monthly[month].amount + cash) * 100) / 100;
+      const item = {
+        symbol: h.symbol,
+        sector: d.Sector || d.sector || '',
+        shares: h.shares,
+        paymentMonth: month,
+        monthName: MONTH_NAMES_LONG[month - 1],
+        dividendPerShare: dps,
+        cash,
+        type: d.Type || d.dividendType || 'Interim',
+        year: parseInt(d.Year || d.year || new Date().getFullYear(), 10),
+      };
+      monthly[month].items.push(item);
+      lineItems.push(item);
+    }
+
+    if (stockAnnual > 0) {
+      matched.push({ symbol: h.symbol, shares: h.shares, annualDividend: Math.round(stockAnnual * 100) / 100 });
+    } else {
+      unmatched.push({ symbol: h.symbol, shares: h.shares, reason: 'No dividend rows with payment month in dataset' });
+    }
+  }
+
+  const byMonth = [];
+  for (let m = 1; m <= 12; m++) {
+    byMonth.push({
+      month: m,
+      monthName: MONTH_NAMES_LONG[m - 1],
+      amount: Math.round(monthly[m].amount * 100) / 100,
+      items: monthly[m].items,
+    });
+  }
+
+  return {
+    holdings,
+    totalAnnual: Math.round(totalAnnual * 100) / 100,
+    byMonth,
+    lineItems,
+    matched,
+    unmatched,
+    disclaimer:
+      'Projections use DividendFlow dividend calendar / PSX payout data and your share counts. Amounts are indicative only — not verified, not tax advice, and not a guarantee of future payouts.',
+  };
+}
+
+function regexExtractHoldingsFromText(text, knownSymbols) {
+  const sorted = [...knownSymbols].sort((a, b) => b.length - a.length);
+  const holdings = new Map();
+  const lines = String(text).split(/\r?\n/);
+
+  for (const line of lines) {
+    const upper = line.toUpperCase();
+    for (const sym of sorted) {
+      if (!new RegExp(`\\b${sym}\\b`).test(upper)) continue;
+      const nums = [...line.matchAll(/(\d[\d,]*(?:\.\d+)?)/g)]
+        .map((m) => parseFloat(m[1].replace(/,/g, '')))
+        .filter((n) => Number.isFinite(n) && n >= 1 && n <= 50_000_000 && (n < 1900 || n > 2100));
+      if (!nums.length) continue;
+      const shares = Math.max(...nums);
+      if (!holdings.has(sym) || holdings.get(sym) < shares) holdings.set(sym, shares);
+    }
+  }
+
+  return [...holdings.entries()].map(([symbol, shares]) => ({ symbol, shares }));
+}
+
+async function groqExtractHoldingsFromText(pdfText, knownSymbols) {
+  const apiKey = getGroqKey();
+  if (!apiKey) return null;
+  const sample = knownSymbols.slice(0, 100).join(', ');
+  const prompt = `Extract PSX stock holdings from this broker/portfolio statement text.
+Return ONLY valid JSON with this shape: {"holdings":[{"symbol":"HBL","shares":500}]}
+Rules:
+- symbol: PSX ticker, uppercase letters (2-6 chars)
+- shares: positive number of shares/units held
+- Skip cash, balances, totals, dates-only lines
+- Max 50 holdings
+
+Known PSX symbols (subset): ${sample}
+
+Statement text:
+${String(pdfText).slice(0, 14000)}`;
+
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2000,
+        temperature: 0.1,
+      },
+      {
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        timeout: 45000,
+      }
+    );
+    const content = response.data.choices[0]?.message?.content || '';
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    const list = Array.isArray(parsed.holdings) ? parsed.holdings : [];
+    return list
+      .map((h) => ({
+        symbol: normalizePsxSymbol(h.symbol || h.Symbol || h.ticker),
+        shares: parseFloat(h.shares ?? h.Shares ?? h.quantity ?? 0) || 0,
+      }))
+      .filter((h) => h.symbol && h.shares > 0);
+  } catch (err) {
+    console.error('Groq PDF holdings extract error:', err.response?.data || err.message);
+    return null;
+  }
+}
+
+async function extractHoldingsFromPdfText(text) {
+  const known = await getKnownPsxSymbols();
+  let holdings = await groqExtractHoldingsFromText(text, known);
+  let method = 'groq';
+  if (!holdings?.length) {
+    holdings = regexExtractHoldingsFromText(text, known);
+    method = 'regex';
+  }
+  return { holdings, method, knownSymbolCount: known.length };
+}
+
+// POST /api/dividend-calculator — project dividend income from manual holdings
+app.post('/api/dividend-calculator', async (req, res) => {
+  try {
+    const holdings = req.body?.holdings;
+    if (!Array.isArray(holdings) || holdings.length === 0) {
+      return res.status(400).json({ error: 'Provide holdings: [{ symbol, shares }, ...]' });
+    }
+    if (holdings.length > 80) {
+      return res.status(400).json({ error: 'Maximum 80 holdings per request' });
+    }
+    const result = await computeDividendProjection(holdings);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/dividend-calculator/pdf — parse portfolio PDF then project dividends
+app.post('/api/dividend-calculator/pdf', (req, res, next) => {
+  pdfUpload.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message || 'Invalid PDF upload' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file?.buffer?.length) {
+      return res.status(400).json({ error: 'Upload a PDF portfolio statement (field name: file)' });
+    }
+    const parsed = await pdfParse(req.file.buffer);
+    const text = parsed?.text || '';
+    if (text.trim().length < 20) {
+      return res.status(400).json({ error: 'Could not read text from PDF — try a text-based statement or enter holdings manually.' });
+    }
+    const { holdings, method } = await extractHoldingsFromPdfText(text);
+    if (!holdings.length) {
+      return res.status(422).json({
+        error: 'No PSX holdings detected in this PDF. Enter symbols manually or try a clearer statement export.',
+        textPreview: text.slice(0, 400),
+      });
+    }
+    const projection = await computeDividendProjection(holdings);
+    res.json({
+      ...projection,
+      extractedHoldings: holdings,
+      extractionMethod: method,
+      pdfPages: parsed.numpages || null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/dividend-calculator/symbols — PSX tickers in dividend dataset (autocomplete)
+app.get('/api/dividend-calculator/symbols', async (_req, res) => {
+  try {
+    const symbols = await getKnownPsxSymbols();
+    res.json({ symbols });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
