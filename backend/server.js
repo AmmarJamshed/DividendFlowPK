@@ -6,7 +6,7 @@ const path = require('path');
 const csv = require('csv-parser');
 const axios = require('axios');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+const pdfParseModule = require('pdf-parse');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -709,6 +709,23 @@ async function extractHoldingsFromPdfText(text) {
   return { holdings, method, knownSymbolCount: known.length };
 }
 
+/** pdf-parse v1 exports a function; v2 exports { PDFParse } class */
+async function parsePdfBuffer(buffer) {
+  if (typeof pdfParseModule === 'function') {
+    const parsed = await pdfParseModule(buffer);
+    return { text: parsed?.text || '', numpages: parsed?.numpages ?? null };
+  }
+  const { PDFParse } = pdfParseModule;
+  const parser = new PDFParse({ data: buffer });
+  try {
+    const result = await parser.getText();
+    const text = typeof result === 'string' ? result : (result?.text ?? '');
+    return { text, numpages: result?.total ?? null };
+  } finally {
+    await parser.destroy?.();
+  }
+}
+
 // POST /api/dividend-calculator — project dividend income from manual holdings
 app.post('/api/dividend-calculator', async (req, res) => {
   try {
@@ -737,7 +754,7 @@ app.post('/api/dividend-calculator/pdf', (req, res, next) => {
     if (!req.file?.buffer?.length) {
       return res.status(400).json({ error: 'Upload a PDF portfolio statement (field name: file)' });
     }
-    const parsed = await pdfParse(req.file.buffer);
+    const parsed = await parsePdfBuffer(req.file.buffer);
     const text = parsed?.text || '';
     if (text.trim().length < 20) {
       return res.status(400).json({ error: 'Could not read text from PDF — try a text-based statement or enter holdings manually.' });
