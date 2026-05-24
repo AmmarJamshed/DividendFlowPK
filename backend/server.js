@@ -544,6 +544,231 @@ async function getKnownPsxSymbols() {
   return [...set].sort();
 }
 
+async function getAllPsxSymbols() {
+  const set = new Set(await getKnownPsxSymbols());
+  const extraFiles = [
+    path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv'),
+    path.join(DATA_PATH, 'dividends', 'psx_payouts.csv'),
+  ];
+  for (const fp of extraFiles) {
+    if (!fs.existsSync(fp)) continue;
+    try {
+      const rows = await readCSV(fp);
+      for (const r of rows) {
+        const sym = normalizePsxSymbol(r.symbol || r.Symbol || r.Company || r.company);
+        if (sym) set.add(sym);
+      }
+    } catch (_) {}
+  }
+  return [...set].sort();
+}
+
+const PDF_SKIP_SYMBOLS = new Set([
+  'PSX', 'CDC', 'KSE', 'KSE100', 'USD', 'PKR', 'ETF', 'GDR', 'FUND', 'TOTAL', 'DATE', 'NA', 'NAV',
+  'THE', 'AND', 'FOR', 'FROM', 'WITH', 'PAGE', 'REPORT', 'CLIENT', 'PORTFOLIO', 'POSITION', 'SYMBOL',
+  'QTY', 'QUANTITY', 'BALANCE', 'AMOUNT', 'VALUE', 'COST', 'PRICE', 'SR', 'NO', 'ISIN',
+]);
+
+function isPlausibleShareCount(n) {
+  return Number.isFinite(n) && n >= 1 && n <= 50_000_000 && !(n >= 1900 && n <= 2100);
+}
+
+function normalizePdfText(text) {
+  return String(text)
+    .replace(/\u00A0/g, ' ')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((l) => l.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
+function mergeHoldingsLists(...lists) {
+  const map = new Map();
+  for (const list of lists) {
+    for (const h of list || []) {
+      const symbol = normalizePsxSymbol(h.symbol);
+      const shares = parseFloat(h.shares) || 0;
+      if (!symbol || !isPlausibleShareCount(shares)) continue;
+      if (!map.has(symbol) || map.get(symbol) < shares) map.set(symbol, shares);
+    }
+  }
+  return [...map.entries()].map(([symbol, shares]) => ({ symbol, shares }));
+}
+
+function tableRowExtractLineGeneric(line) {
+  const parts = line.split(/\s+/).filter(Boolean);
+  for (let i = 0; i < parts.length; i++) {
+    if (/^\d/.test(parts[i])) continue;
+    const sym = normalizePsxSymbol(parts[i].replace(/[^A-Za-z0-9]/g, ''));
+    if (!sym || sym.length < 2 || sym.length > 6 || PDF_SKIP_SYMBOLS.has(sym)) continue;
+    for (const j of [i + 1, i - 1, i + 2, i + 3]) {
+      if (j < 0 || j >= parts.length) continue;
+      const n = parseFloat(String(parts[j]).replace(/,/g, ''));
+      if (isPlausibleShareCount(n)) return { symbol: sym, shares: n };
+    }
+  }
+  return null;
+}
+
+function tableRowExtractLine(line, symbolSet) {
+  const parts = line.split(/\s+/).filter(Boolean);
+  for (let i = 0; i < parts.length; i++) {
+    const raw = parts[i].replace(/[^A-Za-z0-9]/g, '');
+    const sym = normalizePsxSymbol(raw);
+    if (!sym || sym.length < 2 || sym.length > 6 || !symbolSet.has(sym) || PDF_SKIP_SYMBOLS.has(sym)) continue;
+    for (const j of [i + 1, i - 1, i + 2, i + 3]) {
+      if (j < 0 || j >= parts.length) continue;
+      const n = parseFloat(String(parts[j]).replace(/,/g, ''));
+      if (isPlausibleShareCount(n)) return { symbol: sym, shares: n };
+    }
+  }
+  return null;
+}
+
+function brokerExtractHoldingsFromText(text, symbolSet) {
+  const sorted = [...symbolSet].filter((s) => !PDF_SKIP_SYMBOLS.has(s)).sort((a, b) => b.length - a.length);
+  const holdings = new Map();
+  const lines = normalizePdfText(text).split('\n');
+  let tableMode = false;
+
+  for (const line of lines) {
+    const upper = line.toUpperCase();
+    if (/\b(SYMBOL|SCRIP|CODE|TICKER)\b/.test(upper) && /\b(QTY|QUANTITY|BALANCE|HOLDING|SHARES|UNITS)\b/.test(upper)) {
+      tableMode = true;
+      continue;
+    }
+    if (tableMode) {
+      const row = tableRowExtractLine(line, symbolSet);
+      if (row) {
+        holdings.set(row.symbol, Math.max(holdings.get(row.symbol) || 0, row.shares));
+        continue;
+      }
+    }
+
+    for (const sym of sorted) {
+      const patterns = [
+        new RegExp(`^${sym}\\b\\s*[-–—]?\\s*([\\d,]+(?:\\.\\d+)?)`, 'i'),
+        new RegExp(`\\b${sym}\\b\\s*[-–—]?\\s*([\\d,]+(?:\\.\\d+)?)`, 'i'),
+        new RegExp(`\\b${sym}\\b[^\\d]{0,24}([\\d,]+(?:\\.\\d+)?)`, 'i'),
+        new RegExp(`([\\d,]+(?:\\.\\d+)?)\\s+${sym}\\b`, 'i'),
+      ];
+      for (const re of patterns) {
+        const m = line.match(re);
+        if (!m) continue;
+        const shares = parseFloat(m[1].replace(/,/g, ''));
+        if (isPlausibleShareCount(shares)) {
+          holdings.set(sym, Math.max(holdings.get(sym) || 0, shares));
+          break;
+        }
+      }
+    }
+
+    const row = tableRowExtractLine(line, symbolSet) || tableRowExtractLineGeneric(line);
+    if (row) holdings.set(row.symbol, Math.max(holdings.get(row.symbol) || 0, row.shares));
+  }
+
+  return [...holdings.entries()].map(([symbol, shares]) => ({ symbol, shares }));
+}
+
+function regexExtractHoldingsFromText(text, knownSymbols) {
+  const sorted = [...knownSymbols].filter((s) => !PDF_SKIP_SYMBOLS.has(s)).sort((a, b) => b.length - a.length);
+  const holdings = new Map();
+  const lines = normalizePdfText(text).split('\n');
+
+  for (const line of lines) {
+    const upper = line.toUpperCase();
+    for (const sym of sorted) {
+      if (!new RegExp(`\\b${sym}\\b`).test(upper)) continue;
+      const nums = [...line.matchAll(/(\d[\d,]*(?:\.\d+)?)/g)]
+        .map((m) => parseFloat(m[1].replace(/,/g, '')))
+        .filter(isPlausibleShareCount);
+      if (!nums.length) continue;
+      const shares = Math.max(...nums);
+      if (!holdings.has(sym) || holdings.get(sym) < shares) holdings.set(sym, shares);
+    }
+  }
+
+  return [...holdings.entries()].map(([symbol, shares]) => ({ symbol, shares }));
+}
+
+async function groqExtractHoldingsFromText(pdfText, knownSymbols) {
+  const apiKey = getGroqKey();
+  if (!apiKey) return null;
+  const sample = knownSymbols.slice(0, 150).join(', ');
+  const prompt = `You parse Pakistan Stock Exchange (PSX) broker portfolio PDFs such as "Client Portfolio Position Report" or CDC statements.
+
+Return ONLY valid JSON: {"holdings":[{"symbol":"HBL","shares":500}]}
+
+Rules:
+- symbol: PSX ticker only (2-6 uppercase letters), not company full name
+- shares: current quantity / balance / units held (integer or decimal)
+- Include every equity line; skip cash, margins, totals, headers, page numbers
+- If the same symbol appears once, use the holding quantity (not market value)
+- Max 60 holdings
+
+Example tickers on PSX: ${sample}
+
+PDF text:
+${normalizePdfText(pdfText).slice(0, 18000)}`;
+
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2500,
+        temperature: 0.05,
+      },
+      {
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        timeout: 45000,
+      }
+    );
+    const content = response.data.choices[0]?.message?.content || '';
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]);
+    const list = Array.isArray(parsed.holdings) ? parsed.holdings : [];
+    return list
+      .map((h) => ({
+        symbol: normalizePsxSymbol(h.symbol || h.Symbol || h.ticker || h.scrip || h.code),
+        shares: parseFloat(h.shares ?? h.Shares ?? h.quantity ?? h.qty ?? h.balance ?? 0) || 0,
+      }))
+      .filter((h) => h.symbol && isPlausibleShareCount(h.shares));
+  } catch (err) {
+    console.error('Groq PDF holdings extract error:', err.response?.data || err.message);
+    return null;
+  }
+}
+
+async function extractHoldingsFromPdfText(text) {
+  const normalized = normalizePdfText(text);
+  const allSymbols = await getAllPsxSymbols();
+  const dividendSymbols = await getKnownPsxSymbols();
+
+  const groqHoldings = await groqExtractHoldingsFromText(normalized, allSymbols);
+  const genericHoldings = brokerExtractHoldingsFromText(normalized, new Set(allSymbols));
+  const regexHoldings = regexExtractHoldingsFromText(normalized, allSymbols.length ? allSymbols : dividendSymbols);
+  const looseHoldings = (() => {
+    const map = new Map();
+    for (const line of normalized.split('\n')) {
+      const row = tableRowExtractLineGeneric(line);
+      if (row) map.set(row.symbol, Math.max(map.get(row.symbol) || 0, row.shares));
+    }
+    return [...map.entries()].map(([symbol, shares]) => ({ symbol, shares }));
+  })();
+
+  const holdings = mergeHoldingsLists(groqHoldings, genericHoldings, regexHoldings, looseHoldings);
+
+  let method = 'merged';
+  if (groqHoldings?.length && holdings.length === groqHoldings.length) method = 'groq';
+  else if (genericHoldings?.length && !groqHoldings?.length) method = 'broker';
+
+  return { holdings, method, knownSymbolCount: allSymbols.length, textLength: normalized.length };
+}
+
 async function computeDividendProjection(rawHoldings) {
   const holdings = (rawHoldings || [])
     .map((h) => ({
@@ -629,86 +854,6 @@ async function computeDividendProjection(rawHoldings) {
   };
 }
 
-function regexExtractHoldingsFromText(text, knownSymbols) {
-  const sorted = [...knownSymbols].sort((a, b) => b.length - a.length);
-  const holdings = new Map();
-  const lines = String(text).split(/\r?\n/);
-
-  for (const line of lines) {
-    const upper = line.toUpperCase();
-    for (const sym of sorted) {
-      if (!new RegExp(`\\b${sym}\\b`).test(upper)) continue;
-      const nums = [...line.matchAll(/(\d[\d,]*(?:\.\d+)?)/g)]
-        .map((m) => parseFloat(m[1].replace(/,/g, '')))
-        .filter((n) => Number.isFinite(n) && n >= 1 && n <= 50_000_000 && (n < 1900 || n > 2100));
-      if (!nums.length) continue;
-      const shares = Math.max(...nums);
-      if (!holdings.has(sym) || holdings.get(sym) < shares) holdings.set(sym, shares);
-    }
-  }
-
-  return [...holdings.entries()].map(([symbol, shares]) => ({ symbol, shares }));
-}
-
-async function groqExtractHoldingsFromText(pdfText, knownSymbols) {
-  const apiKey = getGroqKey();
-  if (!apiKey) return null;
-  const sample = knownSymbols.slice(0, 100).join(', ');
-  const prompt = `Extract PSX stock holdings from this broker/portfolio statement text.
-Return ONLY valid JSON with this shape: {"holdings":[{"symbol":"HBL","shares":500}]}
-Rules:
-- symbol: PSX ticker, uppercase letters (2-6 chars)
-- shares: positive number of shares/units held
-- Skip cash, balances, totals, dates-only lines
-- Max 50 holdings
-
-Known PSX symbols (subset): ${sample}
-
-Statement text:
-${String(pdfText).slice(0, 14000)}`;
-
-  try {
-    const response = await axios.post(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        model: GROQ_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 2000,
-        temperature: 0.1,
-      },
-      {
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        timeout: 45000,
-      }
-    );
-    const content = response.data.choices[0]?.message?.content || '';
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    const parsed = JSON.parse(jsonMatch[0]);
-    const list = Array.isArray(parsed.holdings) ? parsed.holdings : [];
-    return list
-      .map((h) => ({
-        symbol: normalizePsxSymbol(h.symbol || h.Symbol || h.ticker),
-        shares: parseFloat(h.shares ?? h.Shares ?? h.quantity ?? 0) || 0,
-      }))
-      .filter((h) => h.symbol && h.shares > 0);
-  } catch (err) {
-    console.error('Groq PDF holdings extract error:', err.response?.data || err.message);
-    return null;
-  }
-}
-
-async function extractHoldingsFromPdfText(text) {
-  const known = await getKnownPsxSymbols();
-  let holdings = await groqExtractHoldingsFromText(text, known);
-  let method = 'groq';
-  if (!holdings?.length) {
-    holdings = regexExtractHoldingsFromText(text, known);
-    method = 'regex';
-  }
-  return { holdings, method, knownSymbolCount: known.length };
-}
-
 /** pdf-parse v1 exports a function; v2 exports { PDFParse } class */
 async function parsePdfBuffer(buffer) {
   if (typeof pdfParseModule === 'function') {
@@ -759,11 +904,16 @@ app.post('/api/dividend-calculator/pdf', (req, res, next) => {
     if (text.trim().length < 20) {
       return res.status(400).json({ error: 'Could not read text from PDF — try a text-based statement or enter holdings manually.' });
     }
-    const { holdings, method } = await extractHoldingsFromPdfText(text);
+    const { holdings, method, textLength } = await extractHoldingsFromPdfText(text);
     if (!holdings.length) {
+      const hint =
+        textLength < 200
+          ? 'PDF text is too short — this may be a scanned/image PDF. Export a text-based statement from your broker or use manual entry.'
+          : 'No PSX holdings detected in this PDF. Enter symbols manually or try a clearer statement export.';
       return res.status(422).json({
-        error: 'No PSX holdings detected in this PDF. Enter symbols manually or try a clearer statement export.',
-        textPreview: text.slice(0, 400),
+        error: hint,
+        textPreview: text.slice(0, 600),
+        textLength,
       });
     }
     const projection = await computeDividendProjection(holdings);

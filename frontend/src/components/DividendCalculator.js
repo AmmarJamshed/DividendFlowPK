@@ -85,7 +85,12 @@ export default function DividendCalculator({ symbolList = [] }) {
       }
     } catch (err) {
       setResult(null);
-      setError(err.response?.data?.error || err.message || 'PDF analysis failed');
+      const data = err.response?.data;
+      let msg = data?.error || err.message || 'PDF analysis failed';
+      if (data?.textPreview) {
+        msg += `\n\nExtracted text preview:\n${data.textPreview}`;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -246,7 +251,9 @@ export default function DividendCalculator({ symbolList = [] }) {
         )}
 
         {error && (
-          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm">{error}</div>
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm whitespace-pre-wrap leading-relaxed">
+            {error}
+          </div>
         )}
 
         {result && (
