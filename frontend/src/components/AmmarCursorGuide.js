@@ -225,7 +225,7 @@ export default function AmmarCursorGuide() {
           alt=""
           width={56}
           height={56}
-          className="ammar-avatar rounded-full border-2 border-[#1f4d7a] object-cover shadow-lg shadow-slate-900/15 ring-2 ring-white bg-slate-100"
+          className="ammar-avatar rounded-full border-2 border-teal-500 object-cover shadow-lg shadow-teal-400/30 ring-2 ring-white bg-slate-100"
           aria-hidden="true"
         />
         <span className="text-[10px] font-bold text-teal-700 bg-white/95 px-2 py-0.5 rounded-lg border border-teal-200/80 shadow-sm whitespace-nowrap -mt-1">

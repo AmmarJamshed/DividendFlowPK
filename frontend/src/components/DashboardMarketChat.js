@@ -14,7 +14,7 @@ const WELCOME =
 function Spinner() {
   return (
     <div
-      className="w-5 h-5 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin shrink-0"
+      className="w-5 h-5 border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin shrink-0"
       aria-hidden
     />
   );
@@ -73,7 +73,7 @@ function BuddyAvatar({ size = 'md' }) {
   const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-9 h-9 text-xs';
   return (
     <div
-      className={`${dim} shrink-0 bg-[#0077c8] text-white font-bold flex items-center justify-center`}
+      className={`${dim} shrink-0 rounded-xl bg-gradient-to-br from-teal-500 to-violet-500 text-white font-bold flex items-center justify-center shadow-md shadow-teal-300/40`}
       aria-hidden
     >
       MB
@@ -144,17 +144,17 @@ export default function DashboardMarketChat() {
       className="card p-0 overflow-hidden scroll-mt-24"
       data-ai-hint="Research chat on stocks from the latest saved news and prices"
     >
-      <div className="fin-hero fin-hero--dark px-5 sm:px-6 py-5 border-b border-slate-800">
+      <div className="fin-hero fin-hero--teal px-5 sm:px-6 py-5 border-b border-teal-400/30 rounded-none border-x-0 border-t-0">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <BuddyAvatar />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400 mb-1">
-              Research assistant
+            <p className="text-[11px] font-bold uppercase tracking-widest text-teal-100 mb-1">
+              Research assistant · +20 XP
             </p>
-            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight leading-tight">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight text-white">
               Market research chat
             </h2>
-            <p className="mt-2 text-sm text-neutral-300 leading-relaxed max-w-2xl">
+            <p className="mt-2 text-sm text-teal-50/95 leading-relaxed max-w-2xl">
               Query the same archived PSX price and news files shown on this dashboard. Outputs are
               generated summaries — not live quotes or investment recommendations.
             </p>
@@ -184,9 +184,9 @@ export default function DashboardMarketChat() {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => send(prompt)}
                 disabled={loading}
-                className="group text-left px-3 py-2.5 bg-white border border-neutral-200 hover:border-neutral-900 transition-colors disabled:opacity-50"
+                className="group text-left px-3 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50 transition-colors disabled:opacity-50"
               >
-                <span className="block text-xs font-semibold text-neutral-900 group-hover:text-[#0077c8]">
+                <span className="block text-xs font-semibold text-slate-800 group-hover:text-teal-700">
                   {label}
                 </span>
                 <span className="block text-[10px] text-slate-500 mt-0.5 line-clamp-2 leading-snug">
@@ -224,7 +224,7 @@ export default function DashboardMarketChat() {
                   <div
                     className={`px-3.5 py-3 ${
                       isUser
-                        ? 'bg-neutral-900 text-white'
+                        ? 'bg-gradient-to-r from-teal-600 to-teal-500 text-white'
                         : 'bg-white border border-neutral-200 text-neutral-800'
                     }`}
                   >
@@ -261,7 +261,7 @@ export default function DashboardMarketChat() {
         </div>
 
         {/* Composer */}
-        <div className="border border-neutral-300 bg-white p-2 focus-within:ring-1 focus-within:ring-neutral-900 focus-within:border-neutral-900">
+        <div className="border border-slate-200 bg-white p-2 rounded-xl focus-within:ring-2 focus-within:ring-teal-400/40 focus-within:border-teal-400">
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               ref={inputRef}

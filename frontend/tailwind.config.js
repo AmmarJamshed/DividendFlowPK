@@ -17,7 +17,15 @@ module.exports = {
         surfaceLight: '#334155',
         cream: '#faf8f5',
         coral: '#f97316',
-        violet: '#8b5cf6',
+        violet: {
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          400: '#a78bfa',
+          500: '#8b5cf6',
+          700: '#6d28d9',
+          800: '#5b21b6',
+        },
         lime: '#84cc16',
       },
       backgroundImage: {

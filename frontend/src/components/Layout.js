@@ -18,7 +18,7 @@ const navItems = [
 ];
 
 function NavIcon({ name, active = false }) {
-  const cls = `w-4 h-4 shrink-0 ${active ? 'text-[#e1c88b]' : 'text-slate-500 group-hover:text-slate-700'}`;
+  const cls = `w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-500 group-hover:text-teal-600'}`;
   switch (name) {
     case 'home':
       return (
@@ -88,8 +88,8 @@ function AiToggleSpinner({ className }) {
 }
 
 const Disclaimer = () => (
-  <footer className="mt-auto border-t border-neutral-200 px-5 py-4 text-[11px] text-neutral-500 leading-relaxed bg-neutral-50">
-    Research and education only. Not investment advice. Confirm all figures with PSX and your broker.
+  <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-[11px] text-slate-600 bg-slate-50/90 leading-relaxed">
+    For learning and research only — not buy/sell advice. Confirm figures with PSX and your broker.
   </footer>
 );
 
@@ -124,24 +124,18 @@ export default function Layout({ children }) {
   const pageTitle = navItems.find((n) => n.path === location.pathname)?.label || 'Overview';
 
   return (
-    <div className="min-h-screen flex flex-col text-neutral-800">
-      {/* Utility bar — exchange-style top strip */}
-      <div className="hidden lg:flex items-center justify-between px-6 py-1.5 bg-slate-100/80 border-b border-slate-200 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-        <span>Pakistan Stock Exchange · Dividend &amp; market intelligence</span>
-        <span className="text-neutral-400">Data from public PSX sources</span>
-      </div>
-
+    <div className="min-h-screen flex flex-col text-slate-700 relative">
       <div className="flex flex-1 min-h-0 relative">
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+            className="fixed inset-0 bg-slate-900/20 z-40 lg:hidden backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
             aria-hidden="true"
           />
         )}
 
         <aside
-          className={`fixed lg:relative inset-y-0 left-0 z-50 w-64 flex flex-col bg-white/95 backdrop-blur-sm border-r border-slate-200 transform transition-transform duration-200 ease-out lg:top-0
+          className={`fixed lg:relative inset-y-0 left-0 z-50 w-72 flex flex-col bg-white/95 backdrop-blur-xl border-r border-slate-200/80 shadow-xl transform transition-transform duration-300 ease-out lg:top-0
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         >
           <div className="px-5 py-5 border-b border-slate-200 flex items-center justify-between">
@@ -149,13 +143,13 @@ export default function Layout({ children }) {
               <img
                 src={LOGO}
                 alt="DividendFlow PK"
-                className="w-11 h-11 rounded-full shrink-0 border-2 border-[#c5a667]/50 shadow-md object-cover bg-white"
+                className="w-11 h-11 rounded-2xl shrink-0 border-2 border-teal-300/80 shadow-md shadow-teal-200/40 object-cover bg-white"
               />
               <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-900 tracking-tight leading-none group-hover:text-[#1f4d7a]">
-                  DividendFlow
+                <p className="text-base font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent leading-tight">
+                  DividendFlow PK
                 </p>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mt-1">PK</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 hidden sm:block">PSX dividends &amp; prices</p>
               </div>
             </Link>
             <button
@@ -177,10 +171,10 @@ export default function Layout({ children }) {
                 <Link
                   key={path}
                   to={path}
-                  className={`group flex items-center gap-3 px-5 py-3 text-sm font-medium border-l-[3px] transition-colors ${
+                  className={`group flex items-center gap-3 px-4 py-3 mx-2 rounded-xl text-sm font-semibold transition-all ${
                     active
-                      ? 'border-l-[#c5a667] nav-link-active text-white shadow-sm'
-                      : 'border-l-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'nav-link-active shadow-md'
+                      : 'text-slate-600 hover:bg-teal-50/80 hover:text-teal-800'
                   }`}
                 >
                   <NavIcon name={icon} active={active} />
@@ -193,7 +187,7 @@ export default function Layout({ children }) {
         </aside>
 
         <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-transparent">
-          <header className="min-h-14 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 py-2 px-4 lg:px-8 bg-white/80 backdrop-blur-sm shrink-0">
+          <header className="min-h-14 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 py-2 px-4 lg:px-8 bg-white/90 backdrop-blur-md shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
@@ -227,12 +221,11 @@ export default function Layout({ children }) {
                 aria-pressed={aiAssistanceOn}
                 aria-busy={aiToggleLoading}
                 disabled={aiToggleLoading}
-                className={`text-[11px] font-semibold uppercase tracking-wide px-3 py-2 border rounded-sm transition-colors ${
+                className={`text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
                   aiAssistanceOn
-                    ? 'text-white border-[#143554]'
-                    : 'bg-white text-slate-700 border-slate-300 hover:border-[#1f4d7a]'
+                    ? 'text-white border-teal-400 bg-gradient-to-r from-teal-500 to-cyan-500 shadow-md shadow-teal-300/30'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-teal-300 hover:text-teal-700'
                 } ${aiToggleLoading ? 'opacity-70 cursor-wait' : ''}`}
-                style={aiAssistanceOn ? { background: 'linear-gradient(120deg, #0f2742 0%, #1f4d7a 100%)' } : undefined}
               >
                 {aiToggleLoading ? (
                   <span className="inline-flex items-center gap-1.5">

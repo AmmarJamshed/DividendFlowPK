@@ -27,7 +27,7 @@ const ICONS = {
 };
 
 /**
- * Interactive mission-style shortcuts.
+ * Mission-style shortcuts with visible XP rewards.
  */
 export default function QuickActionGrid({ actions }) {
   return (
@@ -36,26 +36,24 @@ export default function QuickActionGrid({ actions }) {
         <Link
           key={a.to + a.label}
           to={a.to}
-          className="action-card group flex items-start gap-4 p-4 rounded-xl border border-slate-200 bg-white hover:border-[#c5a667]/60"
+          className="action-card group flex items-start gap-4 p-4 border border-slate-200/90 bg-white/95"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#143554] bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200 group-hover:from-[#e8f2fb] group-hover:to-white group-hover:border-[#1f4d7a]/30 transition-colors">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-teal-700 bg-gradient-to-br from-teal-50 to-violet-50 border border-teal-200/80 group-hover:from-teal-100 group-hover:to-violet-100 group-hover:scale-105 transition-all">
             {ICONS[a.icon] || ICONS.chart}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="flex items-center justify-between gap-2">
-              <span className="block text-sm font-bold text-slate-900 group-hover:text-[#1f4d7a]">
+            <span className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="block text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
                 {a.label}
               </span>
-              <span className="text-xs font-semibold text-[#c5a667] opacity-0 group-hover:opacity-100 transition-opacity">
-                Go →
-              </span>
+              {a.xp != null && (
+                <span className="badge-xp shrink-0">+{a.xp} XP</span>
+              )}
             </span>
             {a.hint && <span className="block text-xs text-slate-500 mt-1 leading-snug">{a.hint}</span>}
-            {a.xp && (
-              <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                +{a.xp} XP
-              </span>
-            )}
+            <span className="inline-block mt-2 text-[10px] font-semibold text-teal-600 opacity-80 group-hover:opacity-100">
+              Start mission →
+            </span>
           </span>
         </Link>
       ))}

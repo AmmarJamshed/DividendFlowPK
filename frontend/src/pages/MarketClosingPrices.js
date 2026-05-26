@@ -153,7 +153,7 @@ export default function MarketClosingPrices() {
         </Link>
       </PageHero>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-neutral-200 border border-neutral-200">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
           label="Symbols"
           value={marketPulse.total}

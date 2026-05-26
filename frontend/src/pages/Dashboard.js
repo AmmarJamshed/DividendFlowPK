@@ -34,7 +34,7 @@ const chartOptions = {
     title: {
       display: true,
       text: 'How many companies typically pay dividends each month',
-      color: '#171717',
+      color: '#334155',
       font: { size: 12, weight: '600' },
       padding: { bottom: 12 },
     },
@@ -48,10 +48,10 @@ const chartOptions = {
     y: {
       beginAtZero: true,
       title: { display: true, text: 'Number of companies', color: '#64748b', font: { size: 11 } },
-      grid: { color: 'rgba(0, 0, 0, 0.06)' },
-      ticks: { color: '#737373', stepSize: 1 },
+      grid: { color: 'rgba(148, 163, 184, 0.25)' },
+      ticks: { color: '#64748b', stepSize: 1 },
     },
-    x: { grid: { display: false }, ticks: { color: '#737373', font: { size: 11 } } },
+    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 11 } } },
   },
 };
 
@@ -166,15 +166,25 @@ export default function Dashboard() {
     return { done, total: 4, pct: Math.round((done / 4) * 100) };
   }, [dashboardStats]);
 
+  const missionLevel =
+    missionProgress.pct >= 100
+      ? 'Market Pro'
+      : missionProgress.pct >= 75
+        ? 'Dividend Explorer'
+        : missionProgress.pct >= 50
+          ? 'Learner'
+          : 'Rookie';
+  const earnedXp = missionProgress.done * 25;
+
   const chartData = {
     labels: heatmapData.map(d => d.month),
     datasets: [{
       label: 'Dividend-paying companies',
       data: heatmapData.map(d => d.count),
-      backgroundColor: 'rgba(31, 77, 122, 0.85)',
-      borderColor: '#1f4d7a',
+      backgroundColor: 'rgba(13, 148, 136, 0.75)',
+      borderColor: '#0d9488',
       borderWidth: 0,
-      borderRadius: 0,
+      borderRadius: 8,
     }]
   };
 
@@ -182,8 +192,8 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin" />
-          <p className="text-neutral-500 text-sm">Loading market data…</p>
+          <div className="w-10 h-10 border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
+          <p className="text-slate-500 text-sm">Loading market data…</p>
         </div>
       </div>
     );
@@ -192,10 +202,9 @@ export default function Dashboard() {
   return (
     <div className="space-y-10">
       <PageHero
-        variant="dark"
-        eyebrow="Pakistan Stock Exchange"
-        title="Dividend and market intelligence"
-        description="Track payout calendars, closing prices, and headline-linked price moves from archived PSX datasets. Updated on weekdays after the session. For research only — not a solicitation to buy or sell securities."
+        eyebrow="Daily missions · Pakistan Stock Exchange"
+        title="Your dividend & market snapshot"
+        description="Track payout calendars, closing prices, and headline-linked moves from archived PSX data. Updated on weekdays after the session — for research only, not investment advice."
       >
         <Link to="/market-closing-prices" className="btn-primary">
           View market data
@@ -205,28 +214,35 @@ export default function Dashboard() {
         </Link>
       </PageHero>
 
-      <section className="card p-5">
+      <section className="card p-5 border-teal-200/60">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900">Daily mission progress</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Complete data checks to explore the full PSX toolkit</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Complete checks below to level up · <span className="font-semibold text-violet-700">+{earnedXp} XP earned</span>
+            </p>
           </div>
-          <span className="badge-pill bg-amber-50 text-amber-900 border-amber-200">
-            {missionProgress.done}/{missionProgress.total} complete
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="level-pill">{missionLevel}</span>
+            <span className="badge-pill bg-teal-50 text-teal-800 border-teal-200">
+              {missionProgress.done}/{missionProgress.total} complete
+            </span>
+          </div>
         </div>
         <div className="xp-track">
           <div className="xp-fill" style={{ width: `${missionProgress.pct}%` }} />
         </div>
+        <p className="text-[10px] font-semibold text-slate-500 mt-2 tabular-nums">{missionProgress.pct}% to next rank</p>
       </section>
 
       <section>
         <h3 className="plain-label mb-4">Market snapshot</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-neutral-200 border border-neutral-200">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             label="Dividend payers"
             value={dashboardStats.companies}
             hint="Unique names in payout calendar"
+            accent="teal"
           />
           <MetricCard
             label="Peak payout month"
@@ -236,6 +252,7 @@ export default function Dashboard() {
                 ? `${dashboardStats.busiestCount} payout records`
                 : 'Calendar dataset'
             }
+            accent="violet"
           />
           <MetricCard
             label="Notable movers"
@@ -247,13 +264,13 @@ export default function Dashboard() {
             label="News items"
             value={dashboardStats.headlines}
             hint={`${dashboardStats.alerts} headline alerts`}
-            accent="emerald"
+            accent="violet"
           />
         </div>
       </section>
 
       <section>
-        <h3 className="plain-label mb-4">Explore</h3>
+        <h3 className="plain-label mb-4">Missions — earn XP</h3>
         <QuickActionGrid actions={quickActions} />
       </section>
 

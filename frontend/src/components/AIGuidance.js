@@ -112,7 +112,7 @@ export default function AIGuidance() {
             />
             <button
               onClick={handleSend}
-              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-semibold transition-colors"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white text-sm font-semibold transition-colors shadow-md shadow-teal-300/30"
             >
               Send
             </button>
@@ -121,7 +121,7 @@ export default function AIGuidance() {
       )}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-10 h-10 sm:w-11 sm:h-11 bg-neutral-900 hover:bg-neutral-800 transition-colors flex items-center justify-center border border-neutral-800"
+        className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-teal-500 to-violet-500 hover:from-teal-400 hover:to-violet-400 transition-colors flex items-center justify-center shadow-lg shadow-teal-300/40"
         aria-label="Toggle Ammar quick tips"
       >
         <RobotIcon className="w-[22px] h-[22px] sm:w-6 sm:h-6" />
