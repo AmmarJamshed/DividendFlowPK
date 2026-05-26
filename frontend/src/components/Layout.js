@@ -10,7 +10,7 @@ const navItems = [
   { path: '/', label: 'Home', icon: '🏠', hint: 'Your overview' },
   { path: '/dividend-calendar', label: 'Dividend calendar', icon: '📅', hint: 'When payouts land' },
   { path: '/market-closing-prices', label: 'Market prices', icon: '📊', hint: 'Today’s movers' },
-  { path: '/forecast-engine', label: 'Forecast', icon: '🔮', hint: 'Price outlook' },
+  { path: '/forecast-engine', label: 'Forecast', icon: '▥', hint: 'Volatility ranges' },
   { path: '/salary-simulator', label: 'Income planner', icon: '💰', hint: 'Salary vs dividends' },
   { path: '/reporting-cycles', label: 'Reporting cycles', icon: '📋', hint: 'Earnings seasons' },
 ];

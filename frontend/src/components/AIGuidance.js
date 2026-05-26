@@ -15,7 +15,7 @@ const ROUTE_TIPS = {
     'Check Interim vs Final in the table for each payment.',
   ],
   '/forecast-engine': [
-    'Use Forecast Engine to project future dividend income.',
+    'Review volatility-based price bands and the blended return worksheet for a symbol.',
     'Select a company and date range for estimates.',
   ],
   '/salary-simulator': [
