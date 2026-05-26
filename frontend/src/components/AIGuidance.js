@@ -96,7 +96,7 @@ export default function AIGuidance() {
         <div className="w-80 sm:w-96 bg-white border border-neutral-200 shadow-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-neutral-200 flex items-center gap-2 bg-neutral-50">
             <RobotIcon className="w-7 h-7 shrink-0" />
-            <span className="font-semibold text-neutral-900 text-sm">Site guide</span>
+            <span className="font-semibold text-neutral-900 text-sm">Asi assistant</span>
           </div>
           <div className="p-4 max-h-48 overflow-y-auto">
             <p className="text-sm text-slate-600">{message || tips[0]}</p>

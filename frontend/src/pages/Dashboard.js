@@ -8,7 +8,8 @@ import DashboardMarketChat from '../components/DashboardMarketChat';
 import PageHero from '../components/ui/PageHero';
 import MetricCard from '../components/ui/MetricCard';
 import QuickActionGrid from '../components/ui/QuickActionGrid';
-import { buildDashboardRiskAlerts, getPktDateString, MIN_PRICE_MOVE_PCT } from '../utils/dashboardRiskAlerts';
+import DashboardNewsPanel from '../components/DashboardNewsPanel';
+import { buildDashboardRiskAlerts, getPktDateString } from '../utils/dashboardRiskAlerts';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -214,6 +215,12 @@ export default function Dashboard() {
         </Link>
       </PageHero>
 
+      <DashboardNewsPanel
+        riskAlerts={riskAlerts}
+        dailyNews={dailyNews}
+        onSelectAlert={setAlertDetailOpen}
+      />
+
       <section className="card p-5 border-teal-200/60">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
@@ -277,7 +284,7 @@ export default function Dashboard() {
       <DashboardMarketChat />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-        <div className="card p-6 lg:col-span-3">
+        <div className="card p-6 lg:col-span-6">
           <h3 className="card-header">When dividends get paid</h3>
           <p className="card-subtitle">
             Taller bar = more companies paying in that month. Helps you spread income through the year.
@@ -286,7 +293,7 @@ export default function Dashboard() {
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
-        <div className="card p-6 lg:col-span-3">
+        <div className="card p-6 lg:col-span-6">
           <h3 className="card-header">Highest indicated yields</h3>
           <p className="card-subtitle">
             Yield = dividend per share ÷ price. High yield can mean high income or higher risk — do your own checks.
@@ -297,111 +304,12 @@ export default function Dashboard() {
               return (
                 <li key={i} className="flex justify-between items-center py-2 border-b border-slate-200 last:border-0">
                   <span className="font-medium text-slate-700">{symbol}</span>
-                  <span className="px-2 py-0.5 bg-neutral-100 text-neutral-900 font-semibold tabular-nums text-sm">{(d.Dividend_yield || d.dividend_yield || 0)}%</span>
+                  <span className="px-2 py-0.5 bg-teal-50 text-teal-800 font-semibold tabular-nums text-sm rounded-md">
+                    {(d.Dividend_yield || d.dividend_yield || 0)}%
+                  </span>
                 </li>
               );
             })}
-          </ul>
-        </div>
-        <div className="card p-6 lg:col-span-6 flex flex-col min-h-[320px]">
-          <h3 className="card-header">News linked to price moves</h3>
-          <p className="card-subtitle">
-            We pair a real headline with a big same-day price swing (about {MIN_PRICE_MOVE_PCT}% or more). Macro news (rates, IMF) may appear
-            beside a stock that moved sharply. <strong>Tap a card</strong> to read the
-            story — informational only, not a trading signal.
-          </p>
-          {(riskAlerts[0]?.rotationDate || dailyNews.news?.length > 0 || dailyNews.priceChanges?.length > 0) && (
-            <p className="text-[11px] text-slate-500 mt-1">
-              Pakistan time (PKT): <span className="font-medium text-slate-600">{riskAlerts[0]?.rotationDate || getPktDateString()}</span>
-              <span className="block mt-0.5">Refreshed daily after market close.</span>
-            </p>
-          )}
-          <ul className="mt-4 space-y-4 flex-1 max-h-[560px] overflow-y-auto pr-1">
-            {riskAlerts.length === 0 ? (
-              <li className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
-                <p className="font-medium text-slate-700 mb-1">No qualifying alerts</p>
-                <p className="mb-2">
-                  Nothing matched <strong>today</strong>: we look for a <strong>news headline</strong> plus a move of at least{' '}
-                  {MIN_PRICE_MOVE_PCT}% for that company (or a major market/policy story tied to a large decliner). Check back after the next session — coverage depends on what&apos;s in the public press and how stocks moved.
-                </p>
-                <p>
-                  <Link to="/market-closing-prices" className="btn-link">Market closing prices</Link> — see session moves for more tickers.
-                </p>
-              </li>
-            ) : (
-              riskAlerts.map((r, i) => {
-                const levelStyles =
-                  r.level === 'Elevated'
-                    ? { badge: 'bg-rose-100 text-rose-800 border-rose-300', dot: 'bg-rose-500' }
-                    : r.level === 'Moderate'
-                      ? { badge: 'bg-amber-100 text-amber-800 border-amber-300', dot: 'bg-amber-500' }
-                      : { badge: 'bg-sky-100 text-sky-800 border-sky-300', dot: 'bg-sky-500' };
-                return (
-                  <li key={`${r.company}-${i}`}>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      className="w-full text-left p-4 bg-white border border-neutral-200 cursor-pointer transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus:outline-none focus-visible:ring-1 focus-visible:ring-neutral-900"
-                      onClick={() => setAlertDetailOpen(r)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setAlertDetailOpen(r);
-                        }
-                      }}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${levelStyles.dot}`} aria-hidden />
-                          <span className="font-semibold text-slate-800">{r.company}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-lg border font-bold ${levelStyles.badge}`}>{r.level}</span>
-                          {r.kind === 'news' && (
-                            <span className="text-[10px] uppercase tracking-wide text-teal-700 font-semibold">News + move</span>
-                          )}
-                          {r.kind === 'macro_link' && (
-                            <span className="text-[10px] uppercase tracking-wide text-violet-700 font-semibold">Macro / PSX</span>
-                          )}
-                        </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#0077c8] shrink-0">Details →</span>
-                      </div>
-                      <p className="text-sm font-medium text-slate-800 leading-snug line-clamp-2">{r.headline}</p>
-                      {typeof r.priceMovePct === 'number' && r.priceMovePct !== 0 && (
-                        <p className="mt-1.5 text-xs font-semibold text-slate-700">
-                          Session vs prior:{' '}
-                          <span className={r.priceMovePct < 0 ? 'text-rose-600' : 'text-emerald-600'}>
-                            {r.priceMovePct > 0 ? '+' : ''}
-                            {r.priceMovePct.toFixed(2)}%
-                          </span>
-                        </p>
-                      )}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
-                        <span className="text-slate-500">Source:</span>
-                        {r.url ? (
-                          <a
-                            href={r.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#0077c8] font-medium hover:underline break-all"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {r.source}
-                          </a>
-                        ) : (
-                          <span className="font-medium">{r.source}</span>
-                        )}
-                        {r.newsDate && (
-                          <span className="text-slate-400">· {String(r.newsDate).slice(0, 16)}</span>
-                        )}
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-amber-200/90">
-                        <p className="text-[10px] uppercase tracking-wide text-amber-800/80 font-semibold mb-1">AI summary (preview)</p>
-                        <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{r.message}</p>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })
-            )}
           </ul>
         </div>
       </div>

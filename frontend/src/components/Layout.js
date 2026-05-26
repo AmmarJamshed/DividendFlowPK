@@ -219,6 +219,7 @@ export default function Layout({ children }) {
                   });
                 }}
                 aria-pressed={aiAssistanceOn}
+                aria-label={aiAssistanceOn ? 'Turn off Asi assistant' : 'Turn on Asi assistant'}
                 aria-busy={aiToggleLoading}
                 disabled={aiToggleLoading}
                 className={`text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
@@ -233,9 +234,9 @@ export default function Layout({ children }) {
                     Applying
                   </span>
                 ) : aiAssistanceOn ? (
-                  'Guide on'
+                  'Asi on'
                 ) : (
-                  'Site guide'
+                  'Asi assistant'
                 )}
               </button>
               {dataUpdated && (
