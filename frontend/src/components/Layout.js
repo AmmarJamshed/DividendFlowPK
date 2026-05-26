@@ -5,6 +5,7 @@ import RobotCursor from './RobotCursor';
 import AIGuidance from './AIGuidance';
 import AmmarCursorGuide from './AmmarCursorGuide';
 import { useAIAssistance } from '../context/AIAssistanceContext';
+import { useMarketBuddy } from '../context/MarketBuddyContext';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
@@ -96,6 +97,7 @@ const Disclaimer = () => (
 export default function Layout({ children }) {
   const location = useLocation();
   const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
+  const { open: buddyOpen, toggle: toggleBuddy, setOpen: setBuddyOpen } = useMarketBuddy();
   const [isAiTogglePending, startAiToggleTransition] = useTransition();
   const [aiToggleMinSpin, setAiToggleMinSpin] = useState(false);
   const aiSpinTimerRef = useRef(null);
@@ -114,6 +116,12 @@ export default function Layout({ children }) {
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (location.hash === '#market-chat') {
+      setBuddyOpen(true);
+    }
+  }, [location.hash, setBuddyOpen]);
 
   useEffect(() => {
     return () => {
@@ -203,7 +211,25 @@ export default function Layout({ children }) {
                 {pageTitle}
               </h2>
             </div>
-            <div className="flex items-center gap-3 shrink-0 ml-auto">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+              <button
+                type="button"
+                onClick={toggleBuddy}
+                aria-pressed={buddyOpen}
+                aria-expanded={buddyOpen}
+                aria-label={buddyOpen ? 'Close Market Buddy chat' : 'Open Market Buddy chat'}
+                className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
+                  buddyOpen
+                    ? 'text-white border-blue-500 bg-gradient-to-r from-blue-600 to-blue-500 shadow-md shadow-blue-300/40'
+                    : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 hover:border-blue-300'
+                }`}
+              >
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path d="M4 5h16v11H8l-4 4z" strokeLinejoin="round" />
+                </svg>
+                <span className="hidden sm:inline">Market Buddy</span>
+                <span className="sm:hidden">Buddy</span>
+              </button>
               <button
                 type="button"
                 onClick={() => {
