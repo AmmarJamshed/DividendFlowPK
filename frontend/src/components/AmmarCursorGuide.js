@@ -4,6 +4,7 @@ import { api } from '../api';
 import { useAIAssistance } from '../context/AIAssistanceContext';
 
 const DEBOUNCE_MS = 780;
+const AMMAR_AVATAR = `${process.env.PUBLIC_URL || ''}/ammar-guide.png`;
 
 function GuideMessageBody({ loading, message, fallback }) {
   if (loading) {
@@ -219,12 +220,14 @@ export default function AmmarCursorGuide() {
         style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}
         aria-hidden="true"
       >
-        <div
-          className="ammar-avatar rounded-full border-2 border-teal-500 bg-gradient-to-br from-teal-700 to-teal-600 text-white font-bold text-lg shadow-lg shadow-teal-900/20 flex items-center justify-center ring-2 ring-white"
+        <img
+          src={AMMAR_AVATAR}
+          alt=""
+          width={56}
+          height={56}
+          className="ammar-avatar rounded-full border-2 border-[#1f4d7a] object-cover shadow-lg shadow-slate-900/15 ring-2 ring-white bg-slate-100"
           aria-hidden="true"
-        >
-          A
-        </div>
+        />
         <span className="text-[10px] font-bold text-teal-700 bg-white/95 px-2 py-0.5 rounded-lg border border-teal-200/80 shadow-sm whitespace-nowrap -mt-1">
           Ammar
         </span>

@@ -78,9 +78,13 @@ html.df-robot-cursor label[for] {
   .ammar-avatar {
     width: 3.5rem;
     height: 3.5rem;
+    min-width: 3.5rem;
+    min-height: 3.5rem;
     max-width: 3.5rem;
     max-height: 3.5rem;
     flex-shrink: 0;
+    object-fit: cover;
+    display: block;
   }
   .card-header {
     @apply text-slate-900 font-semibold text-base tracking-tight;
