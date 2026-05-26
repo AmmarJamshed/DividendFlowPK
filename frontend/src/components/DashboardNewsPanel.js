@@ -8,7 +8,11 @@ export default function DashboardNewsPanel({ riskAlerts, dailyNews, onSelectAler
   const headlineCount = (dailyNews?.news || []).length;
 
   return (
-    <section className="card p-6 flex flex-col border-teal-200/70" aria-labelledby="dashboard-news-heading">
+    <section
+      className="section-zone section-zone--news p-5 sm:p-6 flex flex-col"
+      aria-labelledby="dashboard-news-heading"
+    >
+      <span className="section-zone-tag">News &amp; headlines</span>
       <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
         <div>
           <h3 id="dashboard-news-heading" className="card-header text-lg">

@@ -221,10 +221,11 @@ export default function Dashboard() {
         onSelectAlert={setAlertDetailOpen}
       />
 
-      <section className="card p-5 border-teal-200/60">
+      <section className="section-zone section-zone--mission p-5 sm:p-6">
+        <span className="section-zone-tag">Daily missions</span>
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Daily mission progress</h3>
+            <h3 className="text-sm font-bold text-slate-900">Mission progress</h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Complete checks below to level up · <span className="font-semibold text-violet-700">+{earnedXp} XP earned</span>
             </p>
@@ -242,8 +243,8 @@ export default function Dashboard() {
         <p className="text-[10px] font-semibold text-slate-500 mt-2 tabular-nums">{missionProgress.pct}% to next rank</p>
       </section>
 
-      <section>
-        <h3 className="plain-label mb-4">Market snapshot</h3>
+      <section className="section-zone section-zone--snapshot">
+        <span className="section-zone-tag">Market snapshot</span>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
             label="Dividend payers"
@@ -276,16 +277,17 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section>
-        <h3 className="plain-label mb-4">Missions — earn XP</h3>
+      <section className="section-zone section-zone--missions">
+        <span className="section-zone-tag">Earn XP — quick missions</span>
         <QuickActionGrid actions={quickActions} />
       </section>
 
       <DashboardMarketChat />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-        <div className="card p-6 lg:col-span-6">
-          <h3 className="card-header">When dividends get paid</h3>
+        <div className="section-zone section-zone--dividends p-6 lg:col-span-6">
+          <span className="section-zone-tag">Dividend calendar</span>
+          <h3 className="card-header mt-1">When dividends get paid</h3>
           <p className="card-subtitle">
             Taller bar = more companies paying in that month. Helps you spread income through the year.
           </p>
@@ -293,8 +295,9 @@ export default function Dashboard() {
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
-        <div className="card p-6 lg:col-span-6">
-          <h3 className="card-header">Highest indicated yields</h3>
+        <div className="section-zone section-zone--yields p-6 lg:col-span-6">
+          <span className="section-zone-tag">Top dividend yields</span>
+          <h3 className="card-header mt-1">Highest indicated yields</h3>
           <p className="card-subtitle">
             Yield = dividend per share ÷ price. High yield can mean high income or higher risk — do your own checks.
           </p>
@@ -315,8 +318,9 @@ export default function Dashboard() {
       </div>
 
       {(dailyNews.priceChanges?.length > 0) && (
-        <div className="card p-6 animate-slide-up">
-          <h3 className="card-header">Largest advances &amp; declines</h3>
+        <div className="section-zone section-zone--movers p-6 animate-slide-up">
+          <span className="section-zone-tag">Session movers</span>
+          <h3 className="card-header mt-1">Largest advances &amp; declines</h3>
           <p className="card-subtitle">
             From the latest saved session (typically after 5pm PKT). Green = gainers, red = decliners — snapshot only, not a recommendation.
             {dailyNews.priceChanges?.[0]?.Date && (

@@ -151,6 +151,60 @@ html.df-robot-cursor label[for] {
   .level-pill {
     @apply inline-flex items-center gap-1.5 text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200;
   }
+  .section-zone {
+    @apply rounded-2xl border-2 shadow-sm overflow-hidden;
+  }
+  .section-zone-tag {
+    @apply inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] px-3 py-1 rounded-full border mb-3;
+  }
+  .section-zone--news {
+    @apply border-violet-300 bg-gradient-to-br from-violet-100/90 via-white to-violet-50;
+  }
+  .section-zone--news .section-zone-tag {
+    @apply bg-violet-600 text-white border-violet-700;
+  }
+  .section-zone--mission {
+    @apply border-amber-300 bg-gradient-to-br from-amber-50 via-white to-orange-50/80;
+  }
+  .section-zone--mission .section-zone-tag {
+    @apply bg-amber-500 text-white border-amber-600;
+  }
+  .section-zone--snapshot {
+    @apply border-sky-300 bg-gradient-to-br from-sky-50 via-white to-cyan-50/70 p-4 sm:p-5;
+  }
+  .section-zone--snapshot .section-zone-tag {
+    @apply bg-sky-600 text-white border-sky-700;
+  }
+  .section-zone--missions {
+    @apply border-teal-300 bg-gradient-to-br from-teal-50 via-white to-cyan-50/60 p-4 sm:p-5;
+  }
+  .section-zone--missions .section-zone-tag {
+    @apply bg-teal-600 text-white border-teal-700;
+  }
+  .section-zone--chat {
+    @apply border-blue-300 bg-gradient-to-br from-blue-50/80 via-white to-sky-50;
+  }
+  .section-zone--chat .section-zone-tag {
+    @apply bg-blue-600 text-white border-blue-700;
+  }
+  .section-zone--dividends {
+    @apply border-teal-400 bg-gradient-to-br from-teal-50 to-white;
+  }
+  .section-zone--dividends .section-zone-tag {
+    @apply bg-teal-700 text-white border-teal-800;
+  }
+  .section-zone--yields {
+    @apply border-emerald-400 bg-gradient-to-br from-emerald-50 to-white;
+  }
+  .section-zone--yields .section-zone-tag {
+    @apply bg-emerald-600 text-white border-emerald-700;
+  }
+  .section-zone--movers {
+    @apply border-rose-300 bg-gradient-to-br from-rose-50 via-white to-orange-50/60;
+  }
+  .section-zone--movers .section-zone-tag {
+    @apply bg-rose-600 text-white border-rose-700;
+  }
 }
 
 ::-webkit-scrollbar {

@@ -131,7 +131,7 @@ export default function SalarySimulator() {
             <div>
               <h3 className="card-header text-lg flex items-center gap-2">
                 <span aria-hidden>🤖</span>
-                AI portfolio ideas (Groq)
+                AI portfolio ideas
               </h3>
               <p className="card-subtitle mt-1">
                 How many stocks and how to split Rs {result ? formatRs(result.requiredPortfolioValue) : '—'} — based on

@@ -141,9 +141,10 @@ export default function DashboardMarketChat() {
   return (
     <section
       id="market-chat"
-      className="card p-0 overflow-hidden scroll-mt-24"
+      className="section-zone section-zone--chat p-0 overflow-hidden scroll-mt-24"
       data-ai-hint="Research chat on stocks from the latest saved news and prices"
     >
+      <span className="section-zone-tag mx-5 mt-4 mb-0">Market research chat</span>
       <div className="fin-hero fin-hero--teal px-5 sm:px-6 py-5 border-b border-teal-400/30 rounded-none border-x-0 border-t-0">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <BuddyAvatar />
@@ -292,15 +293,8 @@ export default function DashboardMarketChat() {
           </div>
         </div>
 
-        <p className="text-[11px] text-slate-500 text-center leading-relaxed flex flex-wrap justify-center gap-x-3 gap-y-1">
-          <span className="inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#0077c8]" aria-hidden />
-            Powered by Groq
-          </span>
-          <span className="text-slate-300 hidden sm:inline" aria-hidden>
-            |
-          </span>
-          <span>Same data as news &amp; movers panels — sparse files → shorter answers</span>
+        <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+          Same data as news &amp; movers panels — sparse files → shorter answers
         </p>
       </div>
     </section>
