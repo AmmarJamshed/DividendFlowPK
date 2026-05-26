@@ -2,44 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* DividendFlow — approachable fintech palette (readable for everyday investors) */
+/* Institutional palette — inspired by exchange / listing sites (NYSE-style clarity) */
 :root {
-  --cream: #f8fafc;
-  --cream-warm: #f1f5f9;
-  --ink: #0f172a;
-  --muted: #64748b;
-  --teal: #0d9488;
-  --teal-soft: #ccfbf1;
-  --positive: #059669;
-  --negative: #dc2626;
+  --df-ink: #0a0a0a;
+  --df-paper: #ffffff;
+  --df-muted: #5c5c5c;
+  --df-border: #e5e5e5;
+  --df-surface: #f5f5f5;
+  --df-blue: #0077c8;
+  --df-blue-dark: #005a9e;
+  --df-positive: #0d7a3e;
+  --df-negative: #b91c1c;
 }
 
 html {
   -webkit-tap-highlight-color: transparent;
 }
+
 body {
   margin: 0;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  background-color: #f1f5f9;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(45, 212, 191, 0.12), transparent 50%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(99, 102, 241, 0.08), transparent 45%),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  background-attachment: fixed;
-}
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
+  background-color: var(--df-surface);
+  color: var(--df-ink);
 }
 
-/* Robot mascot: hide OS cursor without `*` (avoids huge style recalc when toggling AI assistance) */
 html.df-robot-cursor,
 html.df-robot-cursor body {
   cursor: none !important;
@@ -57,37 +46,56 @@ html.df-robot-cursor label[for] {
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-sm shadow-md shadow-slate-200/40 transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50;
+    @apply rounded-sm border border-neutral-200 bg-white shadow-none;
   }
   .fin-hero {
-    @apply relative overflow-hidden;
+    @apply relative overflow-hidden rounded-sm;
+  }
+  .fin-hero--dark {
+    @apply bg-[#0a0a0a] text-white border border-neutral-900;
+  }
+  .fin-hero--light {
+    @apply bg-white text-neutral-900 border border-neutral-200;
   }
   .metric-card {
-    @apply transition-transform duration-200 hover:-translate-y-0.5;
+    @apply transition-colors duration-150;
   }
   .plain-label {
-    @apply text-[11px] font-bold uppercase tracking-wider text-slate-500;
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500;
   }
   .chip-up {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800;
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-neutral-100 text-[var(--df-positive)];
   }
   .chip-down {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-rose-100 text-rose-800;
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-neutral-100 text-[var(--df-negative)];
   }
-  .card-block {
-    @apply rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg;
+  .ammar-avatar {
+    width: 3.5rem;
+    height: 3.5rem;
+    max-width: 3.5rem;
+    max-height: 3.5rem;
+    flex-shrink: 0;
   }
   .card-header {
-    @apply text-slate-800 font-bold text-base;
+    @apply text-neutral-900 font-semibold text-base tracking-tight;
   }
   .card-subtitle {
-    @apply text-slate-600 text-sm mt-0.5;
+    @apply text-neutral-600 text-sm mt-1 leading-relaxed;
   }
   .btn-primary {
-    @apply px-5 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl font-semibold text-white shadow-lg shadow-teal-300/40 hover:from-teal-400 hover:to-teal-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-[#0a0a0a] text-white text-sm font-semibold uppercase tracking-wide rounded-sm border border-[#0a0a0a] hover:bg-[#1a1a1a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-transparent text-white text-sm font-semibold uppercase tracking-wide rounded-sm border border-white/90 hover:bg-white/10 transition-colors;
+  }
+  .btn-ghost-dark {
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-transparent text-neutral-900 text-sm font-semibold uppercase tracking-wide rounded-sm border border-neutral-900 hover:bg-neutral-50 transition-colors;
+  }
+  .btn-link {
+    @apply text-sm font-semibold text-[var(--df-blue)] hover:text-[var(--df-blue-dark)] hover:underline;
   }
   .input-field {
-    @apply w-full bg-white/80 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300 transition-colors;
+    @apply w-full bg-white border border-neutral-300 rounded-sm px-4 py-2.5 text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900 focus:border-neutral-900 transition-colors text-sm;
   }
   .table-responsive {
     @apply overflow-x-auto -mx-4 sm:mx-0;
@@ -97,22 +105,27 @@ html.df-robot-cursor label[for] {
   }
   .table-responsive th,
   .table-responsive td {
-    @apply px-2 py-3 sm:px-4 sm:py-4 text-xs sm:text-sm;
+    @apply px-3 py-3 sm:px-4 sm:py-3 text-xs sm:text-sm;
+  }
+  .nav-link-active {
+    @apply bg-neutral-900 text-white;
+  }
+  .section-divider {
+    @apply border-t border-neutral-200;
   }
 }
 
-/* Custom scrollbar - warm cream theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f5f2ed;
+  background: #f5f5f5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d6d3ce;
-  border-radius: 4px;
+  background: #c4c4c4;
+  border-radius: 0;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a29e;
+  background: #9ca3af;
 }

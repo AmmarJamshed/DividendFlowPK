@@ -43,7 +43,7 @@ const DEFAULT_TIPS = [
 
 function RobotIcon({ className }) {
   return (
-    <svg viewBox="0 0 64 64" className={className}>
+    <svg viewBox="0 0 64 64" width="32" height="32" className={className}>
       <rect x="12" y="20" width="40" height="36" rx="6" fill="#0d9488" stroke="#14b8a6" strokeWidth="2" />
       <text x="32" y="42" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="system-ui">₨</text>
       <rect x="18" y="8" width="28" height="16" rx="4" fill="#0f766e" stroke="#14b8a6" strokeWidth="1.5" />
@@ -93,10 +93,10 @@ export default function AIGuidance() {
       className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-[9998] flex flex-col items-end gap-2 pointer-events-none [&>*]:pointer-events-auto"
     >
       {open && (
-        <div className="w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200 shadow-xl shadow-slate-300/30 overflow-hidden animate-fade-in">
-          <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-teal-50">
+        <div className="w-80 sm:w-96 bg-white border border-neutral-200 shadow-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-neutral-200 flex items-center gap-2 bg-neutral-50">
             <RobotIcon className="w-7 h-7 shrink-0" />
-            <span className="font-semibold text-teal-700">Ammar — quick tips</span>
+            <span className="font-semibold text-neutral-900 text-sm">Site guide</span>
           </div>
           <div className="p-4 max-h-48 overflow-y-auto">
             <p className="text-sm text-slate-600">{message || tips[0]}</p>
@@ -112,7 +112,7 @@ export default function AIGuidance() {
             />
             <button
               onClick={handleSend}
-              className="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-semibold transition-colors"
             >
               Send
             </button>
@@ -121,7 +121,7 @@ export default function AIGuidance() {
       )}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 shadow-md shadow-teal-400/30 hover:shadow-lg hover:shadow-teal-400/35 transition-shadow flex items-center justify-center border border-teal-400/20"
+        className="w-10 h-10 sm:w-11 sm:h-11 bg-neutral-900 hover:bg-neutral-800 transition-colors flex items-center justify-center border border-neutral-800"
         aria-label="Toggle Ammar quick tips"
       >
         <RobotIcon className="w-[22px] h-[22px] sm:w-6 sm:h-6" />

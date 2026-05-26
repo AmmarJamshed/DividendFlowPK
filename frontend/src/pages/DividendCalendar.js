@@ -79,9 +79,10 @@ export default function DividendCalendar() {
   return (
     <div className="space-y-6">
       <PageHero
-        eyebrow="Plan your cash flow"
-        title="Dividend calendar & income calculator"
-        description="Estimate how much dividend cash you might receive by month, then explore which companies pay in each month. All figures are from public PSX data — confirm dates and amounts with official announcements."
+        variant="light"
+        eyebrow="Income planning"
+        title="Dividend calendar & calculator"
+        description="Model expected dividend cash by payment month and review company payout schedules. Figures are derived from public PSX datasets — confirm dates and amounts with official announcements."
       />
       <DividendCalculator symbolList={symbolList} />
 

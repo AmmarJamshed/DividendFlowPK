@@ -34,8 +34,8 @@ const chartOptions = {
     title: {
       display: true,
       text: 'How many companies typically pay dividends each month',
-      color: '#334155',
-      font: { size: 13, weight: '600' },
+      color: '#171717',
+      font: { size: 12, weight: '600' },
       padding: { bottom: 12 },
     },
     tooltip: {
@@ -48,10 +48,10 @@ const chartOptions = {
     y: {
       beginAtZero: true,
       title: { display: true, text: 'Number of companies', color: '#64748b', font: { size: 11 } },
-      grid: { color: 'rgba(148, 163, 184, 0.25)' },
-      ticks: { color: '#64748b', stepSize: 1 },
+      grid: { color: 'rgba(0, 0, 0, 0.06)' },
+      ticks: { color: '#737373', stepSize: 1 },
     },
-    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 11 } } },
+    x: { grid: { display: false }, ticks: { color: '#737373', font: { size: 11 } } },
   },
 };
 
@@ -151,10 +151,10 @@ export default function Dashboard() {
   }, [dividends, monthCoverage, dailyNews, riskAlerts]);
 
   const quickActions = [
-    { to: '/market-closing-prices', icon: '📊', label: 'See market movers', hint: 'Who went up or down today' },
-    { to: '/dividend-calendar#dividend-calculator', icon: '🧮', label: 'My dividend income', hint: 'Enter holdings or upload PDF' },
-    { to: '/salary-simulator', icon: '💰', label: 'Income planner', hint: 'Can dividends replace salary?' },
-    { to: '/#market-chat', icon: '💬', label: 'Ask Market Buddy', hint: 'Plain-language Q&A' },
+    { to: '/market-closing-prices', label: 'Market closing prices', hint: 'Session moves and volume' },
+    { to: '/dividend-calendar#dividend-calculator', label: 'Dividend income calculator', hint: 'Holdings or portfolio PDF' },
+    { to: '/salary-simulator', label: 'Income replacement model', hint: 'Salary vs dividend yield' },
+    { to: '/#market-chat', label: 'Market research chat', hint: 'Q&A on saved PSX files' },
   ];
 
   const chartData = {
@@ -162,10 +162,10 @@ export default function Dashboard() {
     datasets: [{
       label: 'Dividend-paying companies',
       data: heatmapData.map(d => d.count),
-      backgroundColor: 'rgba(45, 212, 191, 0.5)',
-      borderColor: 'rgba(45, 212, 191, 0.9)',
-      borderWidth: 1,
-      borderRadius: 6,
+      backgroundColor: 'rgba(0, 119, 200, 0.75)',
+      borderColor: '#0077c8',
+      borderWidth: 0,
+      borderRadius: 0,
     }]
   };
 
@@ -173,75 +173,68 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
-          <p className="text-slate-500">Loading dashboard…</p>
+          <div className="w-10 h-10 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin" />
+          <p className="text-neutral-500 text-sm">Loading market data…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <PageHero
+        variant="dark"
         eyebrow="Pakistan Stock Exchange"
-        title="Your dividend & market snapshot"
-        description="See when companies pay dividends, how prices moved, and what the news said — in everyday language. Built from public PSX data we update on weekdays. This is research, not a tip to buy or sell."
+        title="Dividend and market intelligence"
+        description="Track payout calendars, closing prices, and headline-linked price moves from archived PSX datasets. Updated on weekdays after the session. For research only — not a solicitation to buy or sell securities."
       >
-        <Link to="/market-closing-prices" className="btn-primary text-sm px-4 py-2">
-          Today&apos;s prices
+        <Link to="/market-closing-prices" className="btn-primary">
+          View market data
         </Link>
-        <Link
-          to="/dividend-calendar"
-          className="text-sm font-semibold px-4 py-2 rounded-xl border border-teal-200 text-teal-800 bg-white hover:bg-teal-50"
-        >
+        <Link to="/dividend-calendar" className="btn-ghost">
           Dividend calendar
         </Link>
       </PageHero>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard
-          icon="🏢"
-          label="Dividend payers tracked"
-          value={dashboardStats.companies}
-          hint="Companies in our payout calendar"
-          accent="teal"
-        />
-        <MetricCard
-          icon="📅"
-          label="Busiest payout month"
-          value={dashboardStats.busiestMonth}
-          hint={
-            dashboardStats.busiestCount
-              ? `~${dashboardStats.busiestCount} payout rows that month`
-              : 'From saved calendar data'
-          }
-          accent="violet"
-        />
-        <MetricCard
-          icon="📈"
-          label="Big price moves today"
-          value={dashboardStats.movers}
-          hint="Stocks with a notable day change"
-          accent="emerald"
-        />
-        <MetricCard
-          icon="📰"
-          label="News highlights"
-          value={dashboardStats.headlines}
-          hint={`${dashboardStats.alerts} linked to price alerts`}
-          accent="amber"
-        />
-      </div>
+      <section>
+        <h3 className="plain-label mb-4">Market snapshot</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-neutral-200 border border-neutral-200">
+          <MetricCard
+            label="Dividend payers"
+            value={dashboardStats.companies}
+            hint="Unique names in payout calendar"
+          />
+          <MetricCard
+            label="Peak payout month"
+            value={dashboardStats.busiestMonth}
+            hint={
+              dashboardStats.busiestCount
+                ? `${dashboardStats.busiestCount} payout records`
+                : 'Calendar dataset'
+            }
+          />
+          <MetricCard
+            label="Notable movers"
+            value={dashboardStats.movers}
+            hint="Stocks with large session change"
+          />
+          <MetricCard
+            label="News items"
+            value={dashboardStats.headlines}
+            hint={`${dashboardStats.alerts} headline alerts`}
+          />
+        </div>
+      </section>
 
-      <div>
-        <p className="plain-label mb-3">Quick actions</p>
+      <section>
+        <h3 className="plain-label mb-4">Explore</h3>
         <QuickActionGrid actions={quickActions} />
-      </div>
+      </section>
 
       <DashboardMarketChat />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-        <div className="card p-6 animate-slide-up border-l-4 border-l-teal-500 lg:col-span-3" style={{ animationDelay: '0ms' }}>
+        <div className="card p-6 lg:col-span-3">
           <h3 className="card-header">When dividends get paid</h3>
           <p className="card-subtitle">
             Taller bar = more companies paying in that month. Helps you spread income through the year.
@@ -250,7 +243,7 @@ export default function Dashboard() {
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
-        <div className="card p-6 animate-slide-up border-l-4 border-l-emerald-500 lg:col-span-3" style={{ animationDelay: '50ms' }}>
+        <div className="card p-6 lg:col-span-3">
           <h3 className="card-header">Highest indicated yields</h3>
           <p className="card-subtitle">
             Yield = dividend per share ÷ price. High yield can mean high income or higher risk — do your own checks.
@@ -261,13 +254,13 @@ export default function Dashboard() {
               return (
                 <li key={i} className="flex justify-between items-center py-2 border-b border-slate-200 last:border-0">
                   <span className="font-medium text-slate-700">{symbol}</span>
-                  <span className="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-700 font-bold">{(d.Dividend_yield || d.dividend_yield || 0)}%</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 text-neutral-900 font-semibold tabular-nums text-sm">{(d.Dividend_yield || d.dividend_yield || 0)}%</span>
                 </li>
               );
             })}
           </ul>
         </div>
-        <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-6 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
+        <div className="card p-6 lg:col-span-6 flex flex-col min-h-[320px]">
           <h3 className="card-header">News linked to price moves</h3>
           <p className="card-subtitle">
             We pair a real headline with a big same-day price swing (about {MIN_PRICE_MOVE_PCT}% or more). Macro news (rates, IMF) may appear
@@ -289,7 +282,7 @@ export default function Dashboard() {
                   {MIN_PRICE_MOVE_PCT}% for that company (or a major market/policy story tied to a large decliner). Check back after the next session — coverage depends on what&apos;s in the public press and how stocks moved.
                 </p>
                 <p>
-                  <Link to="/market-closing-prices" className="text-teal-600 font-medium underline">Market Closing Prices</Link> — see session moves for more tickers.
+                  <Link to="/market-closing-prices" className="btn-link">Market closing prices</Link> — see session moves for more tickers.
                 </p>
               </li>
             ) : (
@@ -305,7 +298,7 @@ export default function Dashboard() {
                     <div
                       role="button"
                       tabIndex={0}
-                      className="w-full text-left p-4 rounded-xl bg-amber-50/80 border border-amber-200 shadow-sm cursor-pointer transition-all hover:border-teal-400/50 hover:bg-amber-50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                      className="w-full text-left p-4 bg-white border border-neutral-200 cursor-pointer transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus:outline-none focus-visible:ring-1 focus-visible:ring-neutral-900"
                       onClick={() => setAlertDetailOpen(r)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -326,7 +319,7 @@ export default function Dashboard() {
                             <span className="text-[10px] uppercase tracking-wide text-violet-700 font-semibold">Macro / PSX</span>
                           )}
                         </div>
-                        <span className="text-[10px] font-semibold text-teal-700 shrink-0">View details →</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-[#0077c8] shrink-0">Details →</span>
                       </div>
                       <p className="text-sm font-medium text-slate-800 leading-snug line-clamp-2">{r.headline}</p>
                       {typeof r.priceMovePct === 'number' && r.priceMovePct !== 0 && (
@@ -345,7 +338,7 @@ export default function Dashboard() {
                             href={r.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-teal-700 font-medium hover:underline break-all"
+                            className="text-[#0077c8] font-medium hover:underline break-all"
                             onClick={(e) => e.stopPropagation()}
                           >
                             {r.source}
@@ -380,8 +373,8 @@ export default function Dashboard() {
             )}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
-              <h4 className="text-sm font-bold text-emerald-700 mb-2">Top Stock Appreciations</h4>
+            <div className="p-4 border border-neutral-200 bg-neutral-50">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-neutral-600 mb-3">Top advances</h4>
               <ul className="space-y-2">
                 {(dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) > 0).slice(0, 5).map((c, i) => (
                   <li key={i} className="flex justify-between items-center py-2 border-b border-emerald-100 last:border-0">
@@ -400,8 +393,8 @@ export default function Dashboard() {
                 return null;
               })()}
             </div>
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200">
-              <h4 className="text-sm font-bold text-rose-700 mb-2">Worst Stock Price Plunges</h4>
+            <div className="p-4 border border-neutral-200 bg-neutral-50">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-neutral-600 mb-3">Top declines</h4>
               <ul className="space-y-2">
                 {(dailyNews.priceChanges || []).filter(c => (parseFloat(c.ChangePct) || 0) < 0).slice(0, 5).map((c, i) => (
                   <li key={i} className="flex justify-between items-center py-2 border-b border-rose-100 last:border-0">
@@ -510,7 +503,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={closeAlertDetail}
-                className="w-full py-2.5 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-500"
+                className="w-full py-2.5 btn-primary"
               >
                 Close
               </button>

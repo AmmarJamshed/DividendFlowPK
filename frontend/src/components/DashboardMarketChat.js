@@ -14,7 +14,7 @@ const WELCOME =
 function Spinner() {
   return (
     <div
-      className="w-5 h-5 border-2 border-teal-200 border-t-teal-600 rounded-full animate-spin shrink-0"
+      className="w-5 h-5 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin shrink-0"
       aria-hidden
     />
   );
@@ -47,7 +47,7 @@ function ChatMessageBody({ text }) {
         const isList = lines.length > 1 && lines.every((l) => /^[-•*]\s+/.test(l.trim()));
         if (isList) {
           return (
-            <ul key={bi} className="list-disc pl-5 space-y-1 marker:text-teal-500">
+            <ul key={bi} className="list-disc pl-5 space-y-1 marker:text-neutral-400">
               {lines.map((line, li) => (
                 <li key={li}>{renderInline(line.replace(/^[-•*]\s+/, ''), `b${bi}-l${li}`)}</li>
               ))}
@@ -73,7 +73,7 @@ function BuddyAvatar({ size = 'md' }) {
   const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-9 h-9 text-xs';
   return (
     <div
-      className={`${dim} shrink-0 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 text-white font-bold flex items-center justify-center shadow-md shadow-teal-400/30`}
+      className={`${dim} shrink-0 bg-[#0077c8] text-white font-bold flex items-center justify-center`}
       aria-hidden
     >
       MB
@@ -141,49 +141,36 @@ export default function DashboardMarketChat() {
   return (
     <section
       id="market-chat"
-      className="card p-0 overflow-hidden border-2 border-teal-200/70 shadow-xl shadow-teal-200/25 scroll-mt-24"
-      data-ai-hint="Ask the Market Buddy about stocks from the latest saved news and prices"
+      className="card p-0 overflow-hidden scroll-mt-24"
+      data-ai-hint="Research chat on stocks from the latest saved news and prices"
     >
-      {/* Header */}
-      <div className="relative bg-gradient-to-br from-teal-600 via-teal-500 to-cyan-600 px-5 sm:px-6 py-5 text-white overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-20 pointer-events-none"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 20% 80%, white 0%, transparent 45%), radial-gradient(circle at 90% 10%, white 0%, transparent 40%)',
-          }}
-        />
-        <div className="relative flex flex-col sm:flex-row sm:items-start gap-4">
+      <div className="px-5 sm:px-6 py-5 bg-neutral-900 text-white border-b border-neutral-800">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <BuddyAvatar />
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-teal-100/90 mb-1">
-              AI on saved scrape data
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400 mb-1">
+              Research assistant
             </p>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight leading-tight">
-              Market Buddy
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight leading-tight">
+              Market research chat
             </h2>
-            <p className="mt-2 text-sm sm:text-[0.9375rem] text-white/90 leading-relaxed max-w-2xl">
-              Quick Q&amp;A on the same PSX prices and news files that power this dashboard — for
-              analysts and retail users alike. Not a substitute for your models or broker terminal.
+            <p className="mt-2 text-sm text-neutral-300 leading-relaxed max-w-2xl">
+              Query the same archived PSX price and news files shown on this dashboard. Outputs are
+              generated summaries — not live quotes or investment recommendations.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Disclaimer — scannable */}
-      <div className="px-5 sm:px-6 py-3 bg-amber-50 border-b border-amber-200/80 flex gap-3 items-start">
-        <span className="text-lg shrink-0 mt-0.5" aria-hidden>
-          ⚠️
-        </span>
-        <ul className="text-xs sm:text-sm text-amber-950 space-y-1 leading-relaxed list-none">
-          <li>
-            <span className="font-semibold">AI-generated</span> from archived CSVs — not verified end-to-end.
-          </li>
-          <li>Not a forecast or investment, legal, or tax advice. Verify before you act.</li>
-        </ul>
+      <div className="px-5 sm:px-6 py-3 bg-neutral-50 border-b border-neutral-200">
+        <p className="text-xs text-neutral-600 leading-relaxed">
+          <span className="font-semibold text-neutral-800">Disclaimer:</span> Responses are model-generated from
+          saved CSVs and may be incomplete. Not investment, tax, or legal advice. Verify with PSX and official
+          announcements before acting.
+        </p>
       </div>
 
-      <div className="p-4 sm:p-6 space-y-4 bg-gradient-to-b from-slate-50/80 to-white">
+      <div className="p-4 sm:p-6 space-y-4 bg-white">
         {/* Suggestions */}
         <div>
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">
@@ -197,9 +184,9 @@ export default function DashboardMarketChat() {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => send(prompt)}
                 disabled={loading}
-                className="group text-left px-3 py-2.5 rounded-xl bg-white border border-teal-200/80 text-teal-900 shadow-sm hover:border-teal-400 hover:shadow-md hover:bg-teal-50/50 transition-all disabled:opacity-50"
+                className="group text-left px-3 py-2.5 bg-white border border-neutral-200 hover:border-neutral-900 transition-colors disabled:opacity-50"
               >
-                <span className="block text-xs font-bold text-teal-600 group-hover:text-teal-700">
+                <span className="block text-xs font-semibold text-neutral-900 group-hover:text-[#0077c8]">
                   {label}
                 </span>
                 <span className="block text-[10px] text-slate-500 mt-0.5 line-clamp-2 leading-snug">
@@ -216,7 +203,7 @@ export default function DashboardMarketChat() {
           role="log"
           aria-live="polite"
           aria-label="Market Buddy conversation"
-          className="rounded-2xl bg-white/90 border border-slate-200/90 shadow-inner max-h-[min(26rem,55vh)] overflow-y-auto overflow-x-hidden p-4 space-y-4 overscroll-contain"
+          className="border border-neutral-200 bg-neutral-50 max-h-[min(26rem,55vh)] overflow-y-auto overflow-x-hidden p-4 space-y-4 overscroll-contain"
         >
           {messages.map((msg, i) => {
             const isUser = msg.role === 'user';
@@ -232,13 +219,13 @@ export default function DashboardMarketChat() {
                   }`}
                 >
                   {!isUser && (
-                    <p className="text-[11px] font-bold text-teal-700 mb-1 ml-0.5">Market Buddy</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 mb-1 ml-0.5">Assistant</p>
                   )}
                   <div
-                    className={`rounded-2xl px-3.5 py-3 ${
+                    className={`px-3.5 py-3 ${
                       isUser
-                        ? 'bg-gradient-to-br from-teal-600 to-teal-700 text-white rounded-br-md shadow-md shadow-teal-500/20'
-                        : 'bg-slate-50 border border-slate-200/90 text-slate-800 rounded-bl-md shadow-sm'
+                        ? 'bg-neutral-900 text-white'
+                        : 'bg-white border border-neutral-200 text-neutral-800'
                     }`}
                   >
                     {isUser ? (
@@ -250,7 +237,7 @@ export default function DashboardMarketChat() {
                       <p
                         className={`text-[10px] mt-3 pt-2.5 border-t leading-snug ${
                           isUser
-                            ? 'border-teal-400/40 text-teal-50'
+                            ? 'border-neutral-600 text-neutral-300'
                             : 'border-slate-200 text-slate-500'
                         }`}
                       >
@@ -274,7 +261,7 @@ export default function DashboardMarketChat() {
         </div>
 
         {/* Composer */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm focus-within:ring-2 focus-within:ring-teal-400/40 focus-within:border-teal-300 transition-shadow">
+        <div className="border border-neutral-300 bg-white p-2 focus-within:ring-1 focus-within:ring-neutral-900 focus-within:border-neutral-900">
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               ref={inputRef}
@@ -298,7 +285,7 @@ export default function DashboardMarketChat() {
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => send()}
               disabled={loading || !input.trim()}
-              className="btn-primary shrink-0 px-6 py-2.5 rounded-xl disabled:opacity-50"
+              className="btn-primary shrink-0 px-6 py-2.5 disabled:opacity-50"
             >
               {loading ? 'Wait…' : 'Ask'}
             </button>
@@ -307,7 +294,7 @@ export default function DashboardMarketChat() {
 
         <p className="text-[11px] text-slate-500 text-center leading-relaxed flex flex-wrap justify-center gap-x-3 gap-y-1">
           <span className="inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-500" aria-hidden />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0077c8]" aria-hidden />
             Powered by Groq
           </span>
           <span className="text-slate-300 hidden sm:inline" aria-hidden>

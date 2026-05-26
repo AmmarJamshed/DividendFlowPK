@@ -81,7 +81,7 @@ export default function RobotCursor() {
             click ? 'scale-90' : 'scale-100'
           } ${click ? 'shadow-[0_0_20px_rgba(34,197,94,0.8)]' : hover ? 'shadow-[0_0_20px_rgba(45,212,191,0.5)]' : ''}`}
         >
-          <svg viewBox="0 0 64 64" className="w-8 h-8 overflow-visible">
+          <svg viewBox="0 0 64 64" width="32" height="32" className="w-8 h-8 overflow-visible">
             {/* Robot body */}
             <rect x="12" y="20" width="40" height="36" rx="6" fill={click ? '#22c55e' : '#0d9488'} stroke="#14b8a6" strokeWidth="2" />
             {/* PKR symbol on chest */}
