@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { isShariahCompliant, SHARIAH_LIST_META } from '../utils/psxShariah';
+import PageHero from '../components/ui/PageHero';
+import MetricCard from '../components/ui/MetricCard';
 
 const PAGE_SIZE = 25;
 
@@ -24,8 +27,8 @@ function AICommentary({ summary }) {
   return (
     <div className="rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 shadow-lg shadow-teal-200/30 p-4 sm:p-6 mb-6">
       <h3 className="text-lg font-semibold text-teal-700 mb-3 flex items-center gap-2">
-        <span className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">🤖</span>
-        AI Market Summary
+        <span className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center text-teal-600">📣</span>
+        Today in plain words
       </h3>
       <p className="text-slate-600 text-sm leading-relaxed">
         {date ? `As of ${date}: ` : ''}
@@ -65,6 +68,29 @@ export default function MarketClosingPrices() {
     }
     return n;
   }, [data.rows]);
+
+  const marketPulse = useMemo(() => {
+    const rows = data.rows || [];
+    let gainers = 0;
+    let losers = 0;
+    let flat = 0;
+    for (const r of rows) {
+      const pct = r.changePct;
+      if (pct == null || Number.isNaN(pct) || pct === 0) flat += 1;
+      else if (pct > 0) gainers += 1;
+      else losers += 1;
+    }
+    const topG = data.summary?.topGainer;
+    const topL = data.summary?.topLoser;
+    return {
+      total: rows.length,
+      gainers,
+      losers,
+      flat,
+      topGainerLabel: topG ? `${topG.symbol} +${topG.changePct?.toFixed(1)}%` : '—',
+      topLoserLabel: topL ? `${topL.symbol} ${topL.changePct?.toFixed(1)}%` : '—',
+    };
+  }, [data.rows, data.summary]);
 
   const filtered = useMemo(() => {
     let list = data.rows || [];
@@ -113,7 +139,51 @@ export default function MarketClosingPrices() {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
+      <PageHero
+        eyebrow="After the closing bell"
+        title="PSX closing prices"
+        description="Search any stock, sort by daily or weekly change, and filter the Shariah disclosure list. Prices come from our saved PSX scrape — updated on weekdays after the session."
+      >
+        <Link to="/dividend-calendar" className="btn-primary text-sm px-4 py-2">
+          Dividend calendar
+        </Link>
+        <Link to="/" className="text-sm font-semibold px-4 py-2 rounded-xl border border-teal-200 text-teal-800 bg-white hover:bg-teal-50">
+          Back to home
+        </Link>
+      </PageHero>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <MetricCard
+          icon="📊"
+          label="Stocks in table"
+          value={marketPulse.total}
+          hint={data.date ? `Close of ${data.date}` : 'From latest saved file'}
+          accent="teal"
+        />
+        <MetricCard
+          icon="🟢"
+          label="Ended higher"
+          value={marketPulse.gainers}
+          hint={marketPulse.topGainerLabel !== '—' ? `Best: ${marketPulse.topGainerLabel}` : 'No standout gainer'}
+          accent="emerald"
+        />
+        <MetricCard
+          icon="🔴"
+          label="Ended lower"
+          value={marketPulse.losers}
+          hint={marketPulse.topLoserLabel !== '—' ? `Worst: ${marketPulse.topLoserLabel}` : 'No standout loser'}
+          accent="amber"
+        />
+        <MetricCard
+          icon="☪️"
+          label="Shariah list (in data)"
+          value={shariahInDataset}
+          hint={`Of ${marketPulse.total} symbols • PSX Annexure A`}
+          accent="violet"
+        />
+      </div>
+
       <AICommentary summary={data.summary} />
       <div className="rounded-2xl bg-white/90 border border-slate-200 shadow-lg shadow-slate-300/20 overflow-hidden backdrop-blur-sm">
         <div className="p-4 border-b border-slate-200 flex flex-col gap-3">

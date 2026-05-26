@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 import DividendCalculator from '../components/DividendCalculator';
+import PageHero from '../components/ui/PageHero';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_LONG = [
@@ -77,6 +78,11 @@ export default function DividendCalendar() {
 
   return (
     <div className="space-y-6">
+      <PageHero
+        eyebrow="Plan your cash flow"
+        title="Dividend calendar & income calculator"
+        description="Estimate how much dividend cash you might receive by month, then explore which companies pay in each month. All figures are from public PSX data — confirm dates and amounts with official announcements."
+      />
       <DividendCalculator symbolList={symbolList} />
 
       <div className="card p-6">

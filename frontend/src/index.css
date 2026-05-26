@@ -2,14 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Gen Z / Pokémon-style: warm cream base, subtle diagonal stripes */
+/* DividendFlow — approachable fintech palette (readable for everyday investors) */
 :root {
-  --cream: #faf8f5;
-  --cream-warm: #f5f2ed;
-  --coral: #f97316;
-  --violet: #8b5cf6;
-  --lime: #84cc16;
-  --teal: #14b8a6;
+  --cream: #f8fafc;
+  --cream-warm: #f1f5f9;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --teal: #0d9488;
+  --teal-soft: #ccfbf1;
+  --positive: #059669;
+  --negative: #dc2626;
 }
 
 html {
@@ -21,20 +23,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  background: linear-gradient(135deg, #faf8f5 0%, #f5f2ed 25%, #f8f6f2 50%, #faf5f0 75%, #f5f2ed 100%);
+  background-color: #f1f5f9;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(45, 212, 191, 0.12), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(99, 102, 241, 0.08), transparent 45%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   background-attachment: fixed;
 }
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 40px,
-    rgba(148, 163, 184, 0.03) 40px,
-    rgba(148, 163, 184, 0.03) 80px
-  );
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
 }
@@ -57,7 +57,22 @@ html.df-robot-cursor label[for] {
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-sm shadow-lg shadow-slate-300/20 transition-all duration-300 hover:shadow-xl hover:shadow-slate-300/30;
+    @apply rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-sm shadow-md shadow-slate-200/40 transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50;
+  }
+  .fin-hero {
+    @apply relative overflow-hidden;
+  }
+  .metric-card {
+    @apply transition-transform duration-200 hover:-translate-y-0.5;
+  }
+  .plain-label {
+    @apply text-[11px] font-bold uppercase tracking-wider text-slate-500;
+  }
+  .chip-up {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800;
+  }
+  .chip-down {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-rose-100 text-rose-800;
   }
   .card-block {
     @apply rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg;

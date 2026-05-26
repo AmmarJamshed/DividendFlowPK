@@ -7,12 +7,12 @@ import AmmarCursorGuide from './AmmarCursorGuide';
 import { useAIAssistance } from '../context/AIAssistanceContext';
 
 const navItems = [
-  { path: '/', label: 'Dashboard' },
-  { path: '/dividend-calendar', label: 'Dividend Calendar' },
-  { path: '/market-closing-prices', label: 'Market Closing Prices' },
-  { path: '/forecast-engine', label: 'Forecast Engine' },
-  { path: '/salary-simulator', label: 'Salary Replacement Simulator' },
-  { path: '/reporting-cycles', label: 'PSX Reporting Cycles' },
+  { path: '/', label: 'Home', icon: '🏠', hint: 'Your overview' },
+  { path: '/dividend-calendar', label: 'Dividend calendar', icon: '📅', hint: 'When payouts land' },
+  { path: '/market-closing-prices', label: 'Market prices', icon: '📊', hint: 'Today’s movers' },
+  { path: '/forecast-engine', label: 'Forecast', icon: '🔮', hint: 'Price outlook' },
+  { path: '/salary-simulator', label: 'Income planner', icon: '💰', hint: 'Salary vs dividends' },
+  { path: '/reporting-cycles', label: 'Reporting cycles', icon: '📋', hint: 'Earnings seasons' },
 ];
 
 function AiToggleSpinner({ className }) {
@@ -35,8 +35,8 @@ function AiToggleSpinner({ className }) {
 }
 
 const Disclaimer = () => (
-  <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-xs text-slate-600 bg-[#f0eeea]/80">
-    This platform provides analytical insights based on historical and probabilistic models. It does not constitute investment advice. Users should conduct further research before making financial decisions.
+  <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-[11px] text-slate-600 bg-slate-50/90 leading-relaxed">
+    For learning and research only — not buy/sell advice. Numbers come from saved PSX files; always double-check with your broker or PSX before acting.
   </footer>
 );
 
@@ -80,7 +80,7 @@ export default function Layout({ children }) {
 
       {/* Sidebar - Pokémon-style light grey nav */}
       <aside
-        className={`fixed lg:relative inset-y-0 left-0 z-50 w-72 flex flex-col bg-[#f0eeea]/98 backdrop-blur-xl border-r border-slate-200/80 shadow-xl transform transition-transform duration-300 ease-out
+        className={`fixed lg:relative inset-y-0 left-0 z-50 w-72 flex flex-col bg-white/95 backdrop-blur-xl border-r border-slate-200/80 shadow-xl transform transition-transform duration-300 ease-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="p-4 lg:p-6 border-b border-slate-200/80 flex items-center justify-between">
@@ -90,7 +90,7 @@ export default function Layout({ children }) {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg lg:text-xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent truncate">DividendFlow PK</h1>
-              <p className="text-xs text-slate-500 hidden sm:block">AI Dividend Intelligence for PSX</p>
+              <p className="text-xs text-slate-500 hidden sm:block">PSX dividends &amp; prices, plain and simple</p>
             </div>
           </div>
           <button
@@ -102,17 +102,29 @@ export default function Layout({ children }) {
           </button>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {navItems.map(({ path, label }) => (
+          {navItems.map(({ path, label, icon, hint }) => (
             <Link
               key={path}
               to={path}
-              className={`block px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+              className={`flex items-start gap-3 px-4 py-3 rounded-2xl transition-all duration-200 ${
                 location.pathname === path
-                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-400/30'
-                  : 'text-slate-600 hover:bg-white/80 hover:text-slate-800 border border-transparent'
+                  ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
               }`}
             >
-              {label}
+              <span className="text-lg leading-none mt-0.5" aria-hidden>
+                {icon}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold">{label}</span>
+                <span
+                  className={`block text-[11px] font-medium mt-0.5 ${
+                    location.pathname === path ? 'text-teal-50' : 'text-slate-500'
+                  }`}
+                >
+                  {hint}
+                </span>
+              </span>
             </Link>
           ))}
         </nav>
@@ -121,7 +133,7 @@ export default function Layout({ children }) {
 
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <header className="min-h-14 lg:min-h-16 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2 py-2 px-4 lg:px-8 bg-[#e8e6e2]/90 backdrop-blur-sm shrink-0">
+        <header className="min-h-14 lg:min-h-16 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2 py-2 px-4 lg:px-8 bg-white/80 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}

@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 import DashboardMarketChat from '../components/DashboardMarketChat';
+import PageHero from '../components/ui/PageHero';
+import MetricCard from '../components/ui/MetricCard';
+import QuickActionGrid from '../components/ui/QuickActionGrid';
 import { buildDashboardRiskAlerts, getPktDateString, MIN_PRICE_MOVE_PCT } from '../utils/dashboardRiskAlerts';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -26,10 +29,29 @@ function getTopYieldRows(dividends) {
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
+  plugins: {
+    legend: { display: false },
+    title: {
+      display: true,
+      text: 'How many companies typically pay dividends each month',
+      color: '#334155',
+      font: { size: 13, weight: '600' },
+      padding: { bottom: 12 },
+    },
+    tooltip: {
+      callbacks: {
+        label: (ctx) => ` ${ctx.parsed.y} companies with payouts`,
+      },
+    },
+  },
   scales: {
-    y: { grid: { color: 'rgba(148, 163, 184, 0.3)' }, ticks: { color: '#64748b' } },
-    x: { grid: { display: false }, ticks: { color: '#64748b' } },
+    y: {
+      beginAtZero: true,
+      title: { display: true, text: 'Number of companies', color: '#64748b', font: { size: 11 } },
+      grid: { color: 'rgba(148, 163, 184, 0.25)' },
+      ticks: { color: '#64748b', stepSize: 1 },
+    },
+    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 11 } } },
   },
 };
 
@@ -99,6 +121,42 @@ export default function Dashboard() {
 
   const topYield = getTopYieldRows(dividends);
 
+  const dashboardStats = useMemo(() => {
+    const companies = new Set();
+    (dividends || []).forEach((d) => {
+      const c = (d.Company || d.company || '').trim();
+      if (c) companies.add(c);
+    });
+    let busiestMonth = '—';
+    let busiestCount = 0;
+    if (monthCoverage?.monthCoverage) {
+      for (let i = 1; i <= 12; i++) {
+        const c = monthCoverage.monthCoverage[i]?.count || 0;
+        if (c > busiestCount) {
+          busiestCount = c;
+          busiestMonth = monthNames[i - 1];
+        }
+      }
+    }
+    const movers = (dailyNews.priceChanges || []).length;
+    const headlines = (dailyNews.news || []).length;
+    return {
+      companies: companies.size,
+      busiestMonth,
+      busiestCount,
+      movers,
+      headlines,
+      alerts: riskAlerts.length,
+    };
+  }, [dividends, monthCoverage, dailyNews, riskAlerts]);
+
+  const quickActions = [
+    { to: '/market-closing-prices', icon: '📊', label: 'See market movers', hint: 'Who went up or down today' },
+    { to: '/dividend-calendar#dividend-calculator', icon: '🧮', label: 'My dividend income', hint: 'Enter holdings or upload PDF' },
+    { to: '/salary-simulator', icon: '💰', label: 'Income planner', hint: 'Can dividends replace salary?' },
+    { to: '/#market-chat', icon: '💬', label: 'Ask Market Buddy', hint: 'Plain-language Q&A' },
+  ];
+
   const chartData = {
     labels: heatmapData.map(d => d.month),
     datasets: [{
@@ -124,42 +182,78 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-3xl border-2 border-teal-200/80 bg-gradient-to-br from-white via-teal-50/40 to-cyan-50/50 p-5 sm:p-7 shadow-md shadow-teal-100/50">
-        <div className="flex flex-wrap items-start gap-4">
-          <div className="text-4xl sm:text-5xl leading-none select-none" aria-hidden>
-            📈
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
-              PSX dividends &amp; context — for professionals and the public
-            </h1>
-            <p className="mt-2 text-sm sm:text-base text-slate-600 leading-relaxed max-w-3xl">
-              DividendFlow PK combines <strong>calendar data, post-close prices, news matches, and AI summaries</strong> so you can scan the
-              market faster. Many <strong>finance and treasury professionals</strong> use it alongside their own research; it stays{' '}
-              <strong>informational</strong> — not a buy/sell recommendation — and should be cross-checked with your policies and primary
-              sources before any decision.
-            </p>
-            <p className="mt-3 text-xs text-teal-800 font-semibold">
-              <a href="#market-chat" className="underline hover:text-teal-950">Market Buddy</a> — natural-language Q&amp;A on the latest saved scrape.
-            </p>
-          </div>
-        </div>
+      <PageHero
+        eyebrow="Pakistan Stock Exchange"
+        title="Your dividend & market snapshot"
+        description="See when companies pay dividends, how prices moved, and what the news said — in everyday language. Built from public PSX data we update on weekdays. This is research, not a tip to buy or sell."
+      >
+        <Link to="/market-closing-prices" className="btn-primary text-sm px-4 py-2">
+          Today&apos;s prices
+        </Link>
+        <Link
+          to="/dividend-calendar"
+          className="text-sm font-semibold px-4 py-2 rounded-xl border border-teal-200 text-teal-800 bg-white hover:bg-teal-50"
+        >
+          Dividend calendar
+        </Link>
+      </PageHero>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <MetricCard
+          icon="🏢"
+          label="Dividend payers tracked"
+          value={dashboardStats.companies}
+          hint="Companies in our payout calendar"
+          accent="teal"
+        />
+        <MetricCard
+          icon="📅"
+          label="Busiest payout month"
+          value={dashboardStats.busiestMonth}
+          hint={
+            dashboardStats.busiestCount
+              ? `~${dashboardStats.busiestCount} payout rows that month`
+              : 'From saved calendar data'
+          }
+          accent="violet"
+        />
+        <MetricCard
+          icon="📈"
+          label="Big price moves today"
+          value={dashboardStats.movers}
+          hint="Stocks with a notable day change"
+          accent="emerald"
+        />
+        <MetricCard
+          icon="📰"
+          label="News highlights"
+          value={dashboardStats.headlines}
+          hint={`${dashboardStats.alerts} linked to price alerts`}
+          accent="amber"
+        />
+      </div>
+
+      <div>
+        <p className="plain-label mb-3">Quick actions</p>
+        <QuickActionGrid actions={quickActions} />
       </div>
 
       <DashboardMarketChat />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
         <div className="card p-6 animate-slide-up border-l-4 border-l-teal-500 lg:col-span-3" style={{ animationDelay: '0ms' }}>
-          <h3 className="card-header">Dividend payers by month</h3>
-          <p className="card-subtitle">Bar height = count of companies with payouts in that month (PSX calendar data).</p>
-          <div className="h-52 mt-4">
+          <h3 className="card-header">When dividends get paid</h3>
+          <p className="card-subtitle">
+            Taller bar = more companies paying in that month. Helps you spread income through the year.
+          </p>
+          <div className="h-56 mt-4">
             <Bar data={chartData} options={chartOptions} />
           </div>
         </div>
         <div className="card p-6 animate-slide-up border-l-4 border-l-emerald-500 lg:col-span-3" style={{ animationDelay: '50ms' }}>
-          <h3 className="card-header">Top indicated dividend yields</h3>
+          <h3 className="card-header">Highest indicated yields</h3>
           <p className="card-subtitle">
-            Ranked by indicated dividend yield from the PSX calendar — informational only, not a recommendation.
+            Yield = dividend per share ÷ price. High yield can mean high income or higher risk — do your own checks.
           </p>
           <ul className="mt-4 space-y-3">
             {topYield.map((d, i) => {
@@ -174,10 +268,10 @@ export default function Dashboard() {
           </ul>
         </div>
         <div className="card p-6 animate-slide-up border-l-4 border-l-amber-500 lg:col-span-6 flex flex-col min-h-[320px]" style={{ animationDelay: '100ms' }}>
-          <h3 className="card-header">News + big price moves</h3>
+          <h3 className="card-header">News linked to price moves</h3>
           <p className="card-subtitle">
-            We match a <strong>real headline</strong> with a <strong>big same-day price move</strong> (about {MIN_PRICE_MOVE_PCT}% or more).
-            Big world news (rates, IMF, subsidies) can show next to a stock that fell hard that day. <strong>Click a card</strong> to read the
+            We pair a real headline with a big same-day price swing (about {MIN_PRICE_MOVE_PCT}% or more). Macro news (rates, IMF) may appear
+            beside a stock that moved sharply. <strong>Tap a card</strong> to read the
             story — informational only, not a trading signal.
           </p>
           {(riskAlerts[0]?.rotationDate || dailyNews.news?.length > 0 || dailyNews.priceChanges?.length > 0) && (
