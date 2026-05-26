@@ -61,7 +61,7 @@ export default function DividendCalendar() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-slate-200 border-t-[#1f4d7a] rounded-full animate-spin" />
           <p className="text-slate-500">Loading dividend calendar...</p>
         </div>
       </div>
@@ -113,18 +113,18 @@ export default function DividendCalendar() {
             const count = cov.count || 0;
             const weak = weakByMonth.has(monthNum);
             const strongColor =
-              count >= 20 ? 'bg-emerald-500' : count >= 10 ? 'bg-teal-500' : count >= 5 ? 'bg-violet-500' : 'bg-sky-500';
+              count >= 20 ? 'bg-[#11836a]' : count >= 10 ? 'bg-[#1f4d7a]' : count >= 5 ? 'bg-[#3d6f9b]' : 'bg-slate-400';
             const selected = selectedMonth === monthNum;
             return (
               <button
                 type="button"
                 key={m}
                 onClick={() => setSelectedMonth(monthNum)}
-                className={`p-4 rounded-2xl text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 ${
+                className={`p-4 rounded-xl text-left transition-all duration-200 hover:scale-[1.02] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c5a667] focus-visible:ring-offset-2 ${
                   weak
-                    ? 'bg-gradient-to-br from-orange-400 to-amber-500 text-white shadow-lg shadow-orange-300/50'
-                    : `${strongColor} text-white shadow-lg`
-                } ${selected ? 'ring-4 ring-teal-300 ring-offset-2 scale-[1.02]' : ''}`}
+                    ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md'
+                    : `${strongColor} text-white shadow-md`
+                } ${selected ? 'ring-2 ring-[#c5a667] ring-offset-2 scale-[1.02]' : ''}`}
               >
                 <div className="font-bold text-lg">{m}</div>
                 <div className="font-semibold opacity-95">{count} payout{count !== 1 ? 's' : ''}</div>

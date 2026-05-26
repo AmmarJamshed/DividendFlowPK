@@ -144,7 +144,7 @@ export default function DashboardMarketChat() {
       className="card p-0 overflow-hidden scroll-mt-24"
       data-ai-hint="Research chat on stocks from the latest saved news and prices"
     >
-      <div className="px-5 sm:px-6 py-5 bg-neutral-900 text-white border-b border-neutral-800">
+      <div className="fin-hero fin-hero--dark px-5 sm:px-6 py-5 border-b border-slate-800">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           <BuddyAvatar />
           <div className="min-w-0 flex-1">

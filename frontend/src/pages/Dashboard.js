@@ -151,19 +151,28 @@ export default function Dashboard() {
   }, [dividends, monthCoverage, dailyNews, riskAlerts]);
 
   const quickActions = [
-    { to: '/market-closing-prices', label: 'Market closing prices', hint: 'Session moves and volume' },
-    { to: '/dividend-calendar#dividend-calculator', label: 'Dividend income calculator', hint: 'Holdings or portfolio PDF' },
-    { to: '/salary-simulator', label: 'Income replacement model', hint: 'Salary vs dividend yield' },
-    { to: '/#market-chat', label: 'Market research chat', hint: 'Q&A on saved PSX files' },
+    { to: '/market-closing-prices', icon: 'chart', label: 'Market closing prices', hint: 'Session moves and volume', xp: 10 },
+    { to: '/dividend-calendar#dividend-calculator', icon: 'calc', label: 'Dividend income calculator', hint: 'Holdings or portfolio PDF', xp: 25 },
+    { to: '/salary-simulator', icon: 'wallet', label: 'Income replacement model', hint: 'Salary vs dividend yield', xp: 15 },
+    { to: '/#market-chat', icon: 'chat', label: 'Market research chat', hint: 'Q&A on saved PSX files', xp: 20 },
   ];
+
+  const missionProgress = useMemo(() => {
+    let done = 0;
+    if (dashboardStats.companies > 0) done += 1;
+    if (dashboardStats.movers > 0) done += 1;
+    if (dashboardStats.headlines > 0) done += 1;
+    if (dashboardStats.alerts > 0) done += 1;
+    return { done, total: 4, pct: Math.round((done / 4) * 100) };
+  }, [dashboardStats]);
 
   const chartData = {
     labels: heatmapData.map(d => d.month),
     datasets: [{
       label: 'Dividend-paying companies',
       data: heatmapData.map(d => d.count),
-      backgroundColor: 'rgba(0, 119, 200, 0.75)',
-      borderColor: '#0077c8',
+      backgroundColor: 'rgba(31, 77, 122, 0.85)',
+      borderColor: '#1f4d7a',
       borderWidth: 0,
       borderRadius: 0,
     }]
@@ -196,6 +205,21 @@ export default function Dashboard() {
         </Link>
       </PageHero>
 
+      <section className="card p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Daily mission progress</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Complete data checks to explore the full PSX toolkit</p>
+          </div>
+          <span className="badge-pill bg-amber-50 text-amber-900 border-amber-200">
+            {missionProgress.done}/{missionProgress.total} complete
+          </span>
+        </div>
+        <div className="xp-track">
+          <div className="xp-fill" style={{ width: `${missionProgress.pct}%` }} />
+        </div>
+      </section>
+
       <section>
         <h3 className="plain-label mb-4">Market snapshot</h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-neutral-200 border border-neutral-200">
@@ -217,11 +241,13 @@ export default function Dashboard() {
             label="Notable movers"
             value={dashboardStats.movers}
             hint="Stocks with large session change"
+            accent="emerald"
           />
           <MetricCard
             label="News items"
             value={dashboardStats.headlines}
             hint={`${dashboardStats.alerts} headline alerts`}
+            accent="emerald"
           />
         </div>
       </section>

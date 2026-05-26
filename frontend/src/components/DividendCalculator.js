@@ -1,5 +1,7 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { api } from '../api';
+
+const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -17,17 +19,12 @@ function formatCompactRs(n) {
 
 const emptyRow = () => ({ symbol: '', shares: '' });
 
-function SummaryStat({ label, value, sub, accent = 'violet' }) {
-  const accents = {
-    violet: 'from-violet-600 to-purple-600 text-white',
-    teal: 'from-teal-500 to-cyan-600 text-white',
-    amber: 'from-amber-500 to-orange-500 text-white',
-  };
+function SummaryStat({ label, value, sub }) {
   return (
-    <div className={`rounded-2xl bg-gradient-to-br ${accents[accent] || accents.violet} p-4 shadow-lg shadow-violet-200/30`}>
-      <p className="text-[11px] font-bold uppercase tracking-wider opacity-90">{label}</p>
-      <p className="text-2xl sm:text-3xl font-extrabold mt-1 tabular-nums">{value}</p>
-      {sub && <p className="text-xs mt-1 opacity-85">{sub}</p>}
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm border-t-2 border-t-[#c5a667] hover:-translate-y-0.5 transition-transform">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1 tabular-nums">{value}</p>
+      {sub && <p className="text-xs mt-1 text-slate-600">{sub}</p>}
     </div>
   );
 }
@@ -61,13 +58,12 @@ function CalculatorResults({ result }) {
   const visibleRows = showAllRows ? filteredRows : filteredRows.slice(0, 8);
 
   return (
-    <div className="space-y-6 pt-6 mt-6 border-t-2 border-violet-100">
-      {/* Hero summary */}
-      <div className="rounded-2xl bg-gradient-to-br from-violet-50 via-white to-teal-50 border border-violet-100 p-5 sm:p-6 shadow-sm">
+    <div className="space-y-6 pt-6 mt-6 border-t-2 border-slate-200">
+      <div className="rounded-xl bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 border border-slate-200 p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-violet-600">Your portfolio projection</p>
-            <p className="text-4xl sm:text-5xl font-extrabold text-violet-800 mt-1 tabular-nums">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#1f4d7a]">Your portfolio projection</p>
+            <p className="text-4xl sm:text-5xl font-extrabold text-slate-900 mt-1 tabular-nums">
               {formatRs(result.totalAnnual)}
             </p>
             <p className="text-sm text-slate-600 mt-2 max-w-xl">
@@ -75,7 +71,7 @@ function CalculatorResults({ result }) {
             </p>
           </div>
           {result.extractionMethod && (
-            <span className="self-start lg:self-center shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-white border border-violet-200 text-violet-700 shadow-sm">
+            <span className="self-start lg:self-center shrink-0 text-xs font-medium px-3 py-1.5 rounded-full bg-white border border-amber-200 text-amber-900 shadow-sm">
               PDF · {result.extractionMethod === 'groq' ? 'AI extract' : 'pattern match'}
               {result.pdfPages ? ` · ${result.pdfPages} pg` : ''}
             </span>
@@ -85,14 +81,13 @@ function CalculatorResults({ result }) {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <SummaryStat label="Stocks matched" value={stats.matched} sub="with dividend rows" accent="teal" />
-        <SummaryStat label="Payout lines" value={stats.payoutCount} sub="interim + final" accent="violet" />
-        <SummaryStat label="Active months" value={stats.activeMonths} sub="with cash expected" accent="teal" />
+        <SummaryStat label="Stocks matched" value={stats.matched} sub="with dividend rows" />
+        <SummaryStat label="Payout lines" value={stats.payoutCount} sub="interim + final" />
+        <SummaryStat label="Active months" value={stats.activeMonths} sub="with cash expected" />
         <SummaryStat
           label="Peak month"
           value={stats.topMonth?.amount > 0 ? formatCompactRs(stats.topMonth.amount) : '—'}
           sub={stats.topMonth?.amount > 0 ? stats.topMonth.monthName : 'No payouts'}
-          accent="amber"
         />
       </div>
 
@@ -138,12 +133,12 @@ function CalculatorResults({ result }) {
                 type="button"
                 onClick={() => setMonthFilter(monthFilter === String(m.month) ? 'all' : String(m.month))}
                 className={`group flex-1 min-w-0 flex flex-col items-center justify-end gap-1.5 h-full rounded-lg transition-colors ${
-                  monthFilter === String(m.month) ? 'bg-violet-50 ring-2 ring-violet-300 ring-offset-1' : 'hover:bg-slate-50'
+                  monthFilter === String(m.month) ? 'bg-slate-100 ring-2 ring-[#1f4d7a]/40 ring-offset-1' : 'hover:bg-slate-50'
                 }`}
                 title={`${m.monthName}: ${formatRs(m.amount)}`}
               >
                 {hasPay && (
-                  <span className="text-[9px] sm:text-[10px] font-bold text-violet-700 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity truncate max-w-full px-0.5">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-[#1f4d7a] opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity truncate max-w-full px-0.5">
                     {formatCompactRs(m.amount)}
                   </span>
                 )}
@@ -151,13 +146,13 @@ function CalculatorResults({ result }) {
                   className={`w-full max-w-[2.5rem] mx-auto rounded-t-md transition-all ${
                     hasPay
                       ? isPeak
-                        ? 'bg-gradient-to-t from-violet-700 via-violet-500 to-teal-400 shadow-md shadow-violet-300/40'
-                        : 'bg-gradient-to-t from-violet-600 to-teal-400'
+                        ? 'bg-gradient-to-t from-[#143554] via-[#1f4d7a] to-[#11836a] shadow-md'
+                        : 'bg-gradient-to-t from-[#1f4d7a] to-[#11836a]'
                       : 'bg-slate-100'
                   }`}
                   style={{ height: `${pct}%`, minHeight: hasPay ? '8px' : '4px' }}
                 />
-                <span className={`text-[10px] sm:text-xs font-bold ${hasPay ? 'text-violet-800' : 'text-slate-400'}`}>
+                <span className={`text-[10px] sm:text-xs font-bold ${hasPay ? 'text-[#143554]' : 'text-slate-400'}`}>
                   {MONTH_SHORT[m.month - 1]}
                 </span>
               </button>
@@ -168,7 +163,7 @@ function CalculatorResults({ result }) {
           <button
             type="button"
             onClick={() => setMonthFilter('all')}
-            className="mt-3 text-xs font-semibold text-violet-600 hover:text-violet-800"
+            className="mt-3 text-xs font-semibold text-[#1f4d7a] hover:underline"
           >
             Clear month filter · show all payouts
           </button>
@@ -204,7 +199,7 @@ function CalculatorResults({ result }) {
                 {visibleRows.map((item, i) => (
                   <tr
                     key={`${item.symbol}-${item.paymentMonth}-${i}`}
-                    className="border-t border-slate-100 hover:bg-violet-50/40 transition-colors"
+                    className="border-t border-slate-100 hover:bg-slate-50 transition-colors"
                   >
                     <td className="px-4 py-3">
                       <span className="font-bold text-slate-800">{item.symbol}</span>
@@ -223,7 +218,7 @@ function CalculatorResults({ result }) {
                     <td className="px-4 py-3 text-slate-600 hidden md:table-cell tabular-nums">
                       {item.shares.toLocaleString('en-PK')}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-violet-700 tabular-nums">{formatRs(item.cash)}</td>
+                    <td className="px-4 py-3 text-right font-bold text-emerald-700 tabular-nums">{formatRs(item.cash)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -234,7 +229,7 @@ function CalculatorResults({ result }) {
               <button
                 type="button"
                 onClick={() => setShowAllRows((v) => !v)}
-                className="text-sm font-semibold text-violet-600 hover:text-violet-800"
+                className="text-sm font-semibold text-[#1f4d7a] hover:underline"
               >
                 {showAllRows ? 'Show less' : `Show all ${filteredRows.length} payouts`}
               </button>
@@ -255,7 +250,15 @@ export default function DividendCalculator({ symbolList = [] }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pdfName, setPdfName] = useState('');
+  const [marketSymbolCount, setMarketSymbolCount] = useState(null);
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    api
+      .getMarketClosingPrices()
+      .then((res) => setMarketSymbolCount((res.data?.rows || []).length))
+      .catch(() => setMarketSymbolCount(null));
+  }, []);
 
   const symbols = useMemo(() => {
     const set = new Set(symbolList.map((s) => String(s).trim().toUpperCase()).filter(Boolean));
@@ -331,51 +334,64 @@ export default function DividendCalculator({ symbolList = [] }) {
   return (
     <section
       id="dividend-calculator"
-      className="card overflow-hidden border-2 border-violet-200/70 shadow-xl shadow-violet-100/30 scroll-mt-24"
+      className="card overflow-hidden scroll-mt-24 border border-slate-200"
       data-ai-hint="Dividend calculator — enter holdings or upload a portfolio PDF"
     >
-      <div className="px-5 sm:px-6 py-5 bg-gradient-to-br from-violet-600 via-purple-600 to-teal-600 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(circle_at_80%_20%,white,transparent_50%)]" />
-        <div className="relative">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-violet-100 mb-1">Portfolio income</p>
-          <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">Dividend calculator</h3>
-          <p className="mt-2 text-sm text-white/90 max-w-2xl leading-relaxed">
+      <div className="fin-hero fin-hero--dark px-5 sm:px-6 py-5 relative">
+        <img src={LOGO} alt="" className="absolute right-4 top-4 w-16 opacity-30 pointer-events-none" aria-hidden />
+        <div className="relative z-[1]">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-amber-100 mb-1">Portfolio income</p>
+          <h3 className="text-xl sm:text-2xl font-bold tracking-tight">Dividend calculator</h3>
+          <p className="mt-2 text-sm text-slate-200 max-w-2xl leading-relaxed">
             Enter PSX tickers and share counts, or upload a broker portfolio PDF. See estimated cash by payment month.
           </p>
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 space-y-5 bg-gradient-to-b from-violet-50/50 to-white">
+      <div className="p-4 sm:p-6 space-y-5 bg-slate-50/50">
         {/* Segmented control */}
         <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/80">
           <button
             type="button"
             onClick={() => setMode('manual')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              mode === 'manual' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+              mode === 'manual' ? 'bg-white text-[#1f4d7a] shadow-sm ring-1 ring-[#c5a667]/40' : 'text-slate-600 hover:text-slate-800'
             }`}
           >
-            ✏️ Manual entry
+            Manual entry
           </button>
           <button
             type="button"
             onClick={() => setMode('pdf')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              mode === 'pdf' ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+              mode === 'pdf' ? 'bg-white text-[#1f4d7a] shadow-sm ring-1 ring-[#c5a667]/40' : 'text-slate-600 hover:text-slate-800'
             }`}
           >
-            📄 Upload PDF
+            Upload PDF
           </button>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Dividend universe</p>
+            <p className="text-lg font-bold text-slate-900 tabular-nums">{symbols.length} symbols</p>
+            <p className="text-xs text-slate-500 mt-1">Companies with payout records in our calendar file</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Full market board</p>
+            <p className="text-lg font-bold text-slate-900 tabular-nums">
+              {marketSymbolCount != null ? marketSymbolCount : '—'} symbols
+            </p>
+            <p className="text-xs text-slate-500 mt-1">All listings in latest closing-price scrape</p>
+          </div>
+        </div>
+
         {mode === 'manual' && (
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div className="px-4 sm:px-5 py-3 border-b border-slate-100 bg-slate-50/80 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm text-slate-600">
-                <span className="font-semibold text-slate-800">{symbols.length}</span> PSX symbols in dividend dataset
-              </p>
+              <p className="text-sm text-slate-600">Autocomplete uses dividend-paying symbols only</p>
               {filledRows > 0 && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-100 text-violet-800">
+                <span className="badge-pill bg-emerald-50 text-emerald-800 border-emerald-200">
                   {filledRows} row{filledRows !== 1 ? 's' : ''} ready
                 </span>
               )}
@@ -392,7 +408,7 @@ export default function DividendCalculator({ symbolList = [] }) {
                 </thead>
                 <tbody>
                   {rows.map((row, idx) => (
-                    <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-violet-50/30">
+                    <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
                       <td className="px-4 py-2">
                         <input
                           list="psx-symbol-list"
@@ -401,7 +417,7 @@ export default function DividendCalculator({ symbolList = [] }) {
                           placeholder="HBL"
                           autoComplete="off"
                           spellCheck={false}
-                          className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-violet-400/40 focus:border-violet-300 focus:outline-none uppercase font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400"
+                          className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#1f4d7a]/30 focus:border-[#1f4d7a] focus:outline-none uppercase font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400"
                         />
                       </td>
                       <td className="px-4 py-2">
@@ -412,7 +428,7 @@ export default function DividendCalculator({ symbolList = [] }) {
                           value={row.shares}
                           onChange={(e) => updateRow(idx, 'shares', e.target.value)}
                           placeholder="500"
-                          className="w-full max-w-[140px] px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-violet-400/40 focus:border-violet-300 focus:outline-none tabular-nums text-slate-800 placeholder:text-slate-400"
+                          className="w-full max-w-[140px] px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#1f4d7a]/30 focus:border-[#1f4d7a] focus:outline-none tabular-nums text-slate-800 placeholder:text-slate-400"
                         />
                       </td>
                       <td className="px-2 py-2 text-center">
@@ -441,7 +457,7 @@ export default function DividendCalculator({ symbolList = [] }) {
               <button
                 type="button"
                 onClick={addRow}
-                className="text-sm font-semibold text-violet-700 hover:text-violet-900 px-3 py-2 rounded-lg hover:bg-violet-50 transition-colors"
+                className="text-sm font-semibold text-[#1f4d7a] hover:underline px-3 py-2"
               >
                 + Add row
               </button>
@@ -449,7 +465,7 @@ export default function DividendCalculator({ symbolList = [] }) {
                 type="button"
                 onClick={runManual}
                 disabled={loading || filledRows === 0}
-                className="btn-primary ml-auto px-8 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 shadow-violet-300/40 disabled:opacity-50"
+                className="btn-primary ml-auto px-8 py-2.5 disabled:opacity-50"
               >
                 {loading ? 'Calculating…' : 'Calculate dividends'}
               </button>
@@ -468,14 +484,14 @@ export default function DividendCalculator({ symbolList = [] }) {
             <label
               className={`flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${
                 loading
-                  ? 'border-violet-200 bg-violet-50/40 opacity-70 pointer-events-none'
+                  ? 'border-slate-200 bg-slate-50 opacity-70 pointer-events-none'
                   : pdfName
-                    ? 'border-teal-300 bg-teal-50/30 hover:border-teal-400'
-                    : 'border-violet-200 bg-violet-50/20 hover:bg-violet-50/40 hover:border-violet-400'
+                    ? 'border-emerald-300 bg-emerald-50/50 hover:border-emerald-400'
+                    : 'border-[#c5a667]/50 bg-amber-50/30 hover:bg-amber-50/60 hover:border-[#c5a667]'
               }`}
             >
-              <span className="text-4xl" aria-hidden>
-                {pdfName ? '✓' : '📄'}
+              <span className="text-sm font-bold uppercase tracking-wide text-[#1f4d7a]" aria-hidden>
+                {pdfName ? 'Ready' : 'PDF'}
               </span>
               <span className="font-semibold text-slate-800 text-center break-all max-w-md">
                 {pdfName || 'Drop PDF here or click to browse'}
@@ -495,8 +511,8 @@ export default function DividendCalculator({ symbolList = [] }) {
               />
             </label>
             {loading && (
-              <div className="flex items-center justify-center gap-3 text-sm text-violet-700">
-                <div className="w-5 h-5 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
+              <div className="flex items-center justify-center gap-3 text-sm text-[#1f4d7a]">
+                <div className="w-5 h-5 border-2 border-slate-200 border-t-[#1f4d7a] rounded-full animate-spin" />
                 Parsing PDF and matching dividends…
               </div>
             )}
