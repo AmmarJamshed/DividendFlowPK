@@ -7,6 +7,10 @@ const csv = require('csv-parser');
 const axios = require('axios');
 const multer = require('multer');
 const pdfParseModule = require('pdf-parse');
+const {
+  parsePaymentMonthNum,
+  pickDividendPerShare,
+} = require('./psxDividendParse');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -346,16 +350,6 @@ function inferDividendTypeFromAnnouncement(ann) {
   return null;
 }
 
-/** Rough DPS from "% of par" style (many PSX names use Rs 10 face): pct/100 * 10 */
-function parseDpsFromAnnouncement(ann) {
-  const m = String(ann || '').match(/^([\d,.]+)\s*%/);
-  if (!m) return 0;
-  const pct = parseFloat(m[1].replace(/,/g, ''));
-  if (!Number.isFinite(pct) || pct <= 0) return 0;
-  const guess = Math.round((pct / 100) * 10 * 10000) / 10000;
-  return guess > 0 && guess < 5000 ? guess : 0;
-}
-
 const PAYOUTS_FULL_MIN_ROWS = parseInt(process.env.PAYOUTS_FULL_MIN_ROWS || '120', 10);
 
 // Enrich dividends with latest prices, recalculated yields, and Interim/Final type
@@ -384,14 +378,41 @@ async function getEnrichedDividends() {
   function pickCalendarRow(company, paymentMonth) {
     const list = calendarsByCompany.get(company);
     if (!list || !list.length) return null;
-    const pm = parseInt(paymentMonth || 0);
-    const same = list.find(r => parseInt(r.Payment_month || r.payment_month || 0) === pm);
+    const pm = parseInt(paymentMonth || 0, 10);
+    const same = list.find(
+      (r) => (parsePaymentMonthNum(r.Payment_month || r.payment_month) || 0) === pm
+    );
     return same || list[0];
+  }
+
+  const latestAnnByCompany = new Map();
+  for (const p of payoutRows) {
+    const c = (p.Company || p.company || '').trim();
+    if (!c) continue;
+    const y = parseInt(p.Year || p.year || 0, 10);
+    const m = parsePaymentMonthNum(p.Payment_month || p.payment_month) || 0;
+    const prev = latestAnnByCompany.get(c);
+    if (!prev || y > prev.y || (y === prev.y && m > prev.m)) {
+      latestAnnByCompany.set(c, {
+        y,
+        m,
+        ann: p.Dividend_announcement || p.dividend_announcement || '',
+      });
+    }
   }
 
   function enrichCalendarRow(d) {
     const company = (d.Company || d.company || '').trim();
-    const divPerShare = parseFloat(d.Dividend_per_share || d.dividend_per_share || 0);
+    const annHint = latestAnnByCompany.get(company)?.ann || '';
+    const picked = pickDividendPerShare({
+      announcement: annHint,
+      calendarDps: d.Dividend_per_share || d.dividend_per_share,
+    });
+    const divPerShare = picked.dps;
+    const paymentMonth =
+      parsePaymentMonthNum(d.Payment_month || d.payment_month) ||
+      parseInt(d.Payment_month || d.payment_month || 0, 10) ||
+      null;
     const csvPrice = parseFloat(d.Price || d.price || 0);
     const csvYield = parseFloat(d.Dividend_yield || d.dividend_yield || 0);
     const lp = latestPrices.get(company);
@@ -399,8 +420,22 @@ async function getEnrichedDividends() {
     const yieldVal = price > 0 && divPerShare > 0
       ? Math.round((divPerShare / price) * 10000) / 100
       : csvYield;
-    const type = inferDividendType(company, d.Payment_month || d.payment_month, cyclesMap);
-    return { ...d, Price: price, Dividend_yield: yieldVal, dividend_yield: yieldVal, Type: type, dividendType: type };
+    const type = inferDividendType(company, paymentMonth, cyclesMap);
+    return {
+      ...d,
+      Payment_month: paymentMonth || d.Payment_month,
+      payment_month: paymentMonth || d.payment_month,
+      Dividend_per_share: divPerShare,
+      dividend_per_share: divPerShare,
+      Price: price,
+      Dividend_yield: yieldVal,
+      dividend_yield: yieldVal,
+      Type: type,
+      dividendType: type,
+      dps_source: picked.dpsSource,
+      dps_par_value: picked.dpsParValue,
+      calendar_dps_mismatch: picked.calendarDpsMismatch,
+    };
   }
 
   // Full PSX payouts list (paginated scrape) drives calendar + weak-month counts when large enough
@@ -419,12 +454,15 @@ async function getEnrichedDividends() {
     .filter((p) => (p.Company || p.company || '').trim())
     .map((p) => {
       const company = (p.Company || p.company || '').trim();
-      const paymentMonth = parseInt(p.Payment_month || p.payment_month || 0);
+      const paymentMonth = parsePaymentMonthNum(p.Payment_month || p.payment_month) || 0;
       const year = parseInt(p.Year || p.year || new Date().getFullYear());
       const ann = p.Dividend_announcement || p.dividend_announcement || '';
       const cal = pickCalendarRow(company, paymentMonth);
-      let divPerShare = parseFloat(cal?.Dividend_per_share || cal?.dividend_per_share || 0);
-      if (!divPerShare) divPerShare = parseDpsFromAnnouncement(ann);
+      const picked = pickDividendPerShare({
+        announcement: ann,
+        calendarDps: cal?.Dividend_per_share || cal?.dividend_per_share,
+      });
+      const divPerShare = picked.dps;
       const csvPrice = parseFloat(cal?.Price || cal?.price || 0);
       const csvYield = parseFloat(cal?.Dividend_yield || cal?.dividend_yield || 0);
       const lp = latestPrices.get(company);
@@ -441,6 +479,7 @@ async function getEnrichedDividends() {
         CompanyName: p.CompanyName || p.companyName || '',
         Sector: sector,
         Dividend_per_share: divPerShare || '',
+        dividend_per_share: divPerShare || '',
         Payment_month: paymentMonth,
         payment_month: paymentMonth,
         Year: year,
@@ -454,6 +493,9 @@ async function getEnrichedDividends() {
         dividend_yield: yieldVal,
         Type: type,
         dividendType: type,
+        dps_source: picked.dpsSource,
+        dps_par_value: picked.dpsParValue,
+        calendar_dps_mismatch: picked.calendarDpsMismatch,
       };
     });
 }
@@ -514,24 +556,6 @@ const MONTH_NAMES_LONG = [
 
 function normalizePsxSymbol(sym) {
   return String(sym || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-}
-
-function parsePaymentMonthNum(raw) {
-  if (raw == null || raw === '') return null;
-  const s = String(raw).trim();
-  const asInt = parseInt(s, 10);
-  if (asInt >= 1 && asInt <= 12) return asInt;
-  const iso = s.match(/^(\d{4})-(\d{2})/);
-  if (iso) {
-    const m = parseInt(iso[2], 10);
-    return m >= 1 && m <= 12 ? m : null;
-  }
-  const dmy = s.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
-  if (dmy) {
-    const m = parseInt(dmy[2], 10);
-    return m >= 1 && m <= 12 ? m : null;
-  }
-  return null;
 }
 
 async function getKnownPsxSymbols() {

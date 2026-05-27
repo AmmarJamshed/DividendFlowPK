@@ -1,7 +1,9 @@
+import HelpTip from './HelpTip';
+
 /**
  * KPI tile — teal / violet accents with hover lift.
  */
-export default function MetricCard({ label, value, hint, trend, accent = 'teal' }) {
+export default function MetricCard({ label, value, hint, tip, trend, accent = 'teal' }) {
   const border =
     accent === 'violet'
       ? 'border-l-violet-500 border-t-violet-400'
@@ -25,7 +27,10 @@ export default function MetricCard({ label, value, hint, trend, accent = 'teal' 
         style={{ background: glow }}
         aria-hidden="true"
       />
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 inline-flex items-center gap-1">
+        {label}
+        {tip ? <HelpTip text={tip} /> : null}
+      </p>
       <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2 tabular-nums leading-none">
         {value}
       </p>

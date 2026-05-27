@@ -7,6 +7,7 @@ import Disclaimer from '../components/Disclaimer';
 import DashboardMarketChat from '../components/DashboardMarketChat';
 import PageHero from '../components/ui/PageHero';
 import MetricCard from '../components/ui/MetricCard';
+import HelpTip from '../components/ui/HelpTip';
 import QuickActionGrid from '../components/ui/QuickActionGrid';
 import DashboardNewsPanel from '../components/DashboardNewsPanel';
 import { buildDashboardRiskAlerts, getPktDateString } from '../utils/dashboardRiskAlerts';
@@ -250,6 +251,7 @@ export default function Dashboard() {
             label="Dividend payers"
             value={dashboardStats.companies}
             hint="Unique names in payout calendar"
+            tip="How many different PSX symbols have at least one dividend row in our PSX payout dataset."
             accent="teal"
           />
           <MetricCard
@@ -260,18 +262,21 @@ export default function Dashboard() {
                 ? `${dashboardStats.busiestCount} payout records`
                 : 'Calendar dataset'
             }
+            tip="The calendar month when the most companies pay dividends — useful for planning cash flow."
             accent="violet"
           />
           <MetricCard
             label="Notable movers"
             value={dashboardStats.movers}
             hint="Stocks with large session change"
+            tip="Count of symbols with a large up or down move in the latest saved closing-price file."
             accent="emerald"
           />
           <MetricCard
             label="News items"
             value={dashboardStats.headlines}
             hint={`${dashboardStats.alerts} headline alerts`}
+            tip="Headlines scraped for the dashboard; alerts link big news to price moves."
             accent="violet"
           />
         </div>
@@ -287,7 +292,10 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
         <div className="section-zone section-zone--dividends p-6 lg:col-span-6">
           <span className="section-zone-tag">Dividend calendar</span>
-          <h3 className="card-header mt-1">When dividends get paid</h3>
+          <h3 className="card-header mt-1 inline-flex items-center gap-2">
+            When dividends get paid
+            <HelpTip text="Each bar counts companies with a payout scheduled in that month (from PSX). Taller = more dividend cash events." />
+          </h3>
           <p className="card-subtitle">
             Taller bar = more companies paying in that month. Helps you spread income through the year.
           </p>
@@ -297,19 +305,45 @@ export default function Dashboard() {
         </div>
         <div className="section-zone section-zone--yields p-6 lg:col-span-6">
           <span className="section-zone-tag">Top dividend yields</span>
-          <h3 className="card-header mt-1">Highest indicated yields</h3>
+          <h3 className="card-header mt-1 inline-flex items-center gap-2">
+            Highest indicated yields
+            <HelpTip text="Yield = dividend per share (from PSX notice) ÷ latest saved price. High yield is not always safe — read the PSX announcement." />
+          </h3>
           <p className="card-subtitle">
-            Yield = dividend per share ÷ price. High yield can mean high income or higher risk — do your own checks.
+            Yield = dividend per share ÷ price. Amounts follow PSX company notices — confirm on{' '}
+            <a href="https://dps.psx.com.pk/payouts" className="text-teal-700 underline" target="_blank" rel="noopener noreferrer">
+              dps.psx.com.pk
+            </a>
+            .
           </p>
-          <ul className="mt-4 space-y-3">
+          <ul className="mt-4 space-y-4">
             {topYield.map((d, i) => {
               const symbol = (d.Company || d.company || '').trim();
+              const dps = d.Dividend_per_share || d.dividend_per_share;
+              const ann = (d.Dividend_announcement || d.dividend_announcement || '').trim();
               return (
-                <li key={i} className="flex justify-between items-center py-2 border-b border-slate-200 last:border-0">
-                  <span className="font-medium text-slate-700">{symbol}</span>
-                  <span className="px-2 py-0.5 bg-teal-50 text-teal-800 font-semibold tabular-nums text-sm rounded-md">
-                    {(d.Dividend_yield || d.dividend_yield || 0)}%
-                  </span>
+                <li key={i} className="py-3 border-b border-slate-200 last:border-0">
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="min-w-0">
+                      <span className="font-semibold text-slate-800">{symbol}</span>
+                      {dps ? (
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Rs {dps}/share
+                          {d.dps_source === 'psx_announcement' && (
+                            <span className="text-emerald-700 font-medium"> · PSX notice</span>
+                          )}
+                        </p>
+                      ) : null}
+                      {ann ? (
+                        <p className="text-[11px] font-mono text-slate-600 mt-1 bg-slate-50 px-2 py-0.5 rounded inline-block max-w-full truncate" title={ann}>
+                          {ann}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span className="shrink-0 px-2 py-0.5 bg-teal-50 text-teal-800 font-semibold tabular-nums text-sm rounded-md">
+                      {(d.Dividend_yield || d.dividend_yield || 0)}%
+                    </span>
+                  </div>
                 </li>
               );
             })}

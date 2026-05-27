@@ -6,23 +6,20 @@
 import { readFileSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import { scrapePsxTerminal, buildReportingCycles } from './scrape-psx.js';
 import { pushToGitHub } from './update-github.js';
 import { sendScraperEmail } from './send-email.js';
+import { loadCsv as loadQuotedCsv } from './csv-utils.js';
+
+const require = createRequire(import.meta.url);
+const { parsePaymentMonthNum, pickDividendPerShare } = require('../backend/psxDividendParse.js');
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA = join(__dirname, '..', 'data');
 
 function loadFallbackCsv(path) {
-  if (!existsSync(path)) return [];
-  const lines = readFileSync(path, 'utf-8').split('\n').filter(Boolean);
-  const headers = lines[0].split(',').map(h => h.trim());
-  return lines.slice(1).map(line => {
-    const vals = line.split(',').map(v => v.replace(/^"|"$/g, '').trim());
-    const row = {};
-    headers.forEach((h, i) => row[h] = vals[i]);
-    return row;
-  });
+  return loadQuotedCsv(path, readFileSync, existsSync);
 }
 
 function detectChanges(before, after) {
@@ -78,19 +75,45 @@ async function main() {
   scraped.forEach(d => divMap.set(key(d), { ...divMap.get(key(d)), ...d }));
   let dividends = Array.from(divMap.values()).filter(d => d.Company).sort((a, b) => (a.Company || '').localeCompare(b.Company || '') || (a.Year || 0) - (b.Year || 0));
 
-  // Override Payment_month with current payout dates from dps.psx.com.pk (psx.py)
+  // Prefer official PSX payout notice for DPS + payment month (1–12), not psxterminal "Last Div"
   const payoutsPath = join(DATA, 'dividends', 'psx_payouts.csv');
   if (existsSync(payoutsPath)) {
     const payouts = loadFallbackCsv(payoutsPath);
-    const payoutByCompany = new Map(payouts.map(p => [p.Company || p.company, p]));
-    dividends = dividends.map(d => {
-      const p = payoutByCompany.get(d.Company || d.company);
-      if (p && p.Payment_month) {
-        return { ...d, Payment_month: p.Payment_month };
+    const latestPayoutByCompany = new Map();
+    for (const p of payouts) {
+      const c = (p.Company || p.company || '').trim();
+      if (!c) continue;
+      const y = parseInt(p.Year || p.year || 0, 10);
+      const m = parsePaymentMonthNum(p.Payment_month || p.payment_month) || 0;
+      const prev = latestPayoutByCompany.get(c);
+      if (!prev || y > prev.y || (y === prev.y && m > prev.m)) {
+        latestPayoutByCompany.set(c, { y, m, p });
       }
-      return d;
+    }
+    dividends = dividends.map((d) => {
+      const c = (d.Company || d.company || '').trim();
+      const pm = parsePaymentMonthNum(d.Payment_month || d.payment_month);
+      let row = { ...d, Payment_month: pm || d.Payment_month };
+      const lp = latestPayoutByCompany.get(c);
+      if (!lp) return row;
+      const picked = pickDividendPerShare({
+        announcement: lp.p.Dividend_announcement || lp.p.dividend_announcement || '',
+        calendarDps: row.Dividend_per_share || row.dividend_per_share,
+      });
+      const payoutMonth = parsePaymentMonthNum(lp.p.Payment_month || lp.p.payment_month);
+      return {
+        ...row,
+        Payment_month: payoutMonth || row.Payment_month,
+        Dividend_per_share: picked.dps > 0 ? picked.dps : row.Dividend_per_share,
+        Year: lp.y || row.Year || row.year,
+      };
     });
-    console.log('[Scraper] Applied', payouts.length, 'current payout dates from PSX');
+    console.log('[Scraper] Applied', latestPayoutByCompany.size, 'PSX payout notices (DPS + month)');
+  } else {
+    dividends = dividends.map((d) => ({
+      ...d,
+      Payment_month: parsePaymentMonthNum(d.Payment_month || d.payment_month) || d.Payment_month,
+    }));
   }
 
   const reportingCycles = buildReportingCycles(dividends);

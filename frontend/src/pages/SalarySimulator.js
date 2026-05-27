@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
+import HelpTip, { LabelWithTip, ThWithTip } from '../components/ui/HelpTip';
 
 function formatRs(n) {
   if (n == null || Number.isNaN(n)) return '—';
@@ -61,15 +62,23 @@ export default function SalarySimulator() {
   return (
     <div className="space-y-8">
       <div className="card p-4 sm:p-6 lg:p-8 max-w-xl">
-        <h3 className="card-header text-lg">Salary Replacement Simulator</h3>
+        <h3 className="card-header text-lg inline-flex items-center gap-2 flex-wrap">
+          Salary Replacement Simulator
+          <HelpTip text="A learning tool: enter the monthly cash you want from dividends and an average yield to see how much capital that implies. Not financial advice." />
+        </h3>
         <p className="card-subtitle mb-6">
           Estimate the portfolio value needed to replace your salary with dividend income, then get AI ideas on how
           many PSX names to hold and how to split the amount using today&apos;s saved news and dividend data.
         </p>
         <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-2">Target Monthly Income (Rs)</label>
+            <LabelWithTip
+              htmlFor="salary-target-income"
+              label="Target Monthly Income (Rs)"
+              tip="The after-tax monthly cash you would like from dividends alone (e.g. your current salary)."
+            />
             <input
+              id="salary-target-income"
               type="number"
               value={targetIncome}
               onChange={(e) => setTargetIncome(Number(e.target.value))}
@@ -77,8 +86,13 @@ export default function SalarySimulator() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-2">Expected Dividend Yield (%)</label>
+            <LabelWithTip
+              htmlFor="salary-yield-pct"
+              label="Expected Dividend Yield (%)"
+              tip="Average annual dividend yield you assume for the whole portfolio (e.g. 6 means Rs 6 income per Rs 100 invested per year)."
+            />
             <input
+              id="salary-yield-pct"
               type="number"
               value={yieldPct}
               onChange={(e) => setYieldPct(Number(e.target.value))}
@@ -93,7 +107,8 @@ export default function SalarySimulator() {
               onChange={(e) => setShariahOnly(e.target.checked)}
               className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
             />
-            Prefer PSX Shariah disclosure list only (for AI picks)
+            <span>Prefer PSX Shariah disclosure list only (for AI picks)</span>
+            <HelpTip text="When on, AI stock ideas are limited to symbols on the PSX Shariah-compliant list (PSX/N-1419). Does not change the math above." />
           </label>
           <button onClick={calculate} disabled={loading || aiLoading} className="btn-primary w-full py-3">
             {loading ? 'Calculating…' : aiLoading ? 'Loading AI ideas…' : 'Calculate & get AI allocation ideas'}
@@ -106,15 +121,24 @@ export default function SalarySimulator() {
           <h3 className="card-header text-lg mb-4">Results</h3>
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-teal-50 border border-teal-200">
-              <p className="text-sm text-slate-500">Required Portfolio Value</p>
+              <p className="text-sm text-slate-500 inline-flex items-center gap-1">
+                Required Portfolio Value
+                <HelpTip text="Portfolio size ≈ (monthly income × 12) ÷ yield%. Example: Rs 100k/month at 6% yield needs about Rs 20 million invested." />
+              </p>
               <p className="text-2xl font-bold text-teal-700">Rs {formatRs(result.requiredPortfolioValue)}</p>
             </div>
             <div className="flex justify-between text-slate-600">
-              <span>Annual Dividend at Target</span>
+              <span className="inline-flex items-center gap-1">
+                Annual Dividend at Target
+                <HelpTip text="Monthly target × 12 — the gross dividend cash you need per year before tax." />
+              </span>
               <span>Rs {formatRs(result.annualDividendAtTarget)}</span>
             </div>
             <div className="flex justify-between text-slate-600">
-              <span>Estimated Years to Dividend Independence</span>
+              <span className="inline-flex items-center gap-1">
+                Estimated Years to Dividend Independence
+                <HelpTip text="Rough placeholder if you save a fixed slice of income each year — for illustration only." />
+              </span>
               <span>{result.estimatedYearsToDividendIndependence} years</span>
             </div>
           </div>
@@ -188,10 +212,18 @@ export default function SalarySimulator() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 text-left">
-                        <th className="px-4 py-3 font-medium">Stock</th>
-                        <th className="px-4 py-3 font-medium text-right">Weight</th>
-                        <th className="px-4 py-3 font-medium text-right">Amount (Rs)</th>
-                        <th className="px-4 py-3 font-medium">Rationale</th>
+                        <ThWithTip className="px-4 py-3" tip="PSX symbol suggested by AI — verify dividend notices yourself.">
+                          Stock
+                        </ThWithTip>
+                        <ThWithTip className="px-4 py-3 text-right" tip="Share of your target portfolio value in this name (should sum to ~100%).">
+                          Weight
+                        </ThWithTip>
+                        <ThWithTip className="px-4 py-3 text-right" tip="Weight × required portfolio value from the calculator above.">
+                          Amount (Rs)
+                        </ThWithTip>
+                        <ThWithTip className="px-4 py-3" tip="Why the model grouped this name — uses saved news and dividend calendar, not live trading data.">
+                          Rationale
+                        </ThWithTip>
                       </tr>
                     </thead>
                     <tbody>

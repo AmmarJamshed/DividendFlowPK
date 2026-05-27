@@ -3,6 +3,7 @@ import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
 import DividendCalculator from '../components/DividendCalculator';
 import PageHero from '../components/ui/PageHero';
+import { ThWithTip } from '../components/ui/HelpTip';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_LONG = [
@@ -45,12 +46,21 @@ export default function DividendCalendar() {
     return [...new Set(dividends.map((d) => (d.Company || d.company || '').trim()).filter(Boolean))];
   }, [dividends]);
 
+  const paymentMonthNum = (d) => {
+    const raw = d.Payment_month ?? d.payment_month;
+    const n = parseInt(raw, 10);
+    if (n >= 1 && n <= 12) return n;
+    const iso = String(raw || '').match(/^(\d{4})-(\d{2})/);
+    if (iso) {
+      const m = parseInt(iso[2], 10);
+      return m >= 1 && m <= 12 ? m : null;
+    }
+    return null;
+  };
+
   const dividendsForSelected = useMemo(() => {
     if (!selectedMonth || !dividends?.length) return [];
-    return dividends.filter((d) => {
-      const pm = parseInt(d.Payment_month || d.payment_month || 0, 10);
-      return pm === selectedMonth;
-    });
+    return dividends.filter((d) => paymentMonthNum(d) === selectedMonth);
   }, [dividends, selectedMonth]);
 
   const selectedWeak = selectedMonth ? weakByMonth.get(selectedMonth) : null;
@@ -82,8 +92,40 @@ export default function DividendCalendar() {
         variant="light"
         eyebrow="Income planning"
         title="Dividend calendar & calculator"
-        description="Model expected dividend cash by payment month and review company payout schedules. Figures are derived from public PSX datasets — confirm dates and amounts with official announcements."
+        description="See which months pay the most dividends, estimate cash from your holdings, and read amounts aligned with PSX company notices. New to investing? Start with the glossary below — we explain every column in plain language."
       />
+
+      <details className="card p-4 sm:p-5 border-teal-200/80 bg-teal-50/40">
+        <summary className="cursor-pointer font-semibold text-teal-800 text-sm">
+          New here? Quick glossary (tap to expand)
+        </summary>
+        <ul className="mt-3 space-y-2 text-sm text-slate-600 list-disc pl-5">
+          <li>
+            <strong>Dividend per share (Rs)</strong> — cash the company plans to pay for each share you own for that
+            announcement. We derive this from the official PSX notice text (e.g. 85% of face value), not from
+            third-party yield sites.
+          </li>
+          <li>
+            <strong>Yield %</strong> — dividend per share divided by the latest saved share price in our dataset
+            (informational only).
+          </li>
+          <li>
+            <strong>Payment month</strong> — when cash is expected to reach shareholders (about one month after book
+            closure on PSX).
+          </li>
+          <li>
+            <strong>Interim vs Final</strong> — interim is paid during the year; final is usually with annual results.
+          </li>
+          <li>
+            Always confirm on{' '}
+            <a href="https://dps.psx.com.pk/payouts" className="text-teal-700 underline" target="_blank" rel="noopener noreferrer">
+              dps.psx.com.pk/payouts
+            </a>{' '}
+            and your broker before acting.
+          </li>
+        </ul>
+      </details>
+
       <DividendCalculator symbolList={symbolList} />
 
       <div className="card p-6">
@@ -188,30 +230,33 @@ export default function DividendCalendar() {
             <div className="p-8 text-center text-slate-500">No dividend rows for this payment month in the current dataset.</div>
           ) : (
             <div className="table-responsive">
-              {(() => {
-                const hasPsxAnnouncement = dividendsForSelected.some(
-                  (d) => (d.Dividend_announcement || d.dividend_announcement || '').trim()
-                );
-                return (
               <table className="w-full">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th className="text-left p-4 font-semibold text-slate-600">Company</th>
-                    <th className="text-left p-4 font-semibold text-slate-600">Sector</th>
-                    {hasPsxAnnouncement && (
-                      <th className="text-left p-4 font-semibold text-slate-600 min-w-[140px]">PSX announcement</th>
-                    )}
-                    <th className="text-left p-4 font-semibold text-slate-600">Dividend/Share</th>
-                    <th className="text-left p-4 font-semibold text-slate-600">Interim/Final</th>
-                    <th className="text-left p-4 font-semibold text-slate-600">Payment period</th>
-                    <th className="text-left p-4 font-semibold text-slate-600">Yield %</th>
+                    <th className="text-left p-4">Company</th>
+                    <th className="text-left p-4">Sector</th>
+                    <ThWithTip className="text-left p-4 min-w-[10rem]" tip="Exact wording from the company’s PSX dividend notice on dps.psx.com.pk (e.g. 85%(i))">
+                      PSX announcement
+                    </ThWithTip>
+                    <ThWithTip className="text-left p-4" tip="Rupees per share we calculate from the PSX notice (% of face value). Confirm before investing.">
+                      Dividend/Share (Rs)
+                    </ThWithTip>
+                    <ThWithTip className="text-left p-4" tip="Interim = paid during the year. Final = usually with annual results.">
+                      Interim/Final
+                    </ThWithTip>
+                    <ThWithTip className="text-left p-4" tip="Month and year when cash is expected in your account (from PSX payment schedule).">
+                      Payment period
+                    </ThWithTip>
+                    <ThWithTip className="text-left p-4" tip="Dividend per share ÷ latest saved price in our dataset — not a buy recommendation.">
+                      Yield %
+                    </ThWithTip>
                   </tr>
                 </thead>
                 <tbody>
                   {dividendsForSelected.map((d, idx) => {
-                    const pm = d.Payment_month || d.payment_month;
+                    const pm = paymentMonthNum(d);
                     const yr = d.Year || d.year;
-                    const period = `${MONTH_SHORT[pm - 1] || pm} ${yr}`;
+                    const period = pm ? `${MONTH_SHORT[pm - 1]} ${yr}` : `${d.Payment_month || '—'} ${yr}`;
                     const type = d.Type || d.dividendType || 'Interim';
                     const isFinal = type === 'Final';
                     const ann = (d.Dividend_announcement || d.dividend_announcement || '').trim();
@@ -219,10 +264,31 @@ export default function DividendCalendar() {
                       <tr key={`${d.Company || d.company}-${idx}`} className="border-t border-slate-100 hover:bg-teal-50/50 transition-colors">
                         <td className="p-4 font-medium text-slate-700">{d.Company || d.company}</td>
                         <td className="p-4 text-slate-500">{d.Sector || d.sector}</td>
-                        {hasPsxAnnouncement && (
-                          <td className="p-4 text-slate-600 text-sm max-w-xs">{ann || '—'}</td>
-                        )}
-                        <td className="p-4">{d.Dividend_per_share || d.dividend_per_share || '—'}</td>
+                        <td className="p-4 text-slate-600 text-sm max-w-[14rem]">
+                          {ann ? (
+                            <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded-md break-words" title={ann}>
+                              {ann}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <span className="font-medium text-slate-800">
+                            {d.Dividend_per_share || d.dividend_per_share || '—'}
+                          </span>
+                          {d.dps_source === 'psx_announcement' && (
+                            <span className="block text-[10px] text-emerald-700 font-medium mt-0.5">
+                              From PSX notice
+                              {d.dps_par_value ? ` (face Rs ${d.dps_par_value})` : ''}
+                            </span>
+                          )}
+                          {d.calendar_dps_mismatch && (
+                            <span className="block text-[10px] text-amber-700 mt-0.5">
+                              Corrected vs old calendar file
+                            </span>
+                          )}
+                        </td>
                         <td className="p-4">
                           <span
                             className={`px-2 py-1 rounded-lg font-medium text-xs ${
@@ -250,8 +316,6 @@ export default function DividendCalendar() {
                   })}
                 </tbody>
               </table>
-                );
-              })()}
             </div>
           )}
         </div>
