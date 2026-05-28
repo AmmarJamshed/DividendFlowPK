@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../api';
+import SymbolAutocomplete from './SymbolAutocomplete';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
@@ -409,7 +409,9 @@ export default function DividendCalculator({ symbolList = [] }) {
         {mode === 'manual' && (
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div className="px-4 sm:px-5 py-3 border-b border-slate-100 bg-slate-50/80 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm text-slate-600">Autocomplete uses dividend-paying symbols only</p>
+              <p className="text-sm text-slate-600">
+                Type a symbol or company name — pick from the list (symbol + full company name)
+              </p>
               {filledRows > 0 && (
                 <span className="badge-pill bg-emerald-50 text-emerald-800 border-emerald-200">
                   {filledRows} row{filledRows !== 1 ? 's' : ''} ready
@@ -421,7 +423,7 @@ export default function DividendCalculator({ symbolList = [] }) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-100">
-                    <th className="px-4 py-3 font-semibold w-[45%]">Symbol</th>
+                    <th className="px-4 py-3 font-semibold w-[45%]">Symbol / company</th>
                     <th className="px-4 py-3 font-semibold">Shares held</th>
                     <th className="px-4 py-3 w-12" aria-label="Remove" />
                   </tr>
@@ -430,14 +432,11 @@ export default function DividendCalculator({ symbolList = [] }) {
                   {rows.map((row, idx) => (
                     <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
                       <td className="px-4 py-2">
-                        <input
-                          list="psx-symbol-list"
+                        <SymbolAutocomplete
                           value={row.symbol}
-                          onChange={(e) => updateRow(idx, 'symbol', e.target.value.toUpperCase())}
+                          onChange={(sym) => updateRow(idx, 'symbol', sym)}
+                          options={symbolOptions}
                           placeholder="HBL"
-                          autoComplete="off"
-                          spellCheck={false}
-                          className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600 focus:outline-none uppercase font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400"
                         />
                         {symbolToName.get(String(row.symbol || '').trim().toUpperCase()) && (
                           <p className="text-[11px] text-slate-500 mt-1 truncate">
@@ -472,16 +471,6 @@ export default function DividendCalculator({ symbolList = [] }) {
                 </tbody>
               </table>
             </div>
-
-            <datalist id="psx-symbol-list">
-              {symbolOptions.map((opt) => (
-                <option
-                  key={opt.symbol}
-                  value={opt.symbol}
-                  label={opt.companyName ? `${opt.symbol} — ${opt.companyName}` : opt.symbol}
-                />
-              ))}
-            </datalist>
 
             <div className="px-4 sm:px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center gap-3">
               <button
@@ -556,11 +545,6 @@ export default function DividendCalculator({ symbolList = [] }) {
         )}
 
         {result && <CalculatorResults result={result} />}
-        <div className="rounded-xl border border-teal-200 bg-teal-50/50 px-4 py-3">
-          <Link to="/dividend-calendar" className="text-sm font-semibold text-teal-700 hover:underline">
-            If you wish to know how much dividends you&apos;ll get this time, please click here.
-          </Link>
-        </div>
       </div>
     </section>
   );

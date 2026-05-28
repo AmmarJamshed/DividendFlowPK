@@ -360,6 +360,12 @@ async function getEnrichedDividends() {
   const payoutRows = await readCSV(payoutsPath);
 
   const latestPrices = await getLatestPrices();
+  const companyNameBySymbol = new Map();
+  for (const p of payoutRows) {
+    const sym = (p.Company || p.company || '').trim();
+    const name = (p.CompanyName || p.companyName || '').trim();
+    if (sym && name) companyNameBySymbol.set(sym, name);
+  }
   let cyclesMap = new Map();
   try {
     const cycles = await readCSV(path.join(DATA_PATH, 'financials', 'psx_quarter_cycles.csv'));
@@ -423,6 +429,7 @@ async function getEnrichedDividends() {
     const type = inferDividendType(company, paymentMonth, cyclesMap);
     return {
       ...d,
+      CompanyName: companyNameBySymbol.get(company) || d.CompanyName || d.companyName || '',
       Payment_month: paymentMonth || d.Payment_month,
       payment_month: paymentMonth || d.payment_month,
       Dividend_per_share: divPerShare,

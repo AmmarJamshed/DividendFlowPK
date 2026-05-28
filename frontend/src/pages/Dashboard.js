@@ -8,6 +8,7 @@ import DashboardMarketChat from '../components/DashboardMarketChat';
 import PageHero from '../components/ui/PageHero';
 import MetricCard from '../components/ui/MetricCard';
 import HelpTip from '../components/ui/HelpTip';
+import DividendCalculatorCta from '../components/DividendCalculatorCta';
 import QuickActionGrid from '../components/ui/QuickActionGrid';
 import DashboardNewsPanel from '../components/DashboardNewsPanel';
 import { buildDashboardRiskAlerts, getPktDateString } from '../utils/dashboardRiskAlerts';
@@ -215,6 +216,8 @@ export default function Dashboard() {
           Dividend calendar
         </Link>
       </PageHero>
+
+      <DividendCalculatorCta />
 
       <DashboardNewsPanel
         riskAlerts={riskAlerts}
