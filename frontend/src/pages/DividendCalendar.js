@@ -4,7 +4,6 @@ import Disclaimer from '../components/Disclaimer';
 import DividendCalculator from '../components/DividendCalculator';
 import PageHero from '../components/ui/PageHero';
 import { ThWithTip } from '../components/ui/HelpTip';
-import DividendCalculatorCta from '../components/DividendCalculatorCta';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_LONG = [
@@ -137,8 +136,6 @@ export default function DividendCalendar() {
           </li>
         </ul>
       </details>
-
-      <DividendCalculatorCta />
 
       <DividendCalculator symbolList={symbolList} />
 
