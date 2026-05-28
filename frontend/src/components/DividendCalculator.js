@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
@@ -260,10 +261,29 @@ export default function DividendCalculator({ symbolList = [] }) {
       .catch(() => setMarketSymbolCount(null));
   }, []);
 
-  const symbols = useMemo(() => {
-    const set = new Set(symbolList.map((s) => String(s).trim().toUpperCase()).filter(Boolean));
-    return [...set].sort();
+  const symbolOptions = useMemo(() => {
+    const bySymbol = new Map();
+    (symbolList || []).forEach((entry) => {
+      if (typeof entry === 'string') {
+        const symbol = String(entry).trim().toUpperCase();
+        if (!symbol) return;
+        if (!bySymbol.has(symbol)) bySymbol.set(symbol, { symbol, companyName: '' });
+        return;
+      }
+      const symbol = String(entry?.symbol || entry?.company || '').trim().toUpperCase();
+      if (!symbol) return;
+      const companyName = String(entry?.companyName || entry?.name || '').trim();
+      const prev = bySymbol.get(symbol);
+      bySymbol.set(symbol, { symbol, companyName: companyName || prev?.companyName || '' });
+    });
+    return [...bySymbol.values()].sort((a, b) => a.symbol.localeCompare(b.symbol));
   }, [symbolList]);
+
+  const symbolToName = useMemo(() => {
+    const m = new Map();
+    symbolOptions.forEach((opt) => m.set(opt.symbol, opt.companyName || ''));
+    return m;
+  }, [symbolOptions]);
 
   const filledRows = useMemo(
     () => rows.filter((r) => r.symbol.trim() && parseFloat(r.shares) > 0).length,
@@ -374,7 +394,7 @@ export default function DividendCalculator({ symbolList = [] }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="rounded-xl border border-slate-200 bg-white p-3">
             <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Dividend universe</p>
-            <p className="text-lg font-bold text-slate-900 tabular-nums">{symbols.length} symbols</p>
+            <p className="text-lg font-bold text-slate-900 tabular-nums">{symbolOptions.length} symbols</p>
             <p className="text-xs text-slate-500 mt-1">Companies with payout records in our calendar file</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-3">
@@ -419,6 +439,12 @@ export default function DividendCalculator({ symbolList = [] }) {
                           spellCheck={false}
                           className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600 focus:outline-none uppercase font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400"
                         />
+                        {symbolToName.get(String(row.symbol || '').trim().toUpperCase()) && (
+                          <p className="text-[11px] text-slate-500 mt-1 truncate">
+                            {String(row.symbol || '').trim().toUpperCase()} —{' '}
+                            {symbolToName.get(String(row.symbol || '').trim().toUpperCase())}
+                          </p>
+                        )}
                       </td>
                       <td className="px-4 py-2">
                         <input
@@ -448,8 +474,12 @@ export default function DividendCalculator({ symbolList = [] }) {
             </div>
 
             <datalist id="psx-symbol-list">
-              {symbols.map((s) => (
-                <option key={s} value={s} />
+              {symbolOptions.map((opt) => (
+                <option
+                  key={opt.symbol}
+                  value={opt.symbol}
+                  label={opt.companyName ? `${opt.symbol} — ${opt.companyName}` : opt.symbol}
+                />
               ))}
             </datalist>
 
@@ -526,6 +556,11 @@ export default function DividendCalculator({ symbolList = [] }) {
         )}
 
         {result && <CalculatorResults result={result} />}
+        <div className="rounded-xl border border-teal-200 bg-teal-50/50 px-4 py-3">
+          <Link to="/dividend-calendar" className="text-sm font-semibold text-teal-700 hover:underline">
+            If you wish to know how much dividends you&apos;ll get this time, please click here.
+          </Link>
+        </div>
       </div>
     </section>
   );

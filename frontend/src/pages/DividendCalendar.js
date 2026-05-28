@@ -43,7 +43,18 @@ export default function DividendCalendar() {
 
   const symbolList = useMemo(() => {
     if (!dividends?.length) return [];
-    return [...new Set(dividends.map((d) => (d.Company || d.company || '').trim()).filter(Boolean))];
+    const bySymbol = new Map();
+    dividends.forEach((d) => {
+      const symbol = (d.Company || d.company || '').trim().toUpperCase();
+      if (!symbol) return;
+      const companyName = (d.CompanyName || d.companyName || '').trim();
+      const prev = bySymbol.get(symbol);
+      bySymbol.set(symbol, {
+        symbol,
+        companyName: companyName || prev?.companyName || '',
+      });
+    });
+    return [...bySymbol.values()];
   }, [dividends]);
 
   const paymentMonthNum = (d) => {
