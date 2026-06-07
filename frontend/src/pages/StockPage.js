@@ -13,7 +13,7 @@ import {
 import { api } from '../api';
 import { getExchange } from '../config/exchanges';
 import { formatMoney, formatPct } from '../utils/formatMoney';
-import { getWatchlistSessionId } from '../context/ExchangeContext';
+import { getWatchlistSessionId, useExchange } from '../context/ExchangeContext';
 import PageHero from '../components/ui/PageHero';
 import MetricCard from '../components/ui/MetricCard';
 import Disclaimer from '../components/Disclaimer';
@@ -22,10 +22,15 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip,
 
 export default function StockPage() {
   const { exchange, symbol } = useParams();
+  const { setExchange } = useExchange();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [watchlisted, setWatchlisted] = useState(false);
   const exCfg = getExchange(exchange);
+
+  useEffect(() => {
+    if (exchange) setExchange(exchange);
+  }, [exchange, setExchange]);
 
   useEffect(() => {
     setLoading(true);

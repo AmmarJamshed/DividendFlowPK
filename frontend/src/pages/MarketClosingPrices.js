@@ -14,7 +14,7 @@ function formatNum(n) {
   return Number(n).toLocaleString('en-PK', { maximumFractionDigits: 2 });
 }
 
-function AICommentary({ summary }) {
+function AICommentary({ summary, exchangeName }) {
   if (!summary) return null;
   const { totalCompanies, topGainer, topLoser, date } = summary;
   const sentiment = totalCompanies > 0
@@ -33,7 +33,7 @@ function AICommentary({ summary }) {
       </h3>
       <p className="text-neutral-700 text-sm leading-relaxed">
         {date ? `As of ${date}: ` : ''}
-        Today&apos;s Pakistan Stock Exchange session closed {sentiment.toLowerCase()}{sectorNote}
+        Latest {exchangeName} session closed {sentiment.toLowerCase()}{sectorNote}
         {' '}Total companies traded: <strong className="text-slate-700">{formatNum(totalCompanies)}</strong>.
         {topGainer && (
           <> Top performer: <strong className="text-emerald-600">{topGainer.symbol} +{topGainer.changePct.toFixed(1)}%</strong>.</>
@@ -151,7 +151,7 @@ export default function MarketClosingPrices() {
         description={
           exchange === 'PSX'
             ? 'Search symbols, sort by session and weekly change, and filter the PSX Shariah disclosure list. Sourced from archived scrape files, updated weekdays after the close.'
-            : `Latest closes for ${exchangeConfig.code} from DividendFlow cloud database. Select PSX in the header for Pakistan market data.`
+            : `Latest ${exchangeConfig.code} closes (${exchangeConfig.currency}) from DividendFlow cloud database. Switch market in the banner above to compare exchanges.`
         }
       >
         <Link to="/dividend-calendar" className="btn-primary">
@@ -185,7 +185,7 @@ export default function MarketClosingPrices() {
         />
       </div>
 
-      <AICommentary summary={data.summary} />
+      <AICommentary summary={data.summary} exchangeName={exchangeConfig.name} />
       <div className="rounded-2xl bg-white/90 border border-slate-200 shadow-lg shadow-slate-300/20 overflow-hidden backdrop-blur-sm">
         <div className="p-4 border-b border-slate-200 flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">

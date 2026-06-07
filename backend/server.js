@@ -1647,6 +1647,13 @@ app.post('/api/market-chat', async (req, res) => {
     const message = String(req.body?.message || '').trim().slice(0, 2000);
     const exchange = req.body?.exchange || exchangeService.DEFAULT_EXCHANGE;
     const symbol = req.body?.symbol || null;
+    const holdings = Array.isArray(req.body?.holdings) ? req.body.holdings.slice(0, 25) : [];
+    const chatHistory = Array.isArray(req.body?.history)
+      ? req.body.history.slice(-8).map((m) => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          text: String(m.text || '').slice(0, 500),
+        }))
+      : [];
     if (!message) {
       return res.status(400).json({ ok: false, reply: 'Type a question first.' });
     }
@@ -1655,21 +1662,33 @@ app.post('/api/market-chat', async (req, res) => {
     const dataBlock = buildMarketChatContextText(payload);
     const digest = buildSiteDataDigest();
 
-    const { systemPrompt, userBlock, confidenceHint } = await aiPipeline.prepareMarketChatContext({
+    const ctx = await aiPipeline.prepareMarketChatContext({
       message,
       exchange,
       symbol,
+      holdings,
+      chatHistory,
       legacyDigest: digest,
       legacyDataBlock: dataBlock,
     });
 
-    const out = await groqMarketChat(systemPrompt, userBlock);
+    const out = await groqMarketChat(ctx.systemPrompt, ctx.userBlock);
+    if (out.ok && out.reply) {
+      aiPipeline.persistChatInsight(ctx.exchange, ctx.focusSymbol, out.reply, ctx.confidenceHint).catch(() => {});
+    }
     res.json({
       ok: out.ok,
       reply: out.reply,
       disclaimer: INVESTMENT_DISCLAIMER,
-      exchange,
-      confidenceHint,
+      exchange: ctx.exchange,
+      intent: ctx.intent,
+      confidence: ctx.confidenceHint,
+      confidenceHint: ctx.confidenceHint,
+      sources: {
+        database: true,
+        scrapes: true,
+        sentiment: Boolean(ctx.retrieval?.tools?.sentiment?.aggregate),
+      },
     });
   } catch (err) {
     res.status(500).json({
@@ -1786,26 +1805,23 @@ ${elementContext}`;
 // GET /api/data-status - Last updated timestamp for PSX data (+ Supabase sync info)
 app.get('/api/data-status', async (req, res) => {
   try {
-    const files = [
-      path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv'),
-      path.join(DATA_PATH, 'financials', 'psx_quarter_cycles.csv'),
-      path.join(DATA_PATH, 'prices', 'psx_prices_sample.csv')
-    ];
-    let lastModified = 0;
-    files.forEach(f => {
-      if (fs.existsSync(f)) {
-        const mtime = fs.statSync(f).mtimeMs;
-        if (mtime > lastModified) lastModified = mtime;
-      }
-    });
-    const date = new Date(lastModified || Date.now());
+    const scrapeFreshness = require('./services/scrapeFreshness');
+    const freshness = await scrapeFreshness.getScrapeFreshnessReport();
+    const priceSource = freshness.sources?.psx_prices;
+    const lastDataDate = priceSource?.maxDataDate;
+    const date = lastDataDate ? new Date(`${lastDataDate}T12:00:00Z`) : new Date();
     const supabaseMeta = await dataStore.getDataStatusExtra();
     res.json({
       lastUpdated: date.toISOString(),
       formatted: date.toLocaleString('en-PK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      latestTradingDate: lastDataDate,
+      todayPkt: freshness.todayPkt,
+      scrapeVerified: freshness.verified,
+      scrapeStatus: freshness.overallStatus,
+      scrapeSources: freshness.sources,
       storage: supabaseMeta.storage,
       supabaseConfigured: supabaseMeta.supabaseConfigured,
-      lastSync: supabaseMeta.lastSync || null,
+      lastSync: supabaseMeta.lastSync || freshness.supabase?.lastSync || null,
       rowCounts: supabaseMeta.rowCounts || null,
       marketCloseNotice: supabaseMeta.marketCloseNotice || MARKET_CLOSE_NOTICE,
       exchanges: exchangeService.listExchanges().map((e) => ({
@@ -1815,7 +1831,18 @@ app.get('/api/data-status', async (req, res) => {
       })),
     });
   } catch (err) {
-    res.json({ lastUpdated: new Date().toISOString(), formatted: new Date().toLocaleString() });
+    res.json({ lastUpdated: new Date().toISOString(), formatted: new Date().toLocaleString(), error: err.message });
+  }
+});
+
+// GET /api/scrape-freshness — detailed verification of scrape file dates vs expected trading day
+app.get('/api/scrape-freshness', async (req, res) => {
+  try {
+    const scrapeFreshness = require('./services/scrapeFreshness');
+    const report = await scrapeFreshness.getScrapeFreshnessReport();
+    res.json(report);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

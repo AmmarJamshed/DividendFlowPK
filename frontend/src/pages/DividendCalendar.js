@@ -4,6 +4,8 @@ import Disclaimer from '../components/Disclaimer';
 import DividendCalculator from '../components/DividendCalculator';
 import PageHero from '../components/ui/PageHero';
 import { ThWithTip } from '../components/ui/HelpTip';
+import { useExchange } from '../context/ExchangeContext';
+import { normalizeDividendRows, buildMonthCoverageFromDividends } from '../utils/exchangeDashboard';
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_LONG = [
@@ -12,17 +14,34 @@ const MONTH_LONG = [
 ];
 
 export default function DividendCalendar() {
+  const { exchange, exchangeConfig } = useExchange();
+  const isPsx = exchange === 'PSX';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(null);
 
   useEffect(() => {
-    api
-      .getMonthCoverage()
-      .then((res) => setData(res.data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+    setLoading(true);
+    setSelectedMonth(null);
+    const load = async () => {
+      try {
+        if (isPsx) {
+          const res = await api.getMonthCoverage();
+          setData(res.data);
+        } else {
+          const res = await api.getMarketDividends(exchange);
+          const dividends = normalizeDividendRows(res.data?.rows || [], exchange);
+          setData(buildMonthCoverageFromDividends(dividends));
+        }
+      } catch (e) {
+        console.error(e);
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [exchange, isPsx]);
 
   const { monthCoverage, weakMonths, dividends } = data || {
     monthCoverage: {},
@@ -83,7 +102,7 @@ export default function DividendCalendar() {
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
-          <p className="text-slate-500">Loading dividend calendar...</p>
+          <p className="text-slate-500">Loading {exchangeConfig.name} dividend calendar…</p>
         </div>
       </div>
     );
@@ -101,9 +120,13 @@ export default function DividendCalendar() {
     <div className="space-y-6">
       <PageHero
         variant="light"
-        eyebrow="Income planning"
+        eyebrow={`${exchangeConfig.code} · Income planning`}
         title="Dividend calendar & calculator"
-        description="See which months pay the most dividends, estimate cash from your holdings, and read amounts aligned with PSX company notices. New to investing? Start with the glossary below — we explain every column in plain language."
+        description={
+          isPsx
+            ? 'See which months pay the most dividends, estimate cash from your holdings, and read amounts aligned with PSX company notices. New to investing? Start with the glossary below — we explain every column in plain language.'
+            : `Payment months and yields for ${exchangeConfig.name} (${exchangeConfig.currency}). PSX notice columns below apply only when viewing Pakistan listings.`
+        }
       />
 
       <details className="card p-4 sm:p-5 border-teal-200/80 bg-teal-50/40">

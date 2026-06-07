@@ -360,32 +360,10 @@ function applyDividendFilters(rows, filters) {
   return out;
 }
 
-async function retrieveForAi(exchangeCode, symbol, question) {
-  const tools = { prices: null, dividends: null, news: null, metrics: null, forecast: null };
-  const code = exchangeService.normalizeExchangeCode(exchangeCode || 'PSX');
-
-  if (symbol) {
-    const detail = await getStockDetail(code, symbol);
-    if (detail) {
-      tools.prices = detail.price;
-      tools.dividends = detail.dividends;
-      tools.news = detail.news?.slice(0, 5);
-      tools.metrics = detail.metrics;
-    }
-  } else if (code === 'PSX') {
-    const psx = await getClosingPrices('PSX');
-    tools.prices = { topMovers: psx.rows?.slice(0, 15) };
-  } else {
-    const market = await getClosingPrices(code);
-    tools.prices = { topMovers: market.rows?.slice(0, 15) };
-  }
-
-  const q = String(question || '').toLowerCase();
-  if (q.includes('dividend') && !tools.dividends) {
-    tools.dividends = await getDividendsForExchange(code, {});
-  }
-
-  return { exchange: code, symbol: symbol || null, tools };
+async function retrieveForAi(exchangeCode, symbol, question, holdings) {
+  const { retrieveEnhanced } = require('./aiPipeline');
+  const retrieval = await retrieveEnhanced(exchangeCode, symbol, question, holdings);
+  return retrieval;
 }
 
 module.exports = {

@@ -80,9 +80,30 @@ async function main() {
         PreviousPrice: parseFloat(r.PreviousPrice) || 0,
         Change: parseFloat(r.Change) || 0,
         ChangePct: parseFloat(r.ChangePct) || 0,
-      })).filter(x => x.Company && (x.ChangePct !== 0 || x.Change !== 0));
+      })).filter(x => x.Company);
       priceChanges.forEach(p => currentPrices.set(p.Company, p.Price));
-      console.log('[Prices] Loaded', priceChanges.length, 'price changes from psx.py (GitHub Actions)');
+      console.log('[Prices] Loaded', priceChanges.length, 'price rows from psx.py (GitHub Actions)');
+    }
+  }
+
+  // Fall back to psx_full_dataset when price_changes has no movers (flat day)
+  if (priceChanges.every(p => p.ChangePct === 0)) {
+    const fullPath = join(DATA, 'prices', 'psx_full_dataset.csv');
+    if (existsSync(fullPath)) {
+      const full = loadDividendCsv(fullPath);
+      const movers = full
+        .map(r => ({
+          Company: r.symbol || r.Symbol || r.Company,
+          Price: parseFloat(r.close || r.Close || r.Price) || 0,
+          ChangePct: parseFloat(String(r.change_pct || r.ChangePct || '0').replace('%', '')) || 0,
+        }))
+        .filter(x => x.Company && x.Price > 0)
+        .sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
+      if (movers.some(m => m.ChangePct !== 0)) {
+        priceChanges = movers;
+        movers.forEach(p => currentPrices.set(p.Company, p.Price));
+        console.log('[Prices] Using psx_full_dataset movers:', movers.filter(m => m.ChangePct !== 0).length);
+      }
     }
   }
   
@@ -116,10 +137,11 @@ async function main() {
   }
 
   const priceCommentary = [];
-  // Cover more movers so dashboard rotation still finds Groq commentary (was top 5+5 only).
   const topGainers = priceChanges.filter(c => c.ChangePct > 0).slice(0, 15);
   const topDecliners = priceChanges.filter(c => c.ChangePct < 0).slice(0, 15);
-  for (const c of [...topGainers, ...topDecliners]) {
+  const movers = [...topGainers, ...topDecliners];
+  const commentaryTargets = movers.length > 0 ? movers : priceChanges.slice(0, 10);
+  for (const c of commentaryTargets) {
     const headlines = newsByCompany[c.Company] || [];
     const comment = await getGroqPriceCommentary(
       c.Company,

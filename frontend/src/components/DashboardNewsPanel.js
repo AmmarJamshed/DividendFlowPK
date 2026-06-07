@@ -1,56 +1,94 @@
 import { Link } from 'react-router-dom';
 import { getPktDateString, MIN_PRICE_MOVE_PCT } from '../utils/dashboardRiskAlerts';
+import { stockPath } from '../config/exchanges';
 
 /**
- * Headline alerts paired with price moves — shown prominently on the dashboard.
+ * Headline alerts (PSX) or price movers (global) — shown prominently on the dashboard.
  */
-export default function DashboardNewsPanel({ riskAlerts, dailyNews, onSelectAlert }) {
+export default function DashboardNewsPanel({
+  riskAlerts,
+  dailyNews,
+  exchange,
+  exchangeConfig,
+  tradeDate,
+  onSelectAlert,
+}) {
+  const isPsx = exchange === 'PSX';
   const headlineCount = (dailyNews?.news || []).length;
+  const marketName = exchangeConfig?.name || exchange;
 
   return (
     <section
       className="section-zone section-zone--news p-5 sm:p-6 flex flex-col"
       aria-labelledby="dashboard-news-heading"
     >
-      <span className="section-zone-tag">News &amp; headlines</span>
+      <span className="section-zone-tag">{isPsx ? 'News & headlines' : 'Market movers'}</span>
       <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
         <div>
           <h3 id="dashboard-news-heading" className="card-header text-lg">
-            News linked to price moves
+            {isPsx ? 'News linked to price moves' : `${exchange} session movers & dividend context`}
           </h3>
           <p className="card-subtitle">
-            We pair a real headline with a big same-day price swing (about {MIN_PRICE_MOVE_PCT}% or more). Macro news
-            (rates, IMF) may appear beside a stock that moved sharply. <strong>Tap a card</strong> to read the story —
-            informational only, not a trading signal.
+            {isPsx ? (
+              <>
+                We pair a real headline with a big same-day price swing (about {MIN_PRICE_MOVE_PCT}% or more). Macro news
+                (rates, IMF) may appear beside a stock that moved sharply. <strong>Tap a card</strong> to read the story —
+                informational only, not a trading signal.
+              </>
+            ) : (
+              <>
+                Latest <strong>{marketName}</strong> closes from DividendFlow&apos;s database ({exchangeConfig?.currency}).
+                Headline scrapes are PSX-only today; global markets show largest price moves from archived closes.
+              </>
+            )}
           </p>
         </div>
-        {headlineCount > 0 && (
+        {isPsx && headlineCount > 0 && (
           <span className="badge-pill bg-violet-50 text-violet-800 border-violet-200 shrink-0">
             {headlineCount} headline{headlineCount === 1 ? '' : 's'} in feed
           </span>
         )}
+        {!isPsx && riskAlerts.length > 0 && (
+          <span className="badge-pill bg-teal-50 text-teal-800 border-teal-200 shrink-0">
+            {exchange} · {riskAlerts.length} mover{riskAlerts.length === 1 ? '' : 's'}
+          </span>
+        )}
       </div>
-      {(riskAlerts[0]?.rotationDate || dailyNews?.news?.length > 0 || dailyNews?.priceChanges?.length > 0) && (
+      {(tradeDate || riskAlerts[0]?.rotationDate || dailyNews?.priceChanges?.length > 0) && (
         <p className="text-[11px] text-slate-500 mt-1">
-          Pakistan time (PKT):{' '}
-          <span className="font-medium text-slate-600">{riskAlerts[0]?.rotationDate || getPktDateString()}</span>
-          <span className="block mt-0.5">Refreshed daily after market close.</span>
+          {isPsx ? 'Pakistan time (PKT):' : 'Latest close:'}{' '}
+          <span className="font-medium text-slate-600">
+            {riskAlerts[0]?.rotationDate || tradeDate || getPktDateString()}
+          </span>
+          <span className="block mt-0.5">
+            {isPsx ? 'Refreshed daily after market close.' : `Data for ${exchangeConfig?.code} — switch market in the banner to compare exchanges.`}
+          </span>
         </p>
       )}
       <ul className="mt-4 space-y-4 flex-1 max-h-[min(560px,70vh)] overflow-y-auto pr-1">
         {riskAlerts.length === 0 ? (
           <li className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
-            <p className="font-medium text-slate-700 mb-1">No qualifying alerts</p>
+            <p className="font-medium text-slate-700 mb-1">
+              {isPsx ? 'No qualifying alerts' : `No ${exchange} movers yet`}
+            </p>
             <p className="mb-2">
-              Nothing matched <strong>today</strong>: we look for a <strong>news headline</strong> plus a move of at
-              least {MIN_PRICE_MOVE_PCT}% for that company (or a major market/policy story tied to a large decliner).
-              Check back after the next session.
+              {isPsx ? (
+                <>
+                  Nothing matched <strong>today</strong>: we look for a <strong>news headline</strong> plus a move of at
+                  least {MIN_PRICE_MOVE_PCT}% for that company (or a major market/policy story tied to a large decliner).
+                  Check back after the next session.
+                </>
+              ) : (
+                <>
+                  No price changes loaded for <strong>{marketName}</strong> yet. Run the global ingest workflow or check
+                  back after the next market close.
+                </>
+              )}
             </p>
             <p>
               <Link to="/market-closing-prices" className="btn-link">
-                Market closing prices
-              </Link>{' '}
-              — see session moves for more tickers.
+                {exchange} market data
+              </Link>
             </p>
           </li>
         ) : (
@@ -78,7 +116,13 @@ export default function DashboardNewsPanel({ riskAlerts, dailyNews, onSelectAler
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${levelStyles.dot}`} aria-hidden />
-                      <span className="font-semibold text-slate-800">{r.company}</span>
+                      <Link
+                        to={stockPath(exchange, r.company)}
+                        className="font-semibold text-teal-700 hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {r.company}
+                      </Link>
                       <span className={`text-xs px-2 py-0.5 rounded-lg border font-bold ${levelStyles.badge}`}>
                         {r.level}
                       </span>
@@ -89,7 +133,12 @@ export default function DashboardNewsPanel({ riskAlerts, dailyNews, onSelectAler
                       )}
                       {r.kind === 'macro_link' && (
                         <span className="text-[10px] uppercase tracking-wide text-violet-700 font-semibold">
-                          Macro / PSX
+                          Macro / {exchange}
+                        </span>
+                      )}
+                      {r.kind === 'mover' && (
+                        <span className="text-[10px] uppercase tracking-wide text-blue-700 font-semibold">
+                          {exchange} close
                         </span>
                       )}
                     </div>
@@ -126,7 +175,7 @@ export default function DashboardNewsPanel({ riskAlerts, dailyNews, onSelectAler
                   </div>
                   <div className="mt-3 pt-3 border-t border-amber-200/90">
                     <p className="text-[10px] uppercase tracking-wide text-amber-800/80 font-semibold mb-1">
-                      AI summary (preview)
+                      {isPsx ? 'AI summary (preview)' : 'Research note'}
                     </p>
                     <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">{r.message}</p>
                   </div>

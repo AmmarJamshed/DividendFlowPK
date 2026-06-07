@@ -75,7 +75,8 @@ function ChatMessageBody({ text }) {
  */
 export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
   const isDrawer = variant === 'drawer';
-  const { input, setInput, messages, loading, send, scrollRef, inputRef, suggestions } = useMarketBuddy();
+  const { input, setInput, messages, loading, send, scrollRef, inputRef, suggestions, exchange, exchangeConfig } =
+    useMarketBuddy();
 
   const threadMaxH = isDrawer ? 'max-h-[min(20rem,40vh)]' : 'max-h-[min(26rem,55vh)]';
 
@@ -93,11 +94,12 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
               {isDrawer ? 'Market Buddy' : 'Research assistant · +20 XP'}
             </p>
             <h2 className={`font-bold tracking-tight leading-tight text-white ${isDrawer ? 'text-lg' : 'text-xl sm:text-2xl'}`}>
-              {isDrawer ? 'Ask about PSX data' : 'Market research chat'}
+              {isDrawer ? `Ask about ${exchange} data` : `${exchangeConfig.name} research chat`}
             </h2>
             {!isDrawer && (
               <p className="mt-2 text-sm text-teal-50/95 leading-relaxed max-w-2xl">
-                Query the same archived PSX price and news files shown on this dashboard. Outputs are
+                Query archived {exchange} prices, dividends, and database insights for {exchangeConfig.currency} markets.
+                Outputs are research-only — not buy/sell advice.
                 generated summaries — not live quotes or investment recommendations.
               </p>
             )}
@@ -118,8 +120,8 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
       {!isDrawer && (
         <div className="px-5 sm:px-6 py-3 bg-neutral-50 border-b border-neutral-200">
           <p className="text-xs text-neutral-600 leading-relaxed">
-            <span className="font-semibold text-neutral-800">Disclaimer:</span> Responses are model-generated from
-            saved CSVs and may be incomplete. Not investment, tax, or legal advice.
+            <span className="font-semibold text-neutral-800">Disclaimer:</span> Answers use Supabase + scrape archives
+            only. Research ideas — not buy/sell advice.
           </p>
         </div>
       )}
@@ -159,7 +161,14 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
                 {!isUser && <BuddyAvatar size="sm" />}
                 <div className={`min-w-0 max-w-[min(100%,24rem)] ${isUser ? 'ml-4' : 'mr-1'}`}>
                   {!isUser && (
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Buddy</p>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">Buddy</p>
+                      {typeof msg.confidence === 'number' && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">
+                          Data confidence {msg.confidence}/100
+                        </span>
+                      )}
+                    </div>
                   )}
                   <div
                     className={`px-3 py-2.5 rounded-xl ${
@@ -188,7 +197,7 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
               <BuddyAvatar size="sm" />
               <div className="flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-600">
                 <Spinner />
-                <span>Reading latest scrape…</span>
+                <span>Querying database and scrapes…</span>
               </div>
             </div>
           )}

@@ -4,22 +4,13 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 import { api } from '../api';
 import { useExchange } from '../context/ExchangeContext';
 import MarketBuddyChatUI from '../components/MarketBuddyChatUI';
-
-const WELCOME =
-  "Hi — I'm Market Buddy. Ask about movers, dividends, and headlines from DividendFlow's database across PSX and global markets. I summarize saved data only — not live prices or personal investment advice.";
-
-const SUGGESTIONS = [
-  { label: 'Top gainers', prompt: 'Which stocks led gains in the latest scrape?' },
-  { label: 'Top decliners', prompt: 'Which names declined most in the saved data?' },
-  { label: 'News themes', prompt: 'Summarize constructive signals from the news file.' },
-  { label: 'Risk flags', prompt: 'Any names the commentary flags as stressed or risky?' },
-];
 
 const MarketBuddyContext = createContext(null);
 
@@ -32,14 +23,43 @@ export function useMarketBuddy() {
 }
 
 export function MarketBuddyProvider({ children }) {
-  const { exchange } = useExchange();
+  const { exchange, exchangeConfig } = useExchange();
+
+  function buildWelcome(code, cfg) {
+    return `Hi — I'm Market Buddy for **${cfg.name} (${code})**. I use DividendFlow's database and scrape archives for ${code} — dividends, prices, sentiment, and research ideas in ${cfg.currency}. I suggest symbols to research, not buy/sell orders.`;
+  }
+
+  function buildSuggestions(code) {
+    if (code === 'PSX') {
+      return [
+        { label: 'Research ideas', prompt: 'Based on PSX database yields and scraped sentiment, which 5 symbols may warrant research?' },
+        { label: 'Dividend picks', prompt: 'Which high-yield PSX dividend names look strongest by yield and frequency?' },
+        { label: 'Sentiment scan', prompt: 'Summarize bullish vs bearish tone from scraped PSX news and AI commentary.' },
+        { label: 'Portfolio check', prompt: 'I hold OGDC, HBL, and ENGRO — analyze concentration and suggest diversification ideas from the database.' },
+      ];
+    }
+    return [
+      { label: 'Research ideas', prompt: `Based on ${code} database yields and price data, which 5 symbols may warrant research on ${code}?` },
+      { label: 'Dividend picks', prompt: `Which high-yield dividend names on ${code} look strongest in our database?` },
+      { label: 'Top movers', prompt: `Which ${code} stocks led gains and declines in the latest database close?` },
+      { label: 'Compare sectors', prompt: `Summarize sector concentration among high-yield ${code} names in the database.` },
+    ];
+  }
+
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState([{ role: 'assistant', text: WELCOME }]);
+  const [messages, setMessages] = useState([{ role: 'assistant', text: '' }]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const scrollLockRef = useRef(null);
+
+  const suggestions = useMemo(() => buildSuggestions(exchange), [exchange]);
+
+  useEffect(() => {
+    setMessages([{ role: 'assistant', text: buildWelcome(exchange, exchangeConfig) }]);
+    setInput('');
+  }, [exchange, exchangeConfig]);
 
   const toggle = useCallback(() => setOpen((v) => !v), []);
   const close = useCallback(() => setOpen(false), []);
@@ -73,10 +93,23 @@ export function MarketBuddyProvider({ children }) {
       setMessages((m) => [...m, { role: 'user', text: q }]);
       setLoading(true);
       try {
-        const { data } = await api.postMarketChat({ message: q, exchange });
+        const history = messages
+          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .slice(-6)
+          .map((m) => ({ role: m.role, text: m.text }));
+        const { data } = await api.postMarketChat({ message: q, exchange, history });
         const reply = data.reply || 'No answer came back.';
         capturePageScroll();
-        setMessages((m) => [...m, { role: 'assistant', text: reply, disclaimer: data.disclaimer }]);
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'assistant',
+            text: reply,
+            disclaimer: data.disclaimer,
+            confidence: data.confidence ?? data.confidenceHint,
+            intent: data.intent,
+          },
+        ]);
       } catch (err) {
         const msg =
           err.response?.data?.reply ||
@@ -93,7 +126,7 @@ export function MarketBuddyProvider({ children }) {
         });
       }
     },
-    [input, loading, exchange]
+    [input, loading, exchange, messages]
   );
 
   const value = {
@@ -108,7 +141,9 @@ export function MarketBuddyProvider({ children }) {
     send,
     scrollRef,
     inputRef,
-    suggestions: SUGGESTIONS,
+    suggestions,
+    exchange,
+    exchangeConfig,
   };
 
   return (
@@ -153,4 +188,3 @@ function MarketBuddyDrawer() {
   );
 }
 
-export { SUGGESTIONS, WELCOME };

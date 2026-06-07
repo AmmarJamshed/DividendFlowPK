@@ -9,6 +9,7 @@ import { useMarketBuddy } from '../context/MarketBuddyContext';
 import { useExchange } from '../context/ExchangeContext';
 import ExchangeSelector from './ExchangeSelector';
 import GlobalSearch from './GlobalSearch';
+import ExchangeMarketBanner from './ExchangeMarketBanner';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
@@ -91,16 +92,19 @@ function AiToggleSpinner({ className }) {
   );
 }
 
-const Disclaimer = () => (
-  <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-[11px] text-slate-600 bg-slate-50/90 leading-relaxed">
-    For learning and research only — not buy/sell advice. Confirm figures with PSX and your broker.
-  </footer>
-);
+function SidebarDisclaimer() {
+  const { exchangeConfig } = useExchange();
+  return (
+    <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-[11px] text-slate-600 bg-slate-50/90 leading-relaxed">
+      For learning and research only — not buy/sell advice. Confirm figures with {exchangeConfig.code} and your broker.
+    </footer>
+  );
+}
 
 export default function Layout({ children }) {
   const location = useLocation();
   const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
-  const { exchangeConfig } = useExchange();
+  const { exchange, exchangeConfig } = useExchange();
   const { open: buddyOpen, toggle: toggleBuddy, setOpen: setBuddyOpen } = useMarketBuddy();
   const [isAiTogglePending, startAiToggleTransition] = useTransition();
   const [aiToggleMinSpin, setAiToggleMinSpin] = useState(false);
@@ -114,12 +118,12 @@ export default function Layout({ children }) {
     api
       .getDataStatus()
       .then((res) => {
-        const base = res.data.formatted || res.data.lastUpdated;
+        const base = res.data.formatted || res.data.latestTradingDate || res.data.lastUpdated;
         const storageTag = res.data.storage === 'supabase' ? ' · cloud DB' : '';
-        setDataUpdated(`${base}${storageTag}`);
+        setDataUpdated(`${exchange} · ${base}${storageTag}`);
       })
-      .catch(() => setDataUpdated(new Date().toLocaleString()));
-  }, []);
+      .catch(() => setDataUpdated(`${exchange} · ${new Date().toLocaleString()}`));
+  }, [exchange]);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -137,8 +141,12 @@ export default function Layout({ children }) {
     };
   }, []);
 
-  const pageTitle = navItems.find((n) => n.path === location.pathname)?.label
-    || (location.pathname.startsWith('/stock/') ? `${exchangeConfig.code} stock` : 'Overview');
+  const stockMatch = location.pathname.match(/^\/stock\/([^/]+)\/([^/]+)/i);
+  const pageTitle =
+    navItems.find((n) => n.path === location.pathname)?.label ||
+    (stockMatch
+      ? `${stockMatch[1].toUpperCase()} · ${stockMatch[2].toUpperCase()}`
+      : `${exchangeConfig.code} · Overview`);
 
   return (
     <div className="min-h-screen flex flex-col text-slate-700 relative">
@@ -166,7 +174,7 @@ export default function Layout({ children }) {
                 <p className="text-base font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent leading-tight">
                   DividendFlow PK
                 </p>
-                <p className="text-[10px] text-slate-500 mt-0.5 hidden sm:block">PSX dividends &amp; prices</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 hidden sm:block">{exchangeConfig.name} · {exchangeConfig.currency}</p>
               </div>
             </Link>
             <button
@@ -200,7 +208,7 @@ export default function Layout({ children }) {
               );
             })}
           </nav>
-          <Disclaimer />
+          <SidebarDisclaimer />
         </aside>
 
         <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-transparent">
@@ -285,7 +293,10 @@ export default function Layout({ children }) {
           </header>
 
           <div data-app-scroll-root className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-            <div className="max-w-6xl mx-auto">{children}</div>
+            <div className="max-w-6xl mx-auto">
+              {!location.pathname.startsWith('/stock/') && <ExchangeMarketBanner />}
+              {children}
+            </div>
           </div>
         </main>
       </div>

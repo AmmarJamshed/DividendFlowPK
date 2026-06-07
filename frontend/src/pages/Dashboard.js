@@ -11,6 +11,15 @@ import HelpTip from '../components/ui/HelpTip';
 import DividendCalculatorCta from '../components/DividendCalculatorCta';
 import QuickActionGrid from '../components/ui/QuickActionGrid';
 import DashboardNewsPanel from '../components/DashboardNewsPanel';
+import { useExchange } from '../context/ExchangeContext';
+import { stockPath } from '../config/exchanges';
+import { formatMoney } from '../utils/formatMoney';
+import {
+  normalizeDividendRows,
+  buildMonthCoverageFromDividends,
+  buildMoversFromClosingPrices,
+  buildGlobalMarketAlerts,
+} from '../utils/exchangeDashboard';
 import { buildDashboardRiskAlerts, getPktDateString } from '../utils/dashboardRiskAlerts';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -59,9 +68,12 @@ const chartOptions = {
 };
 
 export default function Dashboard() {
+  const { exchange, exchangeConfig } = useExchange();
+  const isPsx = exchange === 'PSX';
   const [dividends, setDividends] = useState([]);
   const [monthCoverage, setMonthCoverage] = useState(null);
   const [riskAlerts, setRiskAlerts] = useState([]);
+  const [tradeDate, setTradeDate] = useState(null);
   const [dailyNews, setDailyNews] = useState({
     news: [],
     commentary: [],
@@ -89,32 +101,53 @@ export default function Dashboard() {
   }, [alertDetailOpen, closeAlertDetail]);
 
   useEffect(() => {
-    const fetch = async () => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
       try {
-        const [divRes, covRes, newsRes] = await Promise.all([
-          api.getDividends(),
-          api.getMonthCoverage(),
-          api.getDailyNews().catch(() => ({ data: {} }))
-        ]);
-        setDividends(divRes.data);
-        setMonthCoverage(covRes.data);
-        const newsPayload = newsRes.data || {};
-        setDailyNews(newsPayload);
-        setRiskAlerts(
-          buildDashboardRiskAlerts(newsPayload, {
-            maxAlerts: 4,
-            dateKey: getPktDateString(),
-          })
-        );
-        
+        if (isPsx) {
+          const [divRes, covRes, newsRes] = await Promise.all([
+            api.getDividends(),
+            api.getMonthCoverage(),
+            api.getDailyNews().catch(() => ({ data: {} })),
+          ]);
+          if (cancelled) return;
+          setDividends(divRes.data);
+          setMonthCoverage(covRes.data);
+          const newsPayload = newsRes.data || {};
+          setDailyNews(newsPayload);
+          setTradeDate(newsPayload.priceChanges?.[0]?.Date || null);
+          setRiskAlerts(
+            buildDashboardRiskAlerts(newsPayload, {
+              maxAlerts: 4,
+              dateKey: getPktDateString(),
+            })
+          );
+        } else {
+          const [divRes, pricesRes] = await Promise.all([
+            api.getMarketDividends(exchange),
+            api.getMarketClosingPrices(exchange),
+          ]);
+          if (cancelled) return;
+          const normalized = normalizeDividendRows(divRes.data?.rows || [], exchange);
+          setDividends(normalized);
+          setMonthCoverage(buildMonthCoverageFromDividends(normalized));
+          const movers = buildMoversFromClosingPrices(pricesRes.data);
+          setTradeDate(pricesRes.data?.date || movers[0]?.Date || null);
+          setDailyNews({ news: [], commentary: [], priceChanges: movers, priceCommentary: [] });
+          setRiskAlerts(buildGlobalMarketAlerts(movers, exchangeConfig));
+        }
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-    fetch();
-  }, []);
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [exchange, exchangeConfig, isPsx]);
 
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const heatmapData = monthCoverage ? monthNames.map((m, i) => ({
@@ -154,10 +187,10 @@ export default function Dashboard() {
   }, [dividends, monthCoverage, dailyNews, riskAlerts]);
 
   const quickActions = [
-    { to: '/market-closing-prices', icon: 'chart', label: 'Market closing prices', hint: 'Session moves and volume', xp: 10 },
-    { to: '/dividend-calendar#dividend-calculator', icon: 'calc', label: 'Dividend income calculator', hint: 'Holdings or portfolio PDF', xp: 25 },
-    { to: '/salary-simulator', icon: 'wallet', label: 'Income replacement model', hint: 'Salary vs dividend yield', xp: 15 },
-    { to: '/#market-chat', icon: 'chat', label: 'Market research chat', hint: 'Q&A on saved PSX files', xp: 20 },
+    { to: '/market-closing-prices', icon: 'chart', label: `${exchangeConfig.code} market data`, hint: 'Session moves and volume', xp: 10 },
+    { to: '/dividend-calendar#dividend-calculator', icon: 'calc', label: 'Dividend income calculator', hint: isPsx ? 'Holdings or portfolio PDF' : `${exchangeConfig.currency} holdings`, xp: 25 },
+    { to: '/salary-simulator', icon: 'wallet', label: 'Income replacement model', hint: isPsx ? 'Salary vs dividend yield' : 'PSX-focused tool', xp: 15 },
+    { to: '/#market-chat', icon: 'chat', label: 'Market Buddy', hint: `Research Q&A for ${exchangeConfig.code}`, xp: 20 },
   ];
 
   const missionProgress = useMemo(() => {
@@ -196,7 +229,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
-          <p className="text-slate-500 text-sm">Loading market data…</p>
+          <p className="text-slate-500 text-sm">Loading {exchangeConfig.name} data…</p>
         </div>
       </div>
     );
@@ -205,9 +238,13 @@ export default function Dashboard() {
   return (
     <div className="space-y-10">
       <PageHero
-        eyebrow="Daily missions · Pakistan Stock Exchange"
+        eyebrow={`Daily missions · ${exchangeConfig.name}`}
         title="Your dividend & market snapshot"
-        description="Track payout calendars, closing prices, and headline-linked moves from archived PSX data. Updated on weekdays after the session — for research only, not investment advice."
+        description={
+          isPsx
+            ? 'Track payout calendars, closing prices, and headline-linked moves from archived PSX data. Updated on weekdays after the session — for research only, not investment advice.'
+            : `Track ${exchangeConfig.code} dividend profiles and closing prices from DividendFlow's cloud database (${exchangeConfig.currency}). Updated after each market close — research only, not investment advice.`
+        }
       >
         <Link to="/market-closing-prices" className="btn-primary">
           View market data
@@ -222,6 +259,9 @@ export default function Dashboard() {
       <DashboardNewsPanel
         riskAlerts={riskAlerts}
         dailyNews={dailyNews}
+        exchange={exchange}
+        exchangeConfig={exchangeConfig}
+        tradeDate={tradeDate}
         onSelectAlert={setAlertDetailOpen}
       />
 
@@ -254,7 +294,7 @@ export default function Dashboard() {
             label="Dividend payers"
             value={dashboardStats.companies}
             hint="Unique names in payout calendar"
-            tip="How many different PSX symbols have at least one dividend row in our PSX payout dataset."
+            tip={`How many different ${exchangeConfig.code} symbols have dividend data in our database.`}
             accent="teal"
           />
           <MetricCard
@@ -272,14 +312,18 @@ export default function Dashboard() {
             label="Notable movers"
             value={dashboardStats.movers}
             hint="Stocks with large session change"
-            tip="Count of symbols with a large up or down move in the latest saved closing-price file."
+            tip={`Count of ${exchangeConfig.code} symbols with a large up or down move in the latest saved close.`}
             accent="emerald"
           />
           <MetricCard
-            label="News items"
-            value={dashboardStats.headlines}
-            hint={`${dashboardStats.alerts} headline alerts`}
-            tip="Headlines scraped for the dashboard; alerts link big news to price moves."
+            label={isPsx ? 'News items' : 'Database rows'}
+            value={isPsx ? dashboardStats.headlines : dashboardStats.movers}
+            hint={isPsx ? `${dashboardStats.alerts} headline alerts` : `${exchangeConfig.currency} market`}
+            tip={
+              isPsx
+                ? 'Headlines scraped for the dashboard; alerts link big news to price moves.'
+                : 'Global exchanges use price movers from the cloud database (news scrapes are PSX-only today).'
+            }
             accent="violet"
           />
         </div>
@@ -297,7 +341,7 @@ export default function Dashboard() {
           <span className="section-zone-tag">Dividend calendar</span>
           <h3 className="card-header mt-1 inline-flex items-center gap-2">
             When dividends get paid
-            <HelpTip text="Each bar counts companies with a payout scheduled in that month (from PSX). Taller = more dividend cash events." />
+            <HelpTip text={`Each bar counts companies with a payout scheduled in that month (${exchangeConfig.code}). Taller = more dividend cash events.`} />
           </h3>
           <p className="card-subtitle">
             Taller bar = more companies paying in that month. Helps you spread income through the year.
@@ -310,14 +354,28 @@ export default function Dashboard() {
           <span className="section-zone-tag">Top dividend yields</span>
           <h3 className="card-header mt-1 inline-flex items-center gap-2">
             Highest indicated yields
-            <HelpTip text="Yield = dividend per share (from PSX notice) ÷ latest saved price. High yield is not always safe — read the PSX announcement." />
+            <HelpTip
+              text={
+                isPsx
+                  ? 'Yield = dividend per share (from PSX notice) ÷ latest saved price. High yield is not always safe — read the company announcement.'
+                  : `Yield from DividendFlow database for ${exchangeConfig.code}. High yield is not always safe — do your own research.`
+              }
+            />
           </h3>
           <p className="card-subtitle">
-            Yield = dividend per share ÷ price. Amounts follow PSX company notices — confirm on{' '}
-            <a href="https://dps.psx.com.pk/payouts" className="text-teal-700 underline" target="_blank" rel="noopener noreferrer">
-              dps.psx.com.pk
-            </a>
-            .
+            Yield = dividend per share ÷ price.
+            {isPsx ? (
+              <>
+                {' '}
+                Amounts follow PSX company notices — confirm on{' '}
+                <a href="https://dps.psx.com.pk/payouts" className="text-teal-700 underline" target="_blank" rel="noopener noreferrer">
+                  dps.psx.com.pk
+                </a>
+                .
+              </>
+            ) : (
+              <> Amounts from cloud database — confirm with your broker or exchange filings.</>
+            )}
           </p>
           <ul className="mt-4 space-y-4">
             {topYield.map((d, i) => {
@@ -328,11 +386,13 @@ export default function Dashboard() {
                 <li key={i} className="py-3 border-b border-slate-200 last:border-0">
                   <div className="flex justify-between items-start gap-3">
                     <div className="min-w-0">
-                      <span className="font-semibold text-slate-800">{symbol}</span>
+                      <Link to={stockPath(exchange, symbol)} className="font-semibold text-teal-700 hover:underline">
+                        {symbol}
+                      </Link>
                       {dps ? (
                         <p className="text-xs text-slate-500 mt-0.5">
-                          Rs {dps}/share
-                          {d.dps_source === 'psx_announcement' && (
+                          {formatMoney(dps, exchangeConfig.currency)}/share
+                          {d.dps_source === 'psx_announcement' && isPsx && (
                             <span className="text-emerald-700 font-medium"> · PSX notice</span>
                           )}
                         </p>
@@ -359,9 +419,12 @@ export default function Dashboard() {
           <span className="section-zone-tag">Session movers</span>
           <h3 className="card-header mt-1">Largest advances &amp; declines</h3>
           <p className="card-subtitle">
-            From the latest saved session (typically after 5pm PKT). Green = gainers, red = decliners — snapshot only, not a recommendation.
-            {dailyNews.priceChanges?.[0]?.Date && (
-              <span className="block text-slate-500 text-xs mt-1">As of {dailyNews.priceChanges[0].Date}</span>
+            From the latest saved {exchangeConfig.code} close.
+            {isPsx ? ' Typically after 5pm PKT.' : ''} Green = gainers, red = decliners — snapshot only, not a recommendation.
+            {(tradeDate || dailyNews.priceChanges?.[0]?.Date) && (
+              <span className="block text-slate-500 text-xs mt-1">
+                As of {tradeDate || dailyNews.priceChanges[0].Date}
+              </span>
             )}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -426,10 +489,12 @@ export default function Dashboard() {
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {alertDetailOpen.kind === 'macro_link'
-                    ? 'Macro / PSX headline + declining leader'
-                    : alertDetailOpen.kind === 'news'
-                      ? 'Company headline + price move'
-                      : 'Signal'}{' '}
+                    ? `Macro / ${exchange} headline + declining leader`
+                    : alertDetailOpen.kind === 'mover'
+                      ? `${exchangeConfig.code} price move`
+                      : alertDetailOpen.kind === 'news'
+                        ? 'Company headline + price move'
+                        : 'Signal'}{' '}
                   · <span className="font-medium text-slate-600">{alertDetailOpen.level}</span>
                 </p>
               </div>
