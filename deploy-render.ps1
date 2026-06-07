@@ -1,4 +1,5 @@
-# Deploy DividendFlow PK to Render
+# Deploy DividendFlow PK web services to Render (backend + frontend only).
+# Scraping, news, health checks, and Supabase ETL run on GitHub Actions — not Render crons.
 # Loads RENDER_API_KEY from api-keys.txt if not set. Or set env var directly.
 
 $ErrorActionPreference = "Stop"
@@ -7,25 +8,17 @@ if (-not $env:RENDER_API_KEY -and (Test-Path (Join-Path $PSScriptRoot "api-keys.
         if ($_ -match '^\s*RENDER_API_KEY=(.+)$') { $env:RENDER_API_KEY = $matches[1].Trim() }
     }
 }
-# All Blueprint services from render.yaml (web + cron)
+
+# Matches render.yaml — web services only (no suspended legacy crons)
 $toDeploy = @(
     "dividendflow-frontend",
-    "dividendflow-backend",
-    "dividendflow-scraper",
-    "dividendflow-news",
-    "dividendflow-health-check"
+    "dividendflow-backend"
 )
 $deployed = 0
 
-# DividendFlow crons: weekdays only (Mon–Fri UTC), matches render.yaml — skip weekend runs to save compute
-$cronSchedules = @(
-    @{ Name = "dividendflow-scraper";       Schedule = "0 11 * * 1-5" }
-    @{ Name = "dividendflow-news";          Schedule = "0 12 * * 1-5" }
-    @{ Name = "dividendflow-health-check";  Schedule = "0 0,6,12,18 * * 1-5" }
-)
-
 if ($env:RENDER_API_KEY) {
     Write-Host "=== Deploying via Render API ===" -ForegroundColor Cyan
+    Write-Host "Note: cron jobs run on GitHub Actions (see .github/workflows/)" -ForegroundColor DarkGray
     $headers = @{
         "Authorization" = "Bearer $env:RENDER_API_KEY"
         "Accept"        = "application/json"
@@ -34,26 +27,6 @@ if ($env:RENDER_API_KEY) {
     try {
         $resp = Invoke-RestMethod -Uri "https://api.render.com/v1/services?limit=100" -Headers $headers -Method Get
         $services = if ($resp -is [array]) { $resp } else { @($resp) }
-
-        Write-Host "`n--- Syncing DividendFlow cron schedules (weekdays only) ---" -ForegroundColor Cyan
-        foreach ($row in $cronSchedules) {
-            $cronName = $row.Name
-            $want = $row.Schedule
-            $wrap = $services | Where-Object { $_.service.name -eq $cronName } | Select-Object -First 1
-            if (-not $wrap) {
-                Write-Host "Cron $cronName not found in service list" -ForegroundColor Yellow
-                continue
-            }
-            $sid = $wrap.service.id
-            $cur = $wrap.service.serviceDetails.schedule
-            if ($cur -eq $want) {
-                Write-Host "$cronName already $want" -ForegroundColor DarkGray
-                continue
-            }
-            Write-Host "PATCH $cronName schedule: '$cur' -> '$want'" -ForegroundColor Green
-            $patchBody = @{ serviceDetails = @{ schedule = $want } } | ConvertTo-Json -Compress
-            Invoke-RestMethod -Uri "https://api.render.com/v1/services/$sid" -Headers $headers -Method Patch -Body $patchBody | Out-Null
-        }
 
         foreach ($name in $toDeploy) {
             $svc = $services | Where-Object { ($_.name -eq $name) -or ($_.service.name -eq $name) } | Select-Object -First 1
