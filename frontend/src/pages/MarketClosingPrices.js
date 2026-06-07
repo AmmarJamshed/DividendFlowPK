@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
+import { useExchange } from '../context/ExchangeContext';
+import { stockPath } from '../config/exchanges';
 import { isShariahCompliant, SHARIAH_LIST_META } from '../utils/psxShariah';
 import PageHero from '../components/ui/PageHero';
 import MetricCard from '../components/ui/MetricCard';
@@ -46,6 +48,7 @@ function AICommentary({ summary }) {
 }
 
 export default function MarketClosingPrices() {
+  const { exchange, exchangeConfig } = useExchange();
   const [data, setData] = useState({ rows: [], date: null, summary: null });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -54,11 +57,13 @@ export default function MarketClosingPrices() {
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    api.getMarketClosingPrices()
+    setLoading(true);
+    setPage(0);
+    api.getMarketClosingPrices(exchange)
       .then(res => setData(res.data))
       .catch(() => setData({ rows: [], date: null, summary: null }))
       .finally(() => setLoading(false));
-  }, []);
+  }, [exchange]);
 
   const shariahInDataset = useMemo(() => {
     let n = 0;
@@ -142,8 +147,12 @@ export default function MarketClosingPrices() {
       <PageHero
         variant="light"
         eyebrow="Market data"
-        title="PSX closing prices"
-        description="Search symbols, sort by session and weekly change, and filter the PSX Shariah disclosure list. Sourced from archived scrape files, updated weekdays after the close."
+        title={`${exchangeConfig.name} closing prices`}
+        description={
+          exchange === 'PSX'
+            ? 'Search symbols, sort by session and weekly change, and filter the PSX Shariah disclosure list. Sourced from archived scrape files, updated weekdays after the close.'
+            : `Latest closes for ${exchangeConfig.code} from DividendFlow cloud database. Select PSX in the header for Pakistan market data.`
+        }
       >
         <Link to="/dividend-calendar" className="btn-primary">
           Dividend calendar
@@ -171,8 +180,8 @@ export default function MarketClosingPrices() {
         />
         <MetricCard
           label="Shariah list"
-          value={shariahInDataset}
-          hint={`Of ${marketPulse.total} in dataset`}
+          value={exchange === 'PSX' ? shariahInDataset : '—'}
+          hint={exchange === 'PSX' ? `Of ${marketPulse.total} in dataset` : 'PSX only'}
         />
       </div>
 
@@ -193,6 +202,7 @@ export default function MarketClosingPrices() {
               {data.date && ` • Close ${data.date}`}
             </span>
           </div>
+          {exchange === 'PSX' && (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-1">Filter</span>
             <button
@@ -222,6 +232,7 @@ export default function MarketClosingPrices() {
               {shariahInDataset} of {(data.rows || []).length} rows match PSX list
             </span>
           </div>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -257,8 +268,13 @@ export default function MarketClosingPrices() {
                     <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
                       <td className="px-4 py-3 font-medium text-slate-700">
                         <span className="inline-flex items-center gap-2 flex-wrap">
-                          {r.symbol || r.company}
-                          {shariah && (
+                          <Link
+                            to={stockPath(exchange, r.symbol || r.company)}
+                            className="text-teal-700 hover:underline font-semibold"
+                          >
+                            {r.symbol || r.company}
+                          </Link>
+                          {exchange === 'PSX' && shariah && (
                             <span
                               className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200"
                               title="On PSX Shariah disclosure list (nature of business)"

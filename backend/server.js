@@ -13,6 +13,9 @@ const {
 } = require('./psxDividendParse');
 const dataStore = require('./services/dataStore');
 const { INVESTMENT_DISCLAIMER, MARKET_CLOSE_NOTICE } = require('./constants/disclaimer');
+const v1Router = require('./routes/v1');
+const aiPipeline = require('./services/aiPipeline');
+const exchangeService = require('./services/exchangeService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -31,6 +34,7 @@ const pdfUpload = multer({
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/v1', v1Router);
 
 // Helper to read CSV file
 function readCSV(filePath) {
@@ -1641,6 +1645,8 @@ app.post('/api/market-chat', async (req, res) => {
     chatRateByIp.set(ip, now);
 
     const message = String(req.body?.message || '').trim().slice(0, 2000);
+    const exchange = req.body?.exchange || exchangeService.DEFAULT_EXCHANGE;
+    const symbol = req.body?.symbol || null;
     if (!message) {
       return res.status(400).json({ ok: false, reply: 'Type a question first.' });
     }
@@ -1649,35 +1655,21 @@ app.post('/api/market-chat', async (req, res) => {
     const dataBlock = buildMarketChatContextText(payload);
     const digest = buildSiteDataDigest();
 
-    const systemPrompt = `You are "Market Buddy" on DividendFlow PK — a PSX-focused research helper used by retail users, analysts, and finance professionals.
-
-Tone: clear, concise, professional. Plain English is fine; avoid childish metaphors. Short bullets when listing movers.
-
-Rules you MUST follow:
-1) ONLY use facts in the DATA block below. Never invent tickers, percentages, or headlines. If absent, say it does not appear in the current file.
-2) Use probabilistic language ("may", "could", "headline suggests") — never "will", guaranteed returns, or explicit buy/sell/size orders.
-3) You are not a licensed adviser; no personalized portfolio or tax guidance.
-4) If the question is outside PSX or outside the supplied data, say you only summarize DividendFlow's archived scrape.
-5) Prefer under ~200 words unless the user requests a longer list.
-
-Data freshness (file mtimes on server — not live market data):
-${digest}
-
-End every reply with one line starting exactly: "Remember: " then one sentence: AI output from saved files only, not exhaustive or verified, not investment advice — verify with primary sources and a licensed professional before trading."`;
-
-    const userBlock = `DATA FROM OUR LATEST SCRAPE (may be from last trading day; do not claim live prices):
----
-${dataBlock}
----
-
-USER QUESTION:
-${message}`;
+    const { systemPrompt, userBlock, confidenceHint } = await aiPipeline.prepareMarketChatContext({
+      message,
+      exchange,
+      symbol,
+      legacyDigest: digest,
+      legacyDataBlock: dataBlock,
+    });
 
     const out = await groqMarketChat(systemPrompt, userBlock);
     res.json({
       ok: out.ok,
       reply: out.reply,
       disclaimer: INVESTMENT_DISCLAIMER,
+      exchange,
+      confidenceHint,
     });
   } catch (err) {
     res.status(500).json({
@@ -1816,6 +1808,11 @@ app.get('/api/data-status', async (req, res) => {
       lastSync: supabaseMeta.lastSync || null,
       rowCounts: supabaseMeta.rowCounts || null,
       marketCloseNotice: supabaseMeta.marketCloseNotice || MARKET_CLOSE_NOTICE,
+      exchanges: exchangeService.listExchanges().map((e) => ({
+        code: e.code,
+        currency: e.currency,
+        name: e.name,
+      })),
     });
   } catch (err) {
     res.json({ lastUpdated: new Date().toISOString(), formatted: new Date().toLocaleString() });

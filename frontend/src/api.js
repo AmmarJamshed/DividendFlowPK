@@ -2,6 +2,10 @@ import axios from 'axios';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
+function watchlistHeaders(sessionId) {
+  return sessionId ? { 'X-Watchlist-Session': sessionId } : {};
+}
+
 export const api = {
   getDividends: () => axios.get(`${API_BASE}/dividends`),
   getMonthCoverage: () => axios.get(`${API_BASE}/month-coverage`),
@@ -15,7 +19,28 @@ export const api = {
   getCapitalGain: (company) => axios.get(`${API_BASE}/capital-gain`, { params: { company } }),
   getDataStatus: () => axios.get(`${API_BASE}/data-status`),
   getDailyNews: () => axios.get(`${API_BASE}/daily-news`),
-  getMarketClosingPrices: () => axios.get(`${API_BASE}/market-closing-prices`),
+  getMarketClosingPrices: (exchange = 'PSX') =>
+    exchange === 'PSX'
+      ? axios.get(`${API_BASE}/market-closing-prices`)
+      : axios.get(`${API_BASE}/v1/markets/${exchange}/closing-prices`),
+  getExchanges: () => axios.get(`${API_BASE}/v1/exchanges`),
+  searchSecurities: (q, limit = 20) =>
+    axios.get(`${API_BASE}/v1/search`, { params: { q, limit } }),
+  getStock: (exchange, symbol) => axios.get(`${API_BASE}/v1/stocks/${exchange}/${symbol}`),
+  getMarketDividends: (exchange, params) =>
+    axios.get(`${API_BASE}/v1/markets/${exchange}/dividends`, { params }),
+  getWatchlist: (sessionId) =>
+    axios.get(`${API_BASE}/v1/watchlist`, { headers: watchlistHeaders(sessionId) }),
+  addWatchlistItem: (sessionId, exchange, symbol) =>
+    axios.post(
+      `${API_BASE}/v1/watchlist/items`,
+      { exchange, symbol, sessionId },
+      { headers: watchlistHeaders(sessionId) }
+    ),
+  removeWatchlistItem: (sessionId, exchange, symbol) =>
+    axios.delete(`${API_BASE}/v1/watchlist/items/${exchange}/${symbol}`, {
+      headers: watchlistHeaders(sessionId),
+    }),
   postSiteGuide: (body, config) => axios.post(`${API_BASE}/ai-site-guide`, body, config),
   postMarketChat: (body) => axios.post(`${API_BASE}/market-chat`, body),
   postDividendCalculator: (holdings) =>

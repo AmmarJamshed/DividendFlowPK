@@ -8,10 +8,11 @@ import {
   useState,
 } from 'react';
 import { api } from '../api';
+import { useExchange } from '../context/ExchangeContext';
 import MarketBuddyChatUI from '../components/MarketBuddyChatUI';
 
 const WELCOME =
-  "Hi — I'm Market Buddy. Ask about PSX movers and headlines from DividendFlow's latest saved scrape. I summarize what's in those CSV files only — not live prices or personal investment advice.";
+  "Hi — I'm Market Buddy. Ask about movers, dividends, and headlines from DividendFlow's database across PSX and global markets. I summarize saved data only — not live prices or personal investment advice.";
 
 const SUGGESTIONS = [
   { label: 'Top gainers', prompt: 'Which stocks led gains in the latest scrape?' },
@@ -31,6 +32,7 @@ export function useMarketBuddy() {
 }
 
 export function MarketBuddyProvider({ children }) {
+  const { exchange } = useExchange();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([{ role: 'assistant', text: WELCOME }]);
@@ -71,7 +73,7 @@ export function MarketBuddyProvider({ children }) {
       setMessages((m) => [...m, { role: 'user', text: q }]);
       setLoading(true);
       try {
-        const { data } = await api.postMarketChat({ message: q });
+        const { data } = await api.postMarketChat({ message: q, exchange });
         const reply = data.reply || 'No answer came back.';
         capturePageScroll();
         setMessages((m) => [...m, { role: 'assistant', text: reply, disclaimer: data.disclaimer }]);
@@ -91,7 +93,7 @@ export function MarketBuddyProvider({ children }) {
         });
       }
     },
-    [input, loading]
+    [input, loading, exchange]
   );
 
   const value = {

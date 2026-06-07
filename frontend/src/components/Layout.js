@@ -6,6 +6,9 @@ import AIGuidance from './AIGuidance';
 import AmmarCursorGuide from './AmmarCursorGuide';
 import { useAIAssistance } from '../context/AIAssistanceContext';
 import { useMarketBuddy } from '../context/MarketBuddyContext';
+import { useExchange } from '../context/ExchangeContext';
+import ExchangeSelector from './ExchangeSelector';
+import GlobalSearch from './GlobalSearch';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
@@ -97,6 +100,7 @@ const Disclaimer = () => (
 export default function Layout({ children }) {
   const location = useLocation();
   const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
+  const { exchangeConfig } = useExchange();
   const { open: buddyOpen, toggle: toggleBuddy, setOpen: setBuddyOpen } = useMarketBuddy();
   const [isAiTogglePending, startAiToggleTransition] = useTransition();
   const [aiToggleMinSpin, setAiToggleMinSpin] = useState(false);
@@ -133,7 +137,8 @@ export default function Layout({ children }) {
     };
   }, []);
 
-  const pageTitle = navItems.find((n) => n.path === location.pathname)?.label || 'Overview';
+  const pageTitle = navItems.find((n) => n.path === location.pathname)?.label
+    || (location.pathname.startsWith('/stock/') ? `${exchangeConfig.code} stock` : 'Overview');
 
   return (
     <div className="min-h-screen flex flex-col text-slate-700 relative">
@@ -215,7 +220,9 @@ export default function Layout({ children }) {
                 {pageTitle}
               </h2>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto flex-wrap justify-end">
+              <GlobalSearch />
+              <ExchangeSelector compact />
               <button
                 type="button"
                 onClick={toggleBuddy}
