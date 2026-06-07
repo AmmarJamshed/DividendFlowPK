@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Ingest daily closes + metrics via yfinance into Supabase."""
+"""Ingest daily closes via yfinance (batch) into Supabase — full exchange universes."""
 from __future__ import annotations
 
 import os
 import sys
+import time
 from datetime import datetime, timezone
 
+import pandas as pd
 import yfinance as yf
 from dotenv import load_dotenv
 from supabase import create_client
@@ -13,13 +15,15 @@ from supabase import create_client
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(ROOT, "ingestion"))
 
-from adapters.registry import get_exchange  # noqa: E402
+from adapters.registry import FULL_UNIVERSE_EXCHANGES, get_exchange  # noqa: E402
+from adapters.symbol_universe import fetch_universe, shard  # noqa: E402
 
 load_dotenv(os.path.join(ROOT, "backend", ".env"))
 
 URL = os.environ.get("SUPABASE_URL")
 KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_SECRET_KEY")
-BATCH = 50
+DOWNLOAD_BATCH = int(os.environ.get("YF_BATCH_SIZE", "120"))
+SLEEP_SEC = float(os.environ.get("YF_BATCH_SLEEP", "0.4"))
 
 
 def sb():
@@ -33,15 +37,19 @@ def exchange_id(client, code: str) -> str:
     return row["id"]
 
 
-def upsert_security(client, ex_id: str, symbol: str, name: str, sector: str | None):
-    sym = symbol.split(".")[0] if "." in symbol and not symbol.endswith(".SR") else symbol
-    if symbol.endswith(".SR"):
-        sym = symbol.replace(".SR", "")
+def db_symbol(yahoo_ticker: str, cfg: dict) -> str:
+    s = yahoo_ticker.strip().upper()
+    suffix = (cfg.get("yfinance_suffix") or "").upper()
+    if suffix and s.endswith(suffix):
+        return s[: -len(suffix)]
+    return s
+
+
+def upsert_security(client, ex_id: str, symbol: str, name: str | None = None):
     payload = {
         "exchange_id": ex_id,
-        "symbol": sym.upper(),
-        "name": name or sym,
-        "sector": sector,
+        "symbol": symbol.upper(),
+        "name": name or symbol,
         "active": True,
     }
     client.table("securities").upsert(payload, on_conflict="exchange_id,symbol").execute()
@@ -49,7 +57,7 @@ def upsert_security(client, ex_id: str, symbol: str, name: str, sector: str | No
         client.table("securities")
         .select("id")
         .eq("exchange_id", ex_id)
-        .eq("symbol", sym.upper())
+        .eq("symbol", symbol.upper())
         .single()
         .execute()
         .data
@@ -57,108 +65,151 @@ def upsert_security(client, ex_id: str, symbol: str, name: str, sector: str | No
     return row["id"]
 
 
+def load_symbols(code: str) -> list[str]:
+    cfg = get_exchange(code)
+    if code in FULL_UNIVERSE_EXCHANGES:
+        print(f"Fetching full {code} symbol universe...")
+        symbols = fetch_universe(code)
+        print(f"  {len(symbols)} symbols loaded")
+        return symbols
+    return list(cfg.get("symbols") or [])
+
+
+def parse_batch_download(data: pd.DataFrame, tickers: list[str]) -> dict[str, pd.DataFrame]:
+    out: dict[str, pd.DataFrame] = {}
+    if data is None or data.empty:
+        return out
+    if len(tickers) == 1:
+        t = tickers[0]
+        if not data.empty:
+            out[t] = data
+        return out
+    # Multi-index columns: (Price, Ticker) or (Ticker, Price) depending on yfinance version
+    if isinstance(data.columns, pd.MultiIndex):
+        level0 = set(data.columns.get_level_values(0))
+        if "Close" in level0 or "Open" in level0:
+            for t in tickers:
+                try:
+                    sub = data.xs(t, axis=1, level=1, drop_level=False)
+                    if sub is not None and not sub.empty:
+                        out[t] = sub
+                except Exception:
+                    pass
+        else:
+            for t in tickers:
+                if t in level0:
+                    sub = data[t]
+                    if sub is not None and not sub.empty:
+                        out[t] = sub
+    return out
+
+
+def upsert_price_row(client, sec_id: str, hist: pd.DataFrame, currency: str, now: str) -> bool:
+    hist = hist.dropna(how="all")
+    if hist.empty:
+        return False
+    if "Close" not in hist.columns:
+        return False
+    last = hist.iloc[-1]
+    prev = hist.iloc[-2] if len(hist) > 1 else last
+    trade_date = hist.index[-1].strftime("%Y-%m-%d")
+    close = float(last["Close"])
+    prev_close = float(prev["Close"])
+    chg = close - prev_close
+    chg_pct = (chg / prev_close * 100) if prev_close else 0
+    vol = last.get("Volume")
+    volume = int(vol) if pd.notna(vol) else None
+
+    client.table("daily_prices").upsert(
+        {
+            "security_id": sec_id,
+            "trade_date": trade_date,
+            "open": float(last["Open"]) if pd.notna(last.get("Open")) else None,
+            "high": float(last["High"]) if pd.notna(last.get("High")) else None,
+            "low": float(last["Low"]) if pd.notna(last.get("Low")) else None,
+            "close": close,
+            "change_amount": round(chg, 4),
+            "change_pct": round(chg_pct, 4),
+            "volume": volume,
+            "currency": currency,
+            "source": "yfinance",
+            "scraped_at": now,
+        },
+        on_conflict="security_id,trade_date",
+    ).execute()
+    return True
+
+
 def ingest_exchange(code: str):
     cfg = get_exchange(code)
     client = sb()
     ex_id = exchange_id(client, code)
     now = datetime.now(timezone.utc).isoformat()
-    n_prices = 0
-    n_metrics = 0
 
-    for ticker in cfg["symbols"]:
-        t = yf.Ticker(ticker)
-        info = t.info or {}
-        hist = t.history(period="5d")
-        if hist.empty:
-            print(f"  skip {ticker}: no history")
+    shard_index = int(os.environ.get("SHARD", "0"))
+    shard_count = int(os.environ.get("SHARD_COUNT", "1"))
+    max_symbols = int(os.environ.get("MAX_SYMBOLS", "0"))
+
+    all_symbols = load_symbols(code)
+    if max_symbols > 0:
+        all_symbols = all_symbols[:max_symbols]
+    symbols = shard(all_symbols, shard_index, shard_count)
+    print(f"{code} shard {shard_index + 1}/{shard_count}: {len(symbols)} tickers")
+
+    n_ok = 0
+    n_skip = 0
+
+    for i in range(0, len(symbols), DOWNLOAD_BATCH):
+        batch = symbols[i : i + DOWNLOAD_BATCH]
+        try:
+            data = yf.download(
+                batch,
+                period="5d",
+                group_by="column",
+                threads=True,
+                progress=False,
+                auto_adjust=False,
+            )
+        except Exception as exc:
+            print(f"  batch download error: {exc}")
+            n_skip += len(batch)
+            time.sleep(SLEEP_SEC * 2)
             continue
 
-        sym_display = ticker.replace(cfg["yfinance_suffix"], "").upper()
-        if cfg["yfinance_suffix"] == ".SR":
-            sym_display = ticker.replace(".SR", "").upper()
-        sec_id = upsert_security(
-            client,
-            ex_id,
-            sym_display,
-            info.get("shortName") or info.get("longName") or sym_display,
-            info.get("sector"),
-        )
+        parsed = parse_batch_download(data, batch)
+        for ticker in batch:
+            hist = parsed.get(ticker)
+            if hist is None or hist.empty:
+                n_skip += 1
+                continue
+            sym = db_symbol(ticker, cfg)
+            try:
+                sec_id = upsert_security(client, ex_id, sym, sym)
+                if upsert_price_row(client, sec_id, hist, cfg["currency"], now):
+                    n_ok += 1
+                else:
+                    n_skip += 1
+            except Exception as exc:
+                print(f"  skip {ticker}: {exc}")
+                n_skip += 1
 
-        last = hist.iloc[-1]
-        prev = hist.iloc[-2] if len(hist) > 1 else last
-        trade_date = hist.index[-1].strftime("%Y-%m-%d")
-        close = float(last["Close"])
-        prev_close = float(prev["Close"])
-        chg = close - prev_close
-        chg_pct = (chg / prev_close * 100) if prev_close else 0
-
-        client.table("daily_prices").upsert(
-            {
-                "security_id": sec_id,
-                "trade_date": trade_date,
-                "open": float(last["Open"]),
-                "high": float(last["High"]),
-                "low": float(last["Low"]),
-                "close": close,
-                "change_amount": round(chg, 4),
-                "change_pct": round(chg_pct, 4),
-                "volume": int(last["Volume"]) if last["Volume"] == last["Volume"] else None,
-                "currency": cfg["currency"],
-                "source": "yfinance",
-                "scraped_at": now,
-            },
-            on_conflict="security_id,trade_date",
-        ).execute()
-        n_prices += 1
-
-        client.table("financial_metrics").upsert(
-            {
-                "security_id": sec_id,
-                "as_of_date": trade_date,
-                "market_cap": info.get("marketCap"),
-                "pe_ratio": info.get("trailingPE"),
-                "eps": info.get("trailingEps"),
-                "week_52_high": info.get("fiftyTwoWeekHigh"),
-                "week_52_low": info.get("fiftyTwoWeekLow"),
-                "dividend_yield": info.get("dividendYield"),
-                "source": "yfinance",
-                "scraped_at": now,
-            },
-            on_conflict="security_id,as_of_date",
-        ).execute()
-        n_metrics += 1
-
-        div_rate = info.get("dividendRate")
-        if div_rate and div_rate > 0:
-            client.table("dividend_calendar").upsert(
-                {
-                    "security_id": sec_id,
-                    "dividend_per_share": div_rate,
-                    "dividend_yield": (info.get("dividendYield") or 0) * 100 if info.get("dividendYield") else None,
-                    "payment_month": datetime.now().month,
-                    "year": datetime.now().year,
-                    "source": "yfinance",
-                    "scraped_at": now,
-                },
-                on_conflict="security_id,year,payment_month",
-            ).execute()
-
-        print(f"  ok {ticker} close={close:.2f}")
+        print(f"  batch {i // DOWNLOAD_BATCH + 1}: ok={n_ok} skip={n_skip}")
+        time.sleep(SLEEP_SEC)
 
     client.table("data_sync_log").insert(
         {
             "source_file": f"yfinance/{code}",
             "exchange_code": code,
-            "rows_processed": n_prices,
+            "rows_processed": n_ok,
             "status": "success",
-            "message": f"metrics={n_metrics}",
+            "message": f"shard={shard_index}/{shard_count} skipped={n_skip} total={len(symbols)}",
         }
     ).execute()
-    print(f"{code}: {n_prices} prices, {n_metrics} metrics")
+    print(f"{code} done: {n_ok} prices upserted, {n_skip} skipped")
 
 
 def main():
-    codes = sys.argv[1:] or ["NYSE", "NASDAQ"]
+    codes = sys.argv[1:] or ["NYSE"]
     for code in codes:
         print(f"Ingesting {code}...")
         ingest_exchange(code.upper())

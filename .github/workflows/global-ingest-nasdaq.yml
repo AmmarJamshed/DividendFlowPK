@@ -1,0 +1,33 @@
+name: Ingest NASDAQ (full universe)
+
+on:
+  workflow_dispatch:
+    inputs:
+      shard_count:
+        description: Parallel shards (default 10)
+        default: "10"
+  schedule:
+    # US close 16:00 ET → 22:30 UTC → 03:30 PKT next day (Mon–Fri, staggered after NYSE)
+    - cron: "30 22 * * 1-5"
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r ingestion/requirements.txt
+      - name: Ingest NASDAQ shard
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SHARD: ${{ matrix.shard }}
+          SHARD_COUNT: ${{ github.event.inputs.shard_count || '10' }}
+        run: python ingestion/jobs/daily_close.py NASDAQ

@@ -23,7 +23,11 @@
     "weekdays": [1, 2, 3, 4, 5],
     "ingestSource": "yfinance",
     "shariahFilter": false,
-    "marketLabel": "NYSE"
+    "marketLabel": "NYSE",
+    "ingestCronUtc": "0 22 * * 1-5",
+    "ingestTimeUtc": "22:00",
+    "ingestTimePkt": "03:00 next day",
+    "marketCloseLocal": "16:00 America/New_York"
   },
   {
     "code": "NASDAQ",
@@ -36,7 +40,11 @@
     "weekdays": [1, 2, 3, 4, 5],
     "ingestSource": "yfinance",
     "shariahFilter": false,
-    "marketLabel": "NASDAQ"
+    "marketLabel": "NASDAQ",
+    "ingestCronUtc": "30 22 * * 1-5",
+    "ingestTimeUtc": "22:30",
+    "ingestTimePkt": "03:30 next day",
+    "marketCloseLocal": "16:00 America/New_York"
   },
   {
     "code": "TADAWUL",
@@ -75,7 +83,11 @@
     "weekdays": [1, 2, 3, 4, 5],
     "ingestSource": "yfinance",
     "shariahFilter": false,
-    "marketLabel": "HKEX"
+    "marketLabel": "HKEX",
+    "ingestCronUtc": "30 8 * * 1-5",
+    "ingestTimeUtc": "08:30",
+    "ingestTimePkt": "13:30",
+    "marketCloseLocal": "16:00 Asia/Hong_Kong"
   },
   {
     "code": "TSE",
@@ -101,6 +113,10 @@
     "weekdays": [1, 2, 3, 4, 5],
     "ingestSource": "yfinance",
     "shariahFilter": false,
-    "marketLabel": "LSE"
+    "marketLabel": "LSE",
+    "ingestCronUtc": "0 17 * * 1-5",
+    "ingestTimeUtc": "17:00",
+    "ingestTimePkt": "22:00",
+    "marketCloseLocal": "16:30 Europe/London"
   }
 ]

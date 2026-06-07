@@ -1,39 +1,28 @@
-# Global market ingestion via yfinance → Supabase
-# PSX continues on psx-market-prices.yml
+# Legacy manual ingest for TADAWUL / TSE / SSE (curated lists).
+# NYSE, NASDAQ, HKEX, LSE → use global-ingest-*.yml (full universe + market-close crons).
 
-name: Global Market Ingest
+name: Global Market Ingest (Asia-GCC manual)
 
 on:
   workflow_dispatch:
     inputs:
       exchanges:
-        description: 'Comma-separated codes: NYSE,NASDAQ,TADAWUL,HKEX,TSE,SSE,LSE'
-        required: false
-        default: 'NYSE,NASDAQ,TADAWUL,HKEX,TSE,SSE,LSE'
-  schedule:
-    # Weekdays 22:00 UTC — after US/EU/Asia sessions
-    - cron: '0 22 * * 1-5'
+        description: "TADAWUL,TSE,SSE or any single exchange"
+        default: "TADAWUL,TSE,SSE"
 
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Install ingestion dependencies
-        run: pip install -r ingestion/requirements.txt
-
-      - name: Run yfinance ingest
-        env:
+          python-version: "3.11"
+      - run: pip install -r ingestion/requirements.txt
+      - env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          EX="${{ github.event.inputs.exchanges }}"
-          if [ -z "$EX" ]; then EX="NYSE,NASDAQ,TADAWUL,HKEX,TSE,SSE,LSE"; fi
-          IFS=',' read -ra ARR <<< "$EX"
+          IFS=',' read -ra ARR <<< "${{ github.event.inputs.exchanges }}"
           python ingestion/jobs/daily_close.py "${ARR[@]}"
