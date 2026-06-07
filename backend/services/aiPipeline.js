@@ -3,6 +3,90 @@ const exchangeService = require('./exchangeService');
 const marketBuddyRag = require('./marketBuddyRag');
 const { INVESTMENT_DISCLAIMER } = require('../constants/disclaimer');
 
+const CHAT_STOP = new Set([
+  'IS', 'IT', 'A', 'AN', 'THE', 'AND', 'OR', 'FOR', 'TO', 'IN', 'ON', 'AT', 'BY', 'AS', 'IF',
+  'GOOD', 'BUY', 'SELL', 'BAD', 'NOW', 'MY', 'ME', 'I', 'YOU', 'WHAT', 'WHICH', 'HOW', 'WHY',
+  'WHEN', 'WHERE', 'ARE', 'WAS', 'BE', 'DO', 'DOES', 'CAN', 'SHOULD', 'WORTH', 'STOCK', 'SHARE',
+  'SHARES', 'PSX', 'NYSE', 'NASDAQ', 'HKEX', 'LSE', 'TSE', 'SSE', 'TADAWUL', 'ABOUT', 'TELL',
+  'GIVE', 'SHOW', 'LIST', 'TOP', 'BEST', 'WELL', 'VERY', 'THIS', 'THAT', 'WITH', 'FROM', 'WILL',
+  'NOT', 'ALL', 'ANY', 'SOME', 'MUCH', 'MORE', 'LIKE', 'JUST', 'THAN', 'THEN', 'THEM', 'THEY',
+  'HAVE', 'HAS', 'HAD', 'BEEN', 'BEING', 'WOULD', 'COULD', 'MAY', 'MIGHT', 'MUST', 'NEED',
+  'WANT', 'KNOW', 'THINK', 'SEE', 'GET', 'MAKE', 'TAKE', 'COME', 'FAIR', 'BETTER', 'WORSE',
+  'IDEA', 'IDEAS', 'PICK', 'PICKS', 'ADD', 'HELP', 'PLEASE', 'HEY', 'HI', 'HELLO', 'OK', 'YES', 'NO',
+]);
+
+const COMPANY_ALIASES = {
+  nestle: 'NESTLE',
+  'nestle pakistan': 'NESTLE',
+  engro: 'ENGRO',
+  'engro fertilizer': 'EFERT',
+  efert: 'EFERT',
+  'habib bank': 'HBL',
+  habib: 'HBL',
+  hbl: 'HBL',
+  mcb: 'MCB',
+  'muslim commercial': 'MCB',
+  ubl: 'UBL',
+  'united bank': 'UBL',
+  ogdc: 'OGDC',
+  'oil and gas development': 'OGDC',
+  ppl: 'PPL',
+  'pakistan petroleum': 'PPL',
+  pso: 'PSO',
+  ffc: 'FFC',
+  'fauji fertilizer': 'FFC',
+  hubco: 'HUBC',
+  hubc: 'HUBC',
+  kapco: 'KAPCO',
+  lucky: 'LUCK',
+  luck: 'LUCK',
+  colgate: 'COLG',
+  colg: 'COLG',
+  unity: 'UNITY',
+  'systems limited': 'SYS',
+  sys: 'SYS',
+};
+
+async function resolveSymbolFromMessage(message, exchangeCode) {
+  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const msg = String(message || '').trim();
+  if (!msg) return null;
+
+  const lower = msg.toLowerCase().replace(/[^\w\s]/g, ' ');
+
+  const aliasKeys = Object.keys(COMPANY_ALIASES).sort((a, b) => b.length - a.length);
+  for (const key of aliasKeys) {
+    if (lower.includes(key)) return COMPANY_ALIASES[key];
+  }
+
+  const upperTokens = msg.toUpperCase().match(/\b[A-Z]{2,6}\b/g) || [];
+  const tickers = upperTokens.filter((t) => !CHAT_STOP.has(t));
+  if (tickers.length === 1) return tickers[0];
+
+  const words = lower.split(/\s+/).filter((w) => w.length >= 3 && !CHAT_STOP.has(w.toUpperCase()));
+  const phrases = [];
+  for (let len = Math.min(4, words.length); len >= 1; len -= 1) {
+    for (let i = 0; i <= words.length - len; i += 1) {
+      phrases.push(words.slice(i, i + len).join(' '));
+    }
+  }
+  phrases.sort((a, b) => b.length - a.length);
+
+  for (const phrase of phrases) {
+    const resolved = await globalDataStore.resolveSymbolForExchange(phrase, code);
+    if (resolved) return resolved;
+  }
+
+  if (tickers.length > 1) {
+    for (const t of tickers) {
+      const detail = await globalDataStore.getStockDetail(code, t);
+      if (detail) return t;
+    }
+  }
+
+  return null;
+}
+
 function classifyIntent(message) {
   const q = String(message || '').toLowerCase();
   if (/portfolio|holdings|allocat|diversif|what should i|invest \$|invest pk|invest usd|split|weight/.test(q)) {
@@ -82,7 +166,11 @@ function formatToolsBlock(retrieval) {
     }
   } else if (tools.prices?.close != null) {
     const p = tools.prices;
-    lines.push(`Latest price: close=${p.close} change=${p.changePct}% date=${p.tradeDate || 'n/a'}`);
+    lines.push(`Focus stock price: close=${p.close} change=${p.changePct}% date=${p.tradeDate || 'n/a'}`);
+  }
+
+  if (tools.stock?.name) {
+    lines.push(`Company: ${tools.stock.name} (${tools.stock.symbol}) sector=${tools.stock.sector || 'n/a'}`);
   }
 
   if (tools.candidates?.length) {
@@ -152,9 +240,10 @@ Rules:
 1) Use ONLY facts from DATA blocks. Never invent tickers, prices, yields, or headlines.
 2) Probabilistic language only ("may", "could", "historically") — no guaranteed returns.
 3) Not a licensed adviser — no personalized tax/legal guidance.
-4) Missing data → say "unavailable in our database".
-5) End with "Confidence: NN/100" (0-100 based on data completeness).
-6) Include 1-3 risk bullets when discussing stocks or portfolios.
+4) Missing data → say "unavailable in our database" only when the Focus symbol block is empty.
+5) When Focus symbol data IS present, answer about that company using price, dividend, and news fields — do not claim data is missing.
+6) End with "Confidence: NN/100" (0-100 based on data completeness).
+7) Include 1-3 risk bullets when discussing stocks or portfolios.
 ${portfolioGuide}
 Data freshness (archived scrapes + Supabase — not live market):
 ${legacyDigest || 'See retrieval block.'}
@@ -194,7 +283,9 @@ ${message}`;
 function estimateConfidence(retrieval) {
   let score = 25;
   const { tools } = retrieval;
-  if (tools.prices || tools.movers) score += 20;
+  if (tools.stock) score += 15;
+  if (tools.prices?.close != null) score += 15;
+  if (tools.movers) score += 10;
   if (tools.candidates?.length) score += 15;
   if (tools.dividends) score += 15;
   if (tools.metrics) score += 10;
@@ -227,6 +318,7 @@ async function retrieveEnhanced(exchangeCode, symbol, question, holdings) {
   if (symbol) {
     const detail = await globalDataStore.getStockDetail(code, symbol);
     if (detail) {
+      tools.stock = { symbol: detail.symbol, name: detail.name, sector: detail.sector };
       tools.prices = detail.price;
       tools.dividends = detail.dividends;
       tools.news = detail.news?.slice(0, 5);
@@ -265,11 +357,10 @@ async function prepareMarketChatContext({
   legacyDataBlock,
 }) {
   const exchangeCode = exchangeService.normalizeExchangeCode(exchange);
-  let detectedSymbol = symbol;
+  let detectedSymbol = symbol ? String(symbol).toUpperCase() : null;
 
   if (!detectedSymbol && message) {
-    const tokens = message.toUpperCase().match(/\b[A-Z]{1,5}\b/g);
-    if (tokens?.length === 1) detectedSymbol = tokens[0];
+    detectedSymbol = await resolveSymbolFromMessage(message, exchangeCode);
   }
 
   const parsedHoldings = parseHoldingsFromMessage(message);
@@ -304,4 +395,5 @@ module.exports = {
   formatToolsBlock,
   estimateConfidence,
   classifyIntent,
+  resolveSymbolFromMessage,
 };

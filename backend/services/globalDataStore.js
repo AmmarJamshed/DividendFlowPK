@@ -107,12 +107,90 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+let psxSymbolIndexCache = null;
+
+async function loadPsxSymbolIndex() {
+  if (psxSymbolIndexCache) return psxSymbolIndexCache;
+  const entries = new Map();
+
+  const add = (symbol, name) => {
+    const sym = String(symbol || '').toUpperCase().trim();
+    if (!sym) return;
+    const nm = String(name || sym).trim();
+    entries.set(sym, { symbol: sym, name: nm, exchange: 'PSX' });
+  };
+
+  const readCsvRows = async (rel) => {
+    const { rows } = await dataStore.readMarketData(rel, async (fp) => {
+      const csv = require('csv-parser');
+      const fs = require('fs');
+      return new Promise((resolve, reject) => {
+        if (!fs.existsSync(fp)) return resolve([]);
+        const results = [];
+        fs.createReadStream(fp)
+          .pipe(csv())
+          .on('data', (d) => results.push(d))
+          .on('end', () => resolve(results))
+          .on('error', reject);
+      });
+    });
+    return rows || [];
+  };
+
+  try {
+    for (const row of await readCsvRows('dividends/psx_dividend_calendar.csv')) {
+      add(row.Company || row.company, row.Company || row.company);
+    }
+    for (const row of await readCsvRows('dividends/psx_payouts.csv')) {
+      add(row.Company || row.company, row.CompanyName || row.Company || row.company);
+    }
+    const psx = await getClosingPrices('PSX');
+    for (const r of psx.rows || []) add(r.symbol, r.company || r.symbol);
+  } catch (err) {
+    console.warn('[globalDataStore] PSX symbol index load failed:', err.message);
+  }
+
+  psxSymbolIndexCache = [...entries.values()];
+  return psxSymbolIndexCache;
+}
+
+function scoreSymbolMatch(query, entry) {
+  const q = String(query || '').toLowerCase().trim();
+  if (!q) return 0;
+  const sym = entry.symbol.toLowerCase();
+  const name = String(entry.name || '').toLowerCase();
+  if (sym === q) return 100;
+  if (name === q) return 95;
+  if (sym.startsWith(q)) return 80;
+  if (name.startsWith(q)) return 75;
+  if (name.includes(q)) return 60;
+  if (sym.includes(q)) return 50;
+  const words = q.split(/\s+/).filter((w) => w.length >= 3);
+  if (words.every((w) => name.includes(w))) return 70;
+  if (words.some((w) => name.includes(w) || sym.includes(w))) return 40;
+  return 0;
+}
+
+async function searchLocalPsx(query, limit = 20) {
+  const index = await loadPsxSymbolIndex();
+  const q = String(query || '').trim();
+  if (!q) return [];
+  return index
+    .map((e) => ({ ...e, score: scoreSymbolMatch(q, e) }))
+    .filter((e) => e.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ score, ...rest }) => rest);
+}
+
 async function searchSecurities(query, limit = 20) {
   const q = String(query || '').trim();
   if (!q || q.length < 1) return [];
 
   if (!isSupabaseConfigured()) {
     if (q.length >= 1) {
+      const local = await searchLocalPsx(q, limit);
+      if (local.length) return local;
       const psx = await getClosingPrices('PSX');
       return (psx.rows || [])
         .filter((r) => r.symbol.toUpperCase().includes(q.toUpperCase()) || r.company.toUpperCase().includes(q.toUpperCase()))
@@ -134,12 +212,141 @@ async function searchSecurities(query, limit = 20) {
     .limit(limit);
 
   if (error) throw error;
-  return (data || []).map((r) => ({
+  const remote = (data || []).map((r) => ({
     symbol: r.symbol,
     name: r.name || r.symbol,
     sector: r.sector || '',
     exchange: exchangeMap.get(r.exchange_id) || 'PSX',
   }));
+
+  if (remote.length) return remote;
+
+  return searchLocalPsx(q, limit);
+}
+
+async function searchSecuritiesForExchange(query, exchangeCode, limit = 5) {
+  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const q = String(query || '').trim();
+  if (!q) return [];
+
+  if (code === 'PSX') {
+    const local = await searchLocalPsx(q, limit * 2);
+    if (local.length) return local.slice(0, limit);
+  }
+
+  if (!isSupabaseConfigured()) {
+    return (await searchSecurities(q, limit * 3)).filter((r) => r.exchange === code).slice(0, limit);
+  }
+
+  const exchangeId = await exchangeService.getExchangeId(code);
+  if (!exchangeId) return code === 'PSX' ? searchLocalPsx(q, limit) : [];
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('securities')
+    .select('symbol, name, sector, exchange_id')
+    .eq('exchange_id', exchangeId)
+    .eq('active', true)
+    .or(`symbol.ilike.%${q}%,name.ilike.%${q}%`)
+    .limit(limit);
+
+  if (error) throw error;
+  const hits = (data || []).map((r) => ({
+    symbol: r.symbol,
+    name: r.name || r.symbol,
+    sector: r.sector || '',
+    exchange: code,
+  }));
+
+  if (hits.length) return hits;
+  return code === 'PSX' ? searchLocalPsx(q, limit) : [];
+}
+
+async function resolveSymbolForExchange(query, exchangeCode) {
+  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const q = String(query || '').trim();
+  if (!q) return null;
+
+  const sym = q.toUpperCase();
+  const direct = await getStockDetail(code, sym);
+  if (direct) return sym;
+
+  const hits = await searchSecuritiesForExchange(q, code, 8);
+  if (!hits.length) return null;
+  if (hits.length === 1) return hits[0].symbol;
+
+  const qLower = q.toLowerCase();
+  const ranked = hits
+    .map((h) => ({ ...h, score: scoreSymbolMatch(qLower, h) }))
+    .sort((a, b) => b.score - a.score);
+  if (ranked[0].score >= 40) return ranked[0].symbol;
+  return ranked[0].symbol;
+}
+
+async function getPsxStockDetailFromLocal(sym) {
+  const psx = await getClosingPrices('PSX');
+  const row = (psx.rows || []).find((r) => r.symbol.toUpperCase() === sym);
+  if (!row) return null;
+
+  const index = await loadPsxSymbolIndex();
+  const meta = index.find((e) => e.symbol === sym);
+
+  let calendar = [];
+  let profile = null;
+  try {
+    const calRows = await dataStore.readMarketData('dividends/psx_dividend_calendar.csv', async (fp) => {
+      const csv = require('csv-parser');
+      const fs = require('fs');
+      return new Promise((resolve, reject) => {
+        if (!fs.existsSync(fp)) return resolve([]);
+        const results = [];
+        fs.createReadStream(fp)
+          .pipe(csv())
+          .on('data', (d) => results.push(d))
+          .on('end', () => resolve(results))
+          .on('error', reject);
+      });
+    });
+    const cal = (calRows.rows || []).find((r) => (r.Company || r.company || '').toUpperCase() === sym);
+    if (cal) {
+      calendar = [{
+        dividend_per_share: parseFloat(cal.Dividend_per_share || cal.dividend_per_share) || null,
+        payment_month: parseInt(cal.Payment_month || cal.payment_month, 10) || null,
+        dividend_yield: parseFloat(cal.Dividend_yield || cal.dividend_yield) || null,
+        price: parseFloat(cal.Price || cal.price) || null,
+        year: parseInt(cal.Year || cal.year, 10) || null,
+      }];
+      profile = {
+        dividend_yield: parseFloat(cal.Dividend_yield || cal.dividend_yield) || null,
+        annual_rate: parseFloat(cal.Dividend_per_share || cal.dividend_per_share) || null,
+      };
+    }
+  } catch (_) {
+    /* optional csv enrichment */
+  }
+
+  return {
+    exchange: 'PSX',
+    symbol: sym,
+    name: meta?.name || sym,
+    sector: '',
+    currency: 'PKR',
+    price: {
+      close: row.close,
+      change: row.change,
+      changePct: row.changePct,
+      open: row.open,
+      high: row.high,
+      low: row.low,
+      volume: row.volume,
+      tradeDate: psx.date,
+    },
+    history: [],
+    dividends: { calendar, payouts: [], events: [], profile },
+    metrics: profile ? { dividend_yield: profile.dividend_yield } : null,
+    news: [],
+    aiInsight: null,
+  };
 }
 
 async function getStockDetail(exchangeCode, symbol) {
@@ -148,20 +355,7 @@ async function getStockDetail(exchangeCode, symbol) {
   if (!sym) return null;
 
   if (code === 'PSX' && !isSupabaseConfigured()) {
-    const psx = await getClosingPrices('PSX');
-    const row = (psx.rows || []).find((r) => r.symbol.toUpperCase() === sym);
-    if (!row) return null;
-    return {
-      exchange: code,
-      symbol: sym,
-      name: row.company,
-      price: row,
-      history: [],
-      dividends: [],
-      metrics: null,
-      news: [],
-      aiInsight: null,
-    };
+    return getPsxStockDetailFromLocal(sym);
   }
 
   if (!isSupabaseConfigured()) return null;
@@ -175,7 +369,10 @@ async function getStockDetail(exchangeCode, symbol) {
     .eq('exchange_id', exchangeId)
     .eq('symbol', sym)
     .maybeSingle();
-  if (!sec) return null;
+  if (!sec) {
+    if (code === 'PSX') return getPsxStockDetailFromLocal(sym);
+    return null;
+  }
 
   const [pricesRes, divCalRes, divPayRes, divEventsRes, divProfileRes, metricsRes, newsRes, insightRes] = await Promise.all([
     supabase
@@ -369,6 +566,8 @@ async function retrieveForAi(exchangeCode, symbol, question, holdings) {
 module.exports = {
   getClosingPrices,
   searchSecurities,
+  searchSecuritiesForExchange,
+  resolveSymbolForExchange,
   getStockDetail,
   getDividendsForExchange,
   retrieveForAi,

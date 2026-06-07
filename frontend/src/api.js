@@ -18,7 +18,8 @@ export const api = {
   getReportingCycles: () => axios.get(`${API_BASE}/reporting-cycles`),
   getCapitalGain: (company) => axios.get(`${API_BASE}/capital-gain`, { params: { company } }),
   getDataStatus: () => axios.get(`${API_BASE}/data-status`),
-  getDailyNews: () => axios.get(`${API_BASE}/daily-news`),
+  getDailyNews: (exchange = 'PSX') =>
+    axios.get(`${API_BASE}/daily-news`, { params: { exchange } }),
   getExchangeDailyNews: (exchange) =>
     axios.get(`${API_BASE}/v1/markets/${exchange}/daily-news`),
   getMarketClosingPrices: (exchange = 'PSX') =>

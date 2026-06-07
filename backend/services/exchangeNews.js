@@ -1,4 +1,3 @@
-const path = require('path');
 const axios = require('axios');
 const exchangeService = require('./exchangeService');
 const globalDataStore = require('./globalDataStore');
@@ -7,12 +6,22 @@ const { getSupabase, isSupabaseConfigured } = require('../db/supabaseClient');
 
 const YAHOO_UA = 'Mozilla/5.0 (compatible; DividendFlow/1.0)';
 
-function toYahooTicker(symbol, exchangeCode) {
+function getSeeds(exchangeCode) {
+  const cfg = exchangeService.getExchangeConfig(exchangeCode);
+  return cfg?.newsSeedSymbols || [];
+}
+
+function getMacroQuery(exchangeCode) {
+  const cfg = exchangeService.getExchangeConfig(exchangeCode);
+  return cfg?.macroNewsQuery || `${exchangeCode} stock market`;
+}
+
+function dbSymbolFromYahoo(yahooTicker, exchangeCode) {
   const cfg = exchangeService.getExchangeConfig(exchangeCode);
   const suffix = (cfg.yfinanceSuffix || '').toUpperCase();
-  const s = String(symbol || '').trim().toUpperCase();
-  if (!s) return '';
-  if (suffix && !s.endsWith(suffix)) return `${s}${suffix}`;
+  let s = String(yahooTicker || '').toUpperCase();
+  if (suffix && s.endsWith(suffix)) s = s.slice(0, -suffix.length);
+  if (suffix === '.HK' && /^\d+$/.test(s)) return s.padStart(4, '0');
   return s;
 }
 
@@ -24,12 +33,14 @@ async function fetchYahooNewsForQuery(query) {
       headers: { 'User-Agent': YAHOO_UA },
       timeout: 12000,
     });
-    return (data?.news || []).map((n) => ({
-      Headline: n.title || '',
-      Date: n.providerPublishTime ? new Date(n.providerPublishTime * 1000).toISOString() : '',
-      Source: n.publisher || 'Yahoo Finance',
-      Url: n.link || '',
-    })).filter((n) => n.Headline);
+    return (data?.news || [])
+      .map((n) => ({
+        Headline: n.title || '',
+        Date: n.providerPublishTime ? new Date(n.providerPublishTime * 1000).toISOString() : '',
+        Source: n.publisher || 'Yahoo Finance',
+        Url: n.link || '',
+      }))
+      .filter((n) => n.Headline);
   } catch (err) {
     console.warn('[exchangeNews] Yahoo search failed:', query, err.message);
     return [];
@@ -37,37 +48,72 @@ async function fetchYahooNewsForQuery(query) {
 }
 
 async function fetchYahooNewsForSymbol(symbol, exchangeCode) {
-  const ticker = toYahooTicker(symbol, exchangeCode);
+  const ticker = exchangeService.yfinanceTicker(symbol, exchangeCode);
   const items = await fetchYahooNewsForQuery(ticker);
-  return items.map((n) => ({ ...n, Company: String(symbol).toUpperCase() }));
+  const company = String(symbol).toUpperCase();
+  return items.map((n) => ({ ...n, Company: company }));
 }
 
-async function fetchYahooNewsBatch(exchangeCode, symbols, limit = 12) {
+async function fetchYahooNewsBatch(exchangeCode, symbols, limit = 14) {
   const out = [];
-  const slice = symbols.slice(0, limit);
+  const slice = [...new Set(symbols.map((s) => String(s).toUpperCase()))].slice(0, limit);
   for (const sym of slice) {
     const rows = await fetchYahooNewsForSymbol(sym, exchangeCode);
     out.push(...rows.slice(0, 2));
-    await new Promise((r) => setTimeout(r, 120));
+    await new Promise((r) => setTimeout(r, 100));
   }
   return out;
 }
 
-const MACRO_QUERIES = {
-  PSX: 'Pakistan stock exchange PSX',
-  NYSE: 'NYSE stock market',
-  NASDAQ: 'NASDAQ stocks',
-  LSE: 'London stock exchange FTSE',
-  HKEX: 'Hang Seng Hong Kong stocks',
-  TSE: 'Nikkei Tokyo stocks',
-  SSE: 'Shanghai stock exchange',
-  TADAWUL: 'Tadawul Saudi stocks',
-};
+async function fetchYahooChartMover(symbol, exchangeCode) {
+  const ticker = exchangeService.yfinanceTicker(symbol, exchangeCode);
+  try {
+    const { data } = await axios.get(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`,
+      {
+        params: { interval: '1d', range: '5d' },
+        headers: { 'User-Agent': YAHOO_UA },
+        timeout: 12000,
+      }
+    );
+    const result = data?.chart?.result?.[0];
+    const closes = (result?.indicators?.quote?.[0]?.close || []).filter((v) => v != null);
+    if (closes.length < 2) return null;
+    const prev = closes[closes.length - 2];
+    const last = closes[closes.length - 1];
+    if (!prev || !last) return null;
+    const changePct = ((last - prev) / prev) * 100;
+    const tradeDate = result?.timestamp?.length
+      ? new Date(result.timestamp[result.timestamp.length - 1] * 1000).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+    return {
+      Company: dbSymbolFromYahoo(result?.meta?.symbol || symbol, exchangeCode),
+      Price: last,
+      Change: last - prev,
+      ChangePct: changePct,
+      Date: tradeDate,
+    };
+  } catch (err) {
+    console.warn('[exchangeNews] Yahoo chart failed:', ticker, err.message);
+    return null;
+  }
+}
+
+async function fetchMoversFromSeeds(exchangeCode) {
+  const seeds = getSeeds(exchangeCode);
+  if (!seeds.length) return [];
+  const movers = [];
+  for (const sym of seeds) {
+    const row = await fetchYahooChartMover(sym, exchangeCode);
+    if (row && row.ChangePct !== 0) movers.push(row);
+    await new Promise((r) => setTimeout(r, 80));
+  }
+  return movers.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
+}
 
 async function fetchExchangeMacroArticle(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
-  const query = MACRO_QUERIES[code] || `${code} stock market`;
-  const items = await fetchYahooNewsForQuery(query);
+  const items = await fetchYahooNewsForQuery(getMacroQuery(code));
   if (!items.length) return null;
   const top = items[0];
   return {
@@ -119,9 +165,9 @@ async function fetchSupabaseCommentaryForExchange(exchangeCode) {
     .from('news_ai_commentary')
     .select('company_symbol, commentary, commentary_date')
     .order('commentary_date', { ascending: false })
-    .limit(300);
+    .limit(400);
   return (data || [])
-    .filter((r) => symSet.has(r.company_symbol) || exchangeCode === 'PSX')
+    .filter((r) => symSet.has(r.company_symbol))
     .map((r) => ({
       Company: r.company_symbol,
       Commentary: r.commentary,
@@ -137,9 +183,9 @@ async function fetchSupabasePriceCommentaryForExchange(exchangeCode) {
     .from('news_price_commentary')
     .select('company_symbol, direction, change_pct, commentary, commentary_date')
     .order('commentary_date', { ascending: false })
-    .limit(200);
+    .limit(300);
   return (data || [])
-    .filter((r) => symSet.has(r.company_symbol) || exchangeCode === 'PSX')
+    .filter((r) => symSet.has(r.company_symbol))
     .map((r) => ({
       Company: r.company_symbol,
       Direction: r.direction || '',
@@ -162,9 +208,20 @@ function priceChangesFromMarket(market) {
     .sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
 }
 
+async function resolvePriceChanges(exchangeCode, market) {
+  let priceChanges = priceChangesFromMarket(market);
+  if (priceChanges.length) return { priceChanges, source: market.source || 'database' };
+
+  const seedMovers = await fetchMoversFromSeeds(exchangeCode);
+  if (seedMovers.length) {
+    return { priceChanges: seedMovers, source: 'yahoo_seeds' };
+  }
+  return { priceChanges: [], source: 'none' };
+}
+
 async function getPsxDailyNewsFromStore() {
-  const readCsv = (rel) =>
-    dataStore.readMarketData(rel, async (fp) => {
+  const readCsv = async (rel) => {
+    const result = await dataStore.readMarketData(rel, async (fp) => {
       const csv = require('csv-parser');
       const fs = require('fs');
       return new Promise((resolve, reject) => {
@@ -177,16 +234,19 @@ async function getPsxDailyNewsFromStore() {
           .on('error', reject);
       });
     });
+    return result?.rows || [];
+  };
 
-  const [news, commentary, priceCommentary, priceChangesRaw] = await Promise.all([
+  const [news, commentary, priceCommentary, priceChangesRaw, dbNews] = await Promise.all([
     readCsv('news/daily_news.csv'),
     readCsv('news/ai_commentary.csv'),
     readCsv('news/price_commentary.csv'),
     readCsv('prices/price_changes.csv'),
+    fetchSupabaseNewsForExchange('PSX'),
   ]);
 
   let priceChanges = (priceChangesRaw || [])
-    .filter((p) => (p.Company || p.company) && (p.ChangePct || p.changePct))
+    .filter((p) => (p.Company || p.company) && (p.ChangePct != null || p.changePct != null))
     .map((p) => ({
       Company: p.Company || p.company,
       Price: parseFloat(p.Price || p.price) || 0,
@@ -199,21 +259,30 @@ async function getPsxDailyNewsFromStore() {
     const market = await globalDataStore.getClosingPrices('PSX');
     priceChanges = priceChangesFromMarket(market);
   }
+  if (!priceChanges.some((p) => p.ChangePct !== 0)) {
+    const seedMovers = await fetchMoversFromSeeds('PSX');
+    if (seedMovers.length) priceChanges = seedMovers;
+  }
+
+  const mergedNews = [...(news || []), ...dbNews];
+  const macro = await fetchExchangeMacroArticle('PSX');
+  if (macro) mergedNews.push(macro);
 
   return {
     exchange: 'PSX',
-    news: news || [],
+    news: mergedNews,
     commentary: commentary || [],
     priceChanges,
     priceCommentary: priceCommentary || [],
     tradeDate: priceChanges[0]?.Date || null,
+    dataSource: 'psx_scrape',
   };
 }
 
 async function getGlobalDailyNews(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
   const market = await globalDataStore.getClosingPrices(code);
-  const priceChanges = priceChangesFromMarket(market);
+  const { priceChanges, source: moverSource } = await resolvePriceChanges(code, market);
 
   const [dbNews, dbCommentary, dbPriceCommentary] = await Promise.all([
     fetchSupabaseNewsForExchange(code),
@@ -222,7 +291,10 @@ async function getGlobalDailyNews(exchangeCode) {
   ]);
 
   const moverSymbols = priceChanges.slice(0, 15).map((p) => p.Company);
-  const yahooNews = moverSymbols.length ? await fetchYahooNewsBatch(code, moverSymbols, 10) : [];
+  const seedSymbols = getSeeds(code);
+  const newsSymbols = [...new Set([...moverSymbols, ...seedSymbols])];
+
+  const yahooNews = newsSymbols.length ? await fetchYahooNewsBatch(code, newsSymbols, 14) : [];
   const macro = await fetchExchangeMacroArticle(code);
 
   const newsByKey = new Map();
@@ -248,16 +320,30 @@ async function getGlobalDailyNews(exchangeCode) {
     priceChanges,
     priceCommentary: dbPriceCommentary,
     tradeDate: market.date || priceChanges[0]?.Date || null,
+    dataSource: moverSource,
   };
 }
 
 async function getDailyNewsForExchange(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const supported = exchangeService.listExchanges().map((e) => e.code);
+  if (!supported.includes(code)) {
+    throw new Error(`Unsupported exchange: ${exchangeCode}`);
+  }
   if (code === 'PSX') return getPsxDailyNewsFromStore();
   return getGlobalDailyNews(code);
 }
 
+function listSupportedExchanges() {
+  return exchangeService.listExchanges().map((e) => ({
+    code: e.code,
+    name: e.name,
+    macroNewsQuery: e.macroNewsQuery,
+    seedCount: (e.newsSeedSymbols || []).length,
+  }));
+}
+
 module.exports = {
   getDailyNewsForExchange,
-  toYahooTicker,
+  listSupportedExchanges,
 };

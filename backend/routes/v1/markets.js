@@ -1,8 +1,13 @@
 const express = require('express');
 const exchangeService = require('../../services/exchangeService');
 const globalDataStore = require('../../services/globalDataStore');
+const exchangeNews = require('../../services/exchangeNews');
 
 const router = express.Router();
+
+router.get('/supported', (_req, res) => {
+  res.json({ exchanges: exchangeNews.listSupportedExchanges() });
+});
 
 router.get('/:exchange/closing-prices', async (req, res) => {
   try {
@@ -42,7 +47,6 @@ router.get('/:exchange/dividends', async (req, res) => {
 router.get('/:exchange/daily-news', async (req, res) => {
   try {
     const code = exchangeService.normalizeExchangeCode(req.params.exchange);
-    const exchangeNews = require('../../services/exchangeNews');
     const payload = await exchangeNews.getDailyNewsForExchange(code);
     res.json(payload);
   } catch (err) {

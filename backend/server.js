@@ -16,6 +16,7 @@ const { INVESTMENT_DISCLAIMER, MARKET_CLOSE_NOTICE } = require('./constants/disc
 const v1Router = require('./routes/v1');
 const aiPipeline = require('./services/aiPipeline');
 const exchangeService = require('./services/exchangeService');
+const exchangeNews = require('./services/exchangeNews');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -1619,10 +1620,11 @@ async function groqMarketChat(systemPrompt, userBlock) {
   }
 }
 
-// GET /api/daily-news - Scraped news + prices + AI commentary for PSX companies
+// GET /api/daily-news - Exchange-scoped news + prices + AI commentary (?exchange=PSX default)
 app.get('/api/daily-news', async (req, res) => {
   try {
-    const payload = await fetchDailyNewsPayload();
+    const code = exchangeService.normalizeExchangeCode(req.query.exchange);
+    const payload = await exchangeNews.getDailyNewsForExchange(code);
     res.json(payload);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1658,8 +1660,8 @@ app.post('/api/market-chat', async (req, res) => {
       return res.status(400).json({ ok: false, reply: 'Type a question first.' });
     }
 
-    const payload = await fetchDailyNewsPayload();
-    const dataBlock = buildMarketChatContextText(payload);
+    const newsPayload = await exchangeNews.getDailyNewsForExchange(exchange);
+    const dataBlock = buildMarketChatContextText(newsPayload);
     const digest = buildSiteDataDigest();
 
     const ctx = await aiPipeline.prepareMarketChatContext({
