@@ -142,6 +142,41 @@ export default function StockPage() {
         </div>
       )}
 
+      {data.dividends?.profile?.frequency && (
+        <p className="text-sm text-slate-600 mb-4">
+          Dividend frequency: <strong>{data.dividends.profile.frequency}</strong>
+          {data.dividends.profile.annual_rate != null && (
+            <> · Annual rate: {formatMoney(data.dividends.profile.annual_rate, data.currency)}</>
+          )}
+        </p>
+      )}
+
+      {data.dividends?.events?.length > 0 && (
+        <div className="card p-4 mb-6">
+          <h3 className="text-xs font-semibold uppercase text-slate-500 mb-3">Dividend history</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-slate-500 border-b">
+                  <th className="py-2 pr-4">Ex-date</th>
+                  <th className="py-2 pr-4">Amount</th>
+                  <th className="py-2">Frequency</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.dividends.events.slice(0, 12).map((ev, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="py-2 pr-4">{ev.ex_date || ev.payment_date}</td>
+                    <td className="py-2 pr-4">{formatMoney(ev.amount, ev.currency || data.currency)}</td>
+                    <td className="py-2">{ev.frequency || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {insight?.content && (
         <div className="card p-4 mb-6 border-teal-100 bg-teal-50/40">
           <h3 className="text-xs font-semibold uppercase text-teal-700 mb-2">AI insight</h3>

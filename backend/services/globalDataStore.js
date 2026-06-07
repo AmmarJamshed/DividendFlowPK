@@ -177,7 +177,7 @@ async function getStockDetail(exchangeCode, symbol) {
     .maybeSingle();
   if (!sec) return null;
 
-  const [pricesRes, divCalRes, divPayRes, metricsRes, newsRes, insightRes] = await Promise.all([
+  const [pricesRes, divCalRes, divPayRes, divEventsRes, divProfileRes, metricsRes, newsRes, insightRes] = await Promise.all([
     supabase
       .from('daily_prices')
       .select('trade_date, open, high, low, close, change_amount, change_pct, volume, currency')
@@ -196,6 +196,17 @@ async function getStockDetail(exchangeCode, symbol) {
       .eq('security_id', sec.id)
       .order('year', { ascending: false })
       .limit(24),
+    supabase
+      .from('dividend_events')
+      .select('ex_date, payment_date, amount, currency, frequency, dividend_type')
+      .eq('security_id', sec.id)
+      .order('payment_date', { ascending: false })
+      .limit(48),
+    supabase
+      .from('dividend_profiles')
+      .select('annual_rate, dividend_yield, frequency, ex_dividend_date, trailing_12m_total, last_updated')
+      .eq('security_id', sec.id)
+      .maybeSingle(),
     supabase
       .from('financial_metrics')
       .select('*')
@@ -248,6 +259,8 @@ async function getStockDetail(exchangeCode, symbol) {
     dividends: {
       calendar: divCalRes.data || [],
       payouts: divPayRes.data || [],
+      events: divEventsRes.data || [],
+      profile: divProfileRes.data || null,
     },
     metrics: metricsRes.data || null,
     news: newsRes.data || [],
@@ -312,7 +325,22 @@ async function getDividendsForExchange(exchangeCode, filters = {}) {
     year: r.year,
     exchange: code,
   }));
-  return applyDividendFilters(mapped, filters);
+
+  const { data: profiles } = await supabase
+    .from('dividend_profiles')
+    .select('frequency, dividend_yield, security_id, securities!inner(symbol)')
+    .in('security_id', secIds);
+
+  const freqBySymbol = new Map(
+    (profiles || []).map((p) => [p.securities?.symbol || '', p.frequency])
+  );
+
+  const enriched = mapped.map((r) => ({
+    ...r,
+    frequency: freqBySymbol.get(r.symbol) || null,
+  }));
+
+  return applyDividendFilters(enriched, filters);
 }
 
 function applyDividendFilters(rows, filters) {
