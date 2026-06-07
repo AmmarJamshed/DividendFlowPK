@@ -17,8 +17,6 @@ import { formatMoney } from '../utils/formatMoney';
 import {
   normalizeDividendRows,
   buildMonthCoverageFromDividends,
-  buildMoversFromClosingPrices,
-  buildGlobalMarketAlerts,
 } from '../utils/exchangeDashboard';
 import { buildDashboardRiskAlerts, getPktDateString } from '../utils/dashboardRiskAlerts';
 
@@ -105,38 +103,32 @@ export default function Dashboard() {
     const load = async () => {
       setLoading(true);
       try {
+        const [divRes, covRes, newsRes] = await Promise.all([
+          isPsx ? api.getDividends() : api.getMarketDividends(exchange),
+          isPsx ? api.getMonthCoverage() : Promise.resolve({ data: null }),
+          api.getExchangeDailyNews(exchange).catch(() => ({ data: {} })),
+        ]);
+        if (cancelled) return;
+
         if (isPsx) {
-          const [divRes, covRes, newsRes] = await Promise.all([
-            api.getDividends(),
-            api.getMonthCoverage(),
-            api.getDailyNews().catch(() => ({ data: {} })),
-          ]);
-          if (cancelled) return;
           setDividends(divRes.data);
           setMonthCoverage(covRes.data);
-          const newsPayload = newsRes.data || {};
-          setDailyNews(newsPayload);
-          setTradeDate(newsPayload.priceChanges?.[0]?.Date || null);
-          setRiskAlerts(
-            buildDashboardRiskAlerts(newsPayload, {
-              maxAlerts: 4,
-              dateKey: getPktDateString(),
-            })
-          );
         } else {
-          const [divRes, pricesRes] = await Promise.all([
-            api.getMarketDividends(exchange),
-            api.getMarketClosingPrices(exchange),
-          ]);
-          if (cancelled) return;
           const normalized = normalizeDividendRows(divRes.data?.rows || [], exchange);
           setDividends(normalized);
           setMonthCoverage(buildMonthCoverageFromDividends(normalized));
-          const movers = buildMoversFromClosingPrices(pricesRes.data);
-          setTradeDate(pricesRes.data?.date || movers[0]?.Date || null);
-          setDailyNews({ news: [], commentary: [], priceChanges: movers, priceCommentary: [] });
-          setRiskAlerts(buildGlobalMarketAlerts(movers, exchangeConfig));
         }
+
+        const newsPayload = newsRes.data || {};
+        setDailyNews(newsPayload);
+        setTradeDate(newsPayload.tradeDate || newsPayload.priceChanges?.[0]?.Date || null);
+        setRiskAlerts(
+          buildDashboardRiskAlerts(newsPayload, {
+            maxAlerts: 6,
+            dateKey: getPktDateString(),
+            exchange,
+          })
+        );
       } catch (err) {
         console.error(err);
       } finally {
@@ -147,7 +139,7 @@ export default function Dashboard() {
     return () => {
       cancelled = true;
     };
-  }, [exchange, exchangeConfig, isPsx]);
+  }, [exchange, isPsx]);
 
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const heatmapData = monthCoverage ? monthNames.map((m, i) => ({
@@ -316,14 +308,10 @@ export default function Dashboard() {
             accent="emerald"
           />
           <MetricCard
-            label={isPsx ? 'News items' : 'Database rows'}
-            value={isPsx ? dashboardStats.headlines : dashboardStats.movers}
-            hint={isPsx ? `${dashboardStats.alerts} headline alerts` : `${exchangeConfig.currency} market`}
-            tip={
-              isPsx
-                ? 'Headlines scraped for the dashboard; alerts link big news to price moves.'
-                : 'Global exchanges use price movers from the cloud database (news scrapes are PSX-only today).'
-            }
+            label="News items"
+            value={dashboardStats.headlines}
+            hint={`${dashboardStats.alerts} linked alerts`}
+            tip={`Headlines paired with price moves for ${exchangeConfig.code} (database + Yahoo Finance).`}
             accent="violet"
           />
         </div>

@@ -22,68 +22,42 @@ export default function DashboardNewsPanel({
       className="section-zone section-zone--news p-5 sm:p-6 flex flex-col"
       aria-labelledby="dashboard-news-heading"
     >
-      <span className="section-zone-tag">{isPsx ? 'News & headlines' : 'Market movers'}</span>
+      <span className="section-zone-tag">News &amp; headlines</span>
       <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
         <div>
           <h3 id="dashboard-news-heading" className="card-header text-lg">
-            {isPsx ? 'News linked to price moves' : `${exchange} session movers & dividend context`}
+            News linked to price moves
           </h3>
           <p className="card-subtitle">
-            {isPsx ? (
-              <>
-                We pair a real headline with a big same-day price swing (about {MIN_PRICE_MOVE_PCT}% or more). Macro news
-                (rates, IMF) may appear beside a stock that moved sharply. <strong>Tap a card</strong> to read the story —
-                informational only, not a trading signal.
-              </>
-            ) : (
-              <>
-                Latest <strong>{marketName}</strong> closes from DividendFlow&apos;s database ({exchangeConfig?.currency}).
-                Headline scrapes are PSX-only today; global markets show largest price moves from archived closes.
-              </>
-            )}
+            We pair a real headline with a meaningful price swing (about {MIN_PRICE_MOVE_PCT}% or more) for{' '}
+            <strong>{marketName}</strong>. Macro stories may appear beside a large mover.{' '}
+            <strong>Tap a card</strong> for details — informational only, not a trading signal.
           </p>
         </div>
-        {isPsx && headlineCount > 0 && (
+        {(headlineCount > 0 || riskAlerts.length > 0) && (
           <span className="badge-pill bg-violet-50 text-violet-800 border-violet-200 shrink-0">
-            {headlineCount} headline{headlineCount === 1 ? '' : 's'} in feed
-          </span>
-        )}
-        {!isPsx && riskAlerts.length > 0 && (
-          <span className="badge-pill bg-teal-50 text-teal-800 border-teal-200 shrink-0">
-            {exchange} · {riskAlerts.length} mover{riskAlerts.length === 1 ? '' : 's'}
+            {exchange} · {headlineCount} headline{headlineCount === 1 ? '' : 's'}
           </span>
         )}
       </div>
       {(tradeDate || riskAlerts[0]?.rotationDate || dailyNews?.priceChanges?.length > 0) && (
         <p className="text-[11px] text-slate-500 mt-1">
-          {isPsx ? 'Pakistan time (PKT):' : 'Latest close:'}{' '}
+          Latest close ({exchange}):
           <span className="font-medium text-slate-600">
             {riskAlerts[0]?.rotationDate || tradeDate || getPktDateString()}
           </span>
           <span className="block mt-0.5">
-            {isPsx ? 'Refreshed daily after market close.' : `Data for ${exchangeConfig?.code} — switch market in the banner to compare exchanges.`}
+            Refreshed after each {exchangeConfig?.code || exchange} market close · headlines from database &amp; Yahoo Finance.
           </span>
         </p>
       )}
       <ul className="mt-4 space-y-4 flex-1 max-h-[min(560px,70vh)] overflow-y-auto pr-1">
         {riskAlerts.length === 0 ? (
           <li className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-600">
-            <p className="font-medium text-slate-700 mb-1">
-              {isPsx ? 'No qualifying alerts' : `No ${exchange} movers yet`}
-            </p>
+            <p className="font-medium text-slate-700 mb-1">No qualifying alerts for {exchange}</p>
             <p className="mb-2">
-              {isPsx ? (
-                <>
-                  Nothing matched <strong>today</strong>: we look for a <strong>news headline</strong> plus a move of at
-                  least {MIN_PRICE_MOVE_PCT}% for that company (or a major market/policy story tied to a large decliner).
-                  Check back after the next session.
-                </>
-              ) : (
-                <>
-                  No price changes loaded for <strong>{marketName}</strong> yet. Run the global ingest workflow or check
-                  back after the next market close.
-                </>
-              )}
+              Nothing matched yet: we need a <strong>headline</strong> plus a move of at least {MIN_PRICE_MOVE_PCT}% for that
+              symbol (or a macro story tied to a large mover). Check back after the next {exchangeConfig?.name || exchange} session.
             </p>
             <p>
               <Link to="/market-closing-prices" className="btn-link">
@@ -138,7 +112,7 @@ export default function DashboardNewsPanel({
                       )}
                       {r.kind === 'mover' && (
                         <span className="text-[10px] uppercase tracking-wide text-blue-700 font-semibold">
-                          {exchange} close
+                          Price move
                         </span>
                       )}
                     </div>

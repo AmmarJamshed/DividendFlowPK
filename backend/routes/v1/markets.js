@@ -39,4 +39,15 @@ router.get('/:exchange/dividends', async (req, res) => {
   }
 });
 
+router.get('/:exchange/daily-news', async (req, res) => {
+  try {
+    const code = exchangeService.normalizeExchangeCode(req.params.exchange);
+    const exchangeNews = require('../../services/exchangeNews');
+    const payload = await exchangeNews.getDailyNewsForExchange(code);
+    res.json(payload);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

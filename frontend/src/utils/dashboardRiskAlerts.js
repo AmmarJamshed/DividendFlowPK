@@ -69,15 +69,39 @@ export function pickLatestCommentaryPerCompany(commentaryRows) {
   return byCo;
 }
 
-/** Headlines that often move the whole PSX or sectors (IMF, subsidies, policy, politics). */
-const MACRO_HEADLINE_RE =
-  /\b(IMF|World Bank|subsid|subsidy|package|fiscal|budget|PSX|KSE\s*-?\s*100|stock exchange|benchmark index|State Bank|SBP|policy rate|discount rate|MPC|political|government|federal|assembly|senate|tariff|fuel price|circular debt|IPPs?|sovereign|default|reserves|CAD|current account)\b/i;
+/** Headlines that often move the whole market or sectors — exchange-aware patterns. */
+const MACRO_PATTERNS = {
+  PSX: /\b(IMF|World Bank|subsid|subsidy|package|fiscal|budget|PSX|KSE\s*-?\s*100|stock exchange|benchmark index|State Bank|SBP|policy rate|discount rate|MPC|political|government|federal|assembly|senate|tariff|fuel price|circular debt|IPPs?|sovereign|default|reserves|CAD|current account)\b/i,
+  NYSE: /\b(Federal Reserve|Fed\b|FOMC|inflation|CPI|PPI|jobs report|nonfarm|SEC\b|S&P\s*500|Dow Jones|NYSE|treasury yield|GDP|recession|tariff|earnings season|interest rate)\b/i,
+  NASDAQ: /\b(Federal Reserve|Fed\b|FOMC|inflation|CPI|tech stocks|NASDAQ|Magnificent Seven|AI stocks|chip|semiconductor|SEC\b|earnings|rate cut|treasury yield)\b/i,
+  LSE: /\b(Bank of England|BOE|FTSE|inflation|CPI|UK budget|Sterling|GBP|LSE|interest rate|recession|tariff)\b/i,
+  HKEX: /\b(Hang Seng|HKEX|Hong Kong|PBOC|China stimulus|property sector|yuan|H share|tariff)\b/i,
+  TSE: /\b(Bank of Japan|BOJ|Nikkei|TSE|yen|inflation|GDP)\b/i,
+  SSE: /\b(PBOC|Shanghai|SSE|China stocks|stimulus|yuan|GDP)\b/i,
+  TADAWUL: /\b(Tadawul|Saudi|oil price|OPEC|Aramco|Vision 2030)\b/i,
+};
 
-function pickLatestMacroArticle(newsRows) {
-  const hits = (newsRows || []).filter((r) =>
-    MACRO_HEADLINE_RE.test(r.Headline || r.headline || '')
-  );
-  if (!hits.length) return null;
+const DEFAULT_MACRO =
+  /\b(stock exchange|benchmark index|central bank|interest rate|inflation|CPI|GDP|recession|earnings|tariff|fiscal|budget|sovereign|default)\b/i;
+
+function macroRegex(exchange) {
+  return MACRO_PATTERNS[String(exchange || 'PSX').toUpperCase()] || DEFAULT_MACRO;
+}
+
+function marketCommentaryKey(exchange) {
+  const code = String(exchange || 'PSX').toUpperCase();
+  return `${code}_MARKET`;
+}
+
+function pickLatestMacroArticle(newsRows, exchange) {
+  const re = macroRegex(exchange);
+  const hits = (newsRows || []).filter((r) => re.test(r.Headline || r.headline || ''));
+  if (!hits.length) {
+    const marketKey = marketCommentaryKey(exchange);
+    const tagged = (newsRows || []).filter((r) => (r.Company || r.company) === marketKey);
+    if (tagged.length) return tagged[0];
+    return null;
+  }
   hits.sort((a, b) => parseTime(b) - parseTime(a));
   return hits[0];
 }
@@ -124,6 +148,8 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
   const maxAlerts = opts.maxAlerts ?? 4;
   const dateKey = opts.dateKey || getPktDateString();
   const minMove = opts.minPriceMovePct ?? MIN_PRICE_MOVE_PCT;
+  const exchange = String(opts.exchange || dailyNews?.exchange || 'PSX').toUpperCase();
+  const marketKey = marketCommentaryKey(exchange);
 
   const news = dailyNews?.news || [];
   const commentary = dailyNews?.commentary || [];
@@ -165,8 +191,12 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
   const used = new Set(alerts.map((a) => a.company));
 
   // 2) Macro / PSX-wide headline → tie to largest decliners still having a real move (liquidity names often move on IMF/subsidy news)
-  const macro = pickLatestMacroArticle(news);
-  const psxMarketBrief = (commentaryByCo.get('PSX_MARKET')?.Commentary || commentaryByCo.get('PSX_MARKET')?.commentary || '').trim();
+  const macro = pickLatestMacroArticle(news, exchange);
+  const marketBrief = (
+    commentaryByCo.get(marketKey)?.Commentary ||
+    commentaryByCo.get(marketKey)?.commentary ||
+    ''
+  ).trim();
 
   if (macro && priceChanges.length && alerts.length < maxAlerts) {
     const headline = (macro.Headline || macro.headline || '').trim();
@@ -189,8 +219,8 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
       const aiExtra = cRow ? (cRow.Commentary || cRow.commentary || '').trim() : '';
       const bridgeMsg = [
         `Session: ${d.company} ${d.pct.toFixed(2)}% (vs prior close).`,
-        'Shown because a macro / market-wide or policy headline appeared the same day — these stories often hit PSX leaders and liquid names first.',
-        psxMarketBrief ? `Macro AI brief: ${psxMarketBrief}` : null,
+        `Shown because a macro / market-wide headline appeared the same period — these stories often hit ${exchange} leaders and liquid names first.`,
+        marketBrief ? `Macro AI brief: ${marketBrief}` : null,
         aiExtra ? `Company AI brief: ${aiExtra}` : null,
       ]
         .filter(Boolean)

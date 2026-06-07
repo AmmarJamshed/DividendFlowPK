@@ -19,6 +19,8 @@ export const api = {
   getCapitalGain: (company) => axios.get(`${API_BASE}/capital-gain`, { params: { company } }),
   getDataStatus: () => axios.get(`${API_BASE}/data-status`),
   getDailyNews: () => axios.get(`${API_BASE}/daily-news`),
+  getExchangeDailyNews: (exchange) =>
+    axios.get(`${API_BASE}/v1/markets/${exchange}/daily-news`),
   getMarketClosingPrices: (exchange = 'PSX') =>
     exchange === 'PSX'
       ? axios.get(`${API_BASE}/market-closing-prices`)
