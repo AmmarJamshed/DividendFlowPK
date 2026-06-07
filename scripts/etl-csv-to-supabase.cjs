@@ -60,8 +60,14 @@ function parseIntSafe(val) {
 function parseDate(val) {
   if (!val) return null;
   const s = String(val).trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
-  return null;
+  if (!/^\d{4}-\d{2}-\d{2}/.test(s)) return null;
+  const iso = s.slice(0, 10);
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {
+    return null;
+  }
+  return iso;
 }
 
 async function logSync(sourceFile, rowsProcessed, status, message) {
