@@ -242,6 +242,9 @@ def sync_exchange(exchange_code: str):
     shard_count = int(os.environ.get("SHARD_COUNT", "1"))
 
     securities = load_securities(client, exchange_code)
+    max_symbols = int(os.environ.get("MAX_SYMBOLS", "0"))
+    if max_symbols > 0:
+        securities = securities[:max_symbols]
     securities = shard(securities, shard_index, shard_count)
     print(f"{exchange_code} dividend sync shard {shard_index + 1}/{shard_count}: {len(securities)} securities")
 
