@@ -11,6 +11,8 @@ const {
   parsePaymentMonthNum,
   pickDividendPerShare,
 } = require('./psxDividendParse');
+const dataStore = require('./services/dataStore');
+const { INVESTMENT_DISCLAIMER, MARKET_CLOSE_NOTICE } = require('./constants/disclaimer');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -43,6 +45,12 @@ function readCSV(filePath) {
       .on('end', () => resolve(results))
       .on('error', reject);
   });
+}
+
+/** Read PSX dataset: Supabase when populated, else local CSV (backward compatible). */
+async function readMarketCSV(relativePath) {
+  const { rows } = await dataStore.readMarketData(relativePath, readCSV);
+  return rows;
 }
 
 // Helper to read all news files for a company
@@ -295,7 +303,7 @@ async function buildWeekAgoPriceMap(sessionDateStr) {
   const targetStr = subtractDaysIso(sessionDateStr, 7);
   if (!targetStr) return map;
 
-  const rows = await readCSV(dailyPath);
+  const rows = await readMarketCSV('prices/daily_prices.csv');
   const bySymbol = new Map();
   for (const r of rows) {
     const sym = (r.Company || r.company || '').trim();
@@ -356,8 +364,8 @@ const PAYOUTS_FULL_MIN_ROWS = parseInt(process.env.PAYOUTS_FULL_MIN_ROWS || '120
 async function getEnrichedDividends() {
   const calendarPath = path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv');
   const payoutsPath = path.join(DATA_PATH, 'dividends', 'psx_payouts.csv');
-  const calendarRows = await readCSV(calendarPath);
-  const payoutRows = await readCSV(payoutsPath);
+  const calendarRows = await readMarketCSV('dividends/psx_dividend_calendar.csv');
+  const payoutRows = await readMarketCSV('dividends/psx_payouts.csv');
 
   const latestPrices = await getLatestPrices();
   const companyNameBySymbol = new Map();
@@ -368,7 +376,7 @@ async function getEnrichedDividends() {
   }
   let cyclesMap = new Map();
   try {
-    const cycles = await readCSV(path.join(DATA_PATH, 'financials', 'psx_quarter_cycles.csv'));
+    const cycles = await readMarketCSV('financials/psx_quarter_cycles.csv');
     cycles.forEach(c => cyclesMap.set((c.Company || c.company || '').trim(), c));
   } catch (_) {}
 
@@ -1377,7 +1385,7 @@ app.post('/api/salary-simulator/ai-recommendations', async (req, res) => {
 // GET /api/reporting-cycles - PSX reporting cycle data
 app.get('/api/reporting-cycles', async (req, res) => {
   try {
-    const data = await readCSV(path.join(DATA_PATH, 'financials', 'psx_quarter_cycles.csv'));
+    const data = await readMarketCSV('financials/psx_quarter_cycles.csv');
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1412,8 +1420,8 @@ app.get('/api/capital-gain', async (req, res) => {
 // Compute latest vs previous price changes from daily_prices.csv (uses two most recent dates)
 async function computePriceChangesFromDailyPrices() {
   const dailyPath = path.join(DATA_PATH, 'prices', 'daily_prices.csv');
-  if (!fs.existsSync(dailyPath)) return [];
-  const rows = await readCSV(dailyPath);
+  if (!fs.existsSync(dailyPath) && !dataStore.isSupabaseConfigured()) return [];
+  const rows = await readMarketCSV('prices/daily_prices.csv');
   const byCompanyDate = new Map(); // "Company|Date" -> price
   const dates = new Set();
   for (const r of rows) {
@@ -1483,15 +1491,15 @@ async function fetchDailyNewsPayload() {
   let commentary = [];
   let priceChanges = [];
   let priceCommentary = [];
-  if (fs.existsSync(path.join(newsPath, 'daily_news.csv'))) {
-    news = await readCSV(path.join(newsPath, 'daily_news.csv'));
+  if (fs.existsSync(path.join(newsPath, 'daily_news.csv')) || dataStore.isSupabaseConfigured()) {
+    news = await readMarketCSV('news/daily_news.csv');
   }
-  if (fs.existsSync(path.join(newsPath, 'ai_commentary.csv'))) {
-    commentary = await readCSV(path.join(newsPath, 'ai_commentary.csv'));
+  if (fs.existsSync(path.join(newsPath, 'ai_commentary.csv')) || dataStore.isSupabaseConfigured()) {
+    commentary = await readMarketCSV('news/ai_commentary.csv');
   }
   priceChanges = await computePriceChangesFromDailyPrices();
-  if (priceChanges.length === 0 && fs.existsSync(path.join(pricesPath, 'price_changes.csv'))) {
-    priceChanges = await readCSV(path.join(pricesPath, 'price_changes.csv'));
+  if (priceChanges.length === 0) {
+    priceChanges = await readMarketCSV('prices/price_changes.csv');
   }
   const hasMeaningfulChanges = priceChanges.some(p => {
     const pct = parseFloat(p.ChangePct || p.changePct || p.Change_pct) || 0;
@@ -1499,8 +1507,8 @@ async function fetchDailyNewsPayload() {
   });
   if (!hasMeaningfulChanges) {
     const fullPath = path.join(pricesPath, 'psx_full_dataset.csv');
-    if (fs.existsSync(fullPath)) {
-      const fullRows = await readCSV(fullPath);
+    if (fs.existsSync(fullPath) || dataStore.isSupabaseConfigured()) {
+      const fullRows = await readMarketCSV('prices/psx_full_dataset.csv');
       const parseNum = (s) => {
         if (!s) return 0;
         const v = String(s).replace(/,/g, '').replace('%', '').trim();
@@ -1520,8 +1528,8 @@ async function fetchDailyNewsPayload() {
       }
     }
   }
-  if (fs.existsSync(path.join(newsPath, 'price_commentary.csv'))) {
-    priceCommentary = await readCSV(path.join(newsPath, 'price_commentary.csv'));
+  if (fs.existsSync(path.join(newsPath, 'price_commentary.csv')) || dataStore.isSupabaseConfigured()) {
+    priceCommentary = await readMarketCSV('news/price_commentary.csv');
   }
   return { news, commentary, priceChanges, priceCommentary };
 }
@@ -1669,8 +1677,7 @@ ${message}`;
     res.json({
       ok: out.ok,
       reply: out.reply,
-      disclaimer:
-        'This reply is generated by AI from DividendFlow’s last saved news and price files. It is not a prediction, not 100% accurate, and not investment, legal, or tax advice. Markets change; always verify facts and talk to a qualified professional before investing.',
+      disclaimer: INVESTMENT_DISCLAIMER,
     });
   } catch (err) {
     res.status(500).json({
@@ -1686,10 +1693,10 @@ ${message}`;
 app.get('/api/market-closing-prices', async (req, res) => {
   try {
     const fp = path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv');
-    if (!fs.existsSync(fp)) {
+    if (!fs.existsSync(fp) && !dataStore.isSupabaseConfigured()) {
       return res.json({ rows: [], date: null, summary: null });
     }
-    const rows = await readCSV(fp);
+    const rows = await readMarketCSV('prices/psx_full_dataset.csv');
     const date = rows[0]?.date || rows[0]?.Date || null;
     const parseNum = (s) => {
       if (!s) return 0;
@@ -1784,8 +1791,8 @@ ${elementContext}`;
   }
 });
 
-// GET /api/data-status - Last updated timestamp for PSX data
-app.get('/api/data-status', (req, res) => {
+// GET /api/data-status - Last updated timestamp for PSX data (+ Supabase sync info)
+app.get('/api/data-status', async (req, res) => {
   try {
     const files = [
       path.join(DATA_PATH, 'dividends', 'psx_dividend_calendar.csv'),
@@ -1800,9 +1807,15 @@ app.get('/api/data-status', (req, res) => {
       }
     });
     const date = new Date(lastModified || Date.now());
+    const supabaseMeta = await dataStore.getDataStatusExtra();
     res.json({
       lastUpdated: date.toISOString(),
-      formatted: date.toLocaleString('en-PK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      formatted: date.toLocaleString('en-PK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      storage: supabaseMeta.storage,
+      supabaseConfigured: supabaseMeta.supabaseConfigured,
+      lastSync: supabaseMeta.lastSync || null,
+      rowCounts: supabaseMeta.rowCounts || null,
+      marketCloseNotice: supabaseMeta.marketCloseNotice || MARKET_CLOSE_NOTICE,
     });
   } catch (err) {
     res.json({ lastUpdated: new Date().toISOString(), formatted: new Date().toLocaleString() });
@@ -1810,8 +1823,14 @@ app.get('/api/data-status', (req, res) => {
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  const supabase = await dataStore.checkSupabaseHealth();
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    storage: dataStore.isSupabaseConfigured() ? (supabase.ok ? 'supabase' : 'csv_fallback') : 'csv',
+    supabase: supabase,
+  });
 });
 
 if (require.main === module) {

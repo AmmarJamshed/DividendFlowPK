@@ -1,0 +1,26 @@
+name: Supabase CSV Sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekdays 12:30 UTC — after PSX price scraper (12:00 UTC)
+    - cron: '30 12 * * 1-5'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install backend dependencies
+        run: cd backend && npm install
+
+      - name: ETL CSV → Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/etl-csv-to-supabase.cjs

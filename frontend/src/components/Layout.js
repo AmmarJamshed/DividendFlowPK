@@ -109,7 +109,11 @@ export default function Layout({ children }) {
   useEffect(() => {
     api
       .getDataStatus()
-      .then((res) => setDataUpdated(res.data.formatted || res.data.lastUpdated))
+      .then((res) => {
+        const base = res.data.formatted || res.data.lastUpdated;
+        const storageTag = res.data.storage === 'supabase' ? ' · cloud DB' : '';
+        setDataUpdated(`${base}${storageTag}`);
+      })
       .catch(() => setDataUpdated(new Date().toLocaleString()));
   }, []);
 

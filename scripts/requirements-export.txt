@@ -1,2 +1,5 @@
 # Optional: generate docs/deployment-calendar.xlsx
 openpyxl>=3.1.0
+
+# Generate docs/DividendFlow-Overview.pdf
+fpdf2>=2.8.0
