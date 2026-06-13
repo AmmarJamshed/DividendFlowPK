@@ -75,6 +75,31 @@ def load_symbols(code: str) -> list[str]:
     return list(cfg.get("symbols") or [])
 
 
+def normalize_hist(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        return df
+    out = df.copy()
+    if isinstance(out.columns, pd.MultiIndex):
+        out.columns = [
+            str(col[0]) if isinstance(col, tuple) and len(col) else str(col)
+            for col in out.columns
+        ]
+    else:
+        out.columns = [str(c) for c in out.columns]
+    return out
+
+
+def scalar(value):
+    if isinstance(value, pd.Series):
+        cleaned = value.dropna()
+        if cleaned.empty:
+            return float("nan")
+        return float(cleaned.iloc[-1])
+    if value is None or (not isinstance(value, (int, float)) and pd.isna(value)):
+        return float("nan")
+    return float(value)
+
+
 def parse_batch_download(data: pd.DataFrame, tickers: list[str]) -> dict[str, pd.DataFrame]:
     out: dict[str, pd.DataFrame] = {}
     if data is None or data.empty:
@@ -82,17 +107,25 @@ def parse_batch_download(data: pd.DataFrame, tickers: list[str]) -> dict[str, pd
     if len(tickers) == 1:
         t = tickers[0]
         if not data.empty:
-            out[t] = data
+            out[t] = normalize_hist(data)
         return out
-    # Multi-index columns: (Price, Ticker) or (Ticker, Price) depending on yfinance version
     if isinstance(data.columns, pd.MultiIndex):
         level0 = set(data.columns.get_level_values(0))
+        level1 = set(data.columns.get_level_values(1))
         if "Close" in level0 or "Open" in level0:
             for t in tickers:
                 try:
-                    sub = data.xs(t, axis=1, level=1, drop_level=False)
+                    sub = data.xs(t, axis=1, level=1, drop_level=True)
                     if sub is not None and not sub.empty:
-                        out[t] = sub
+                        out[t] = normalize_hist(sub)
+                except Exception:
+                    pass
+        elif "Close" in level1 or "Open" in level1:
+            for t in tickers:
+                try:
+                    sub = data.xs(t, axis=1, level=0, drop_level=True)
+                    if sub is not None and not sub.empty:
+                        out[t] = normalize_hist(sub)
                 except Exception:
                     pass
         else:
@@ -100,12 +133,12 @@ def parse_batch_download(data: pd.DataFrame, tickers: list[str]) -> dict[str, pd
                 if t in level0:
                     sub = data[t]
                     if sub is not None and not sub.empty:
-                        out[t] = sub
+                        out[t] = normalize_hist(sub)
     return out
 
 
 def upsert_price_row(client, sec_id: str, hist: pd.DataFrame, currency: str, now: str) -> bool:
-    hist = hist.dropna(how="all")
+    hist = normalize_hist(hist).dropna(how="all")
     if hist.empty:
         return False
     if "Close" not in hist.columns:
@@ -113,20 +146,22 @@ def upsert_price_row(client, sec_id: str, hist: pd.DataFrame, currency: str, now
     last = hist.iloc[-1]
     prev = hist.iloc[-2] if len(hist) > 1 else last
     trade_date = hist.index[-1].strftime("%Y-%m-%d")
-    close = float(last["Close"])
-    prev_close = float(prev["Close"])
+    close = scalar(last["Close"])
+    prev_close = scalar(prev["Close"])
+    if pd.isna(close) or pd.isna(prev_close):
+        return False
     chg = close - prev_close
     chg_pct = (chg / prev_close * 100) if prev_close else 0
-    vol = last.get("Volume")
+    vol = scalar(last["Volume"]) if "Volume" in hist.columns else float("nan")
     volume = int(vol) if pd.notna(vol) else None
 
     client.table("daily_prices").upsert(
         {
             "security_id": sec_id,
             "trade_date": trade_date,
-            "open": float(last["Open"]) if pd.notna(last.get("Open")) else None,
-            "high": float(last["High"]) if pd.notna(last.get("High")) else None,
-            "low": float(last["Low"]) if pd.notna(last.get("Low")) else None,
+            "open": scalar(last["Open"]) if "Open" in hist.columns and pd.notna(scalar(last["Open"])) else None,
+            "high": scalar(last["High"]) if "High" in hist.columns and pd.notna(scalar(last["High"])) else None,
+            "low": scalar(last["Low"]) if "Low" in hist.columns and pd.notna(scalar(last["Low"])) else None,
             "close": close,
             "change_amount": round(chg, 4),
             "change_pct": round(chg_pct, 4),
