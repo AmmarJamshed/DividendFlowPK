@@ -60,16 +60,8 @@ async function getGlobalClosingPricesFromSupabase(code) {
   }
 
   const supabase = getSupabase();
-  const { data: secs, error: secErr } = await supabase
-    .from('securities')
-    .select('id, symbol, name, sector')
-    .eq('exchange_id', exchangeId)
-    .eq('active', true)
-    .order('symbol', { ascending: true })
-    .limit(15000);
-  if (secErr) throw secErr;
-
-  if (!secs?.length) {
+  const secs = await fetchAllActiveSecurities(supabase, exchangeId);
+  if (!secs.length) {
     const fallback = await fetchSeedClosingPrices(code);
     if (fallback.rows.length) return { ...fallback, universe: universeMeta };
     return { exchange: code, rows: [], date: null, source: 'supabase', universe: universeMeta };
@@ -136,6 +128,25 @@ async function getGlobalClosingPricesFromSupabase(code) {
 }
 
 const SEC_ID_CHUNK = 120;
+
+async function fetchAllActiveSecurities(supabase, exchangeId) {
+  const pageSize = 1000;
+  const all = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('securities')
+      .select('id, symbol, name, sector')
+      .eq('exchange_id', exchangeId)
+      .eq('active', true)
+      .order('symbol', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const batch = data || [];
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+  return all;
+}
 
 async function fetchLatestPricesBatched(supabase, secIds) {
   const latestBySecId = new Map();
