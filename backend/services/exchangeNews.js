@@ -111,6 +111,31 @@ async function fetchMoversFromSeeds(exchangeCode) {
   return movers.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
 }
 
+async function fetchSeedClosingRows(exchangeCode) {
+  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const cfg = exchangeService.getExchangeConfig(code);
+  const seeds = getSeeds(code);
+  const rows = [];
+  for (const sym of seeds) {
+    const m = await fetchYahooChartMover(sym, code);
+    if (!m || m.Price == null) continue;
+    rows.push({
+      symbol: m.Company,
+      company: m.Company,
+      sector: '',
+      close: m.Price,
+      change: m.Change,
+      changePct: m.ChangePct,
+      volume: 0,
+      currency: cfg.currency,
+      exchange: code,
+      tradeDate: m.Date,
+    });
+    await new Promise((r) => setTimeout(r, 60));
+  }
+  return rows.sort((a, b) => Math.abs(b.changePct || 0) - Math.abs(a.changePct || 0));
+}
+
 async function fetchExchangeMacroArticle(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
   const items = await fetchYahooNewsForQuery(getMacroQuery(code));
@@ -346,4 +371,5 @@ function listSupportedExchanges() {
 module.exports = {
   getDailyNewsForExchange,
   listSupportedExchanges,
+  fetchSeedClosingRows,
 };

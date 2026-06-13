@@ -151,7 +151,7 @@ export default function MarketClosingPrices() {
         description={
           exchange === 'PSX'
             ? 'Search symbols, sort by session and weekly change, and filter the PSX Shariah disclosure list. Sourced from archived scrape files, updated weekdays after the close.'
-            : `Latest ${exchangeConfig.code} closes (${exchangeConfig.currency}) from DividendFlow cloud database. Switch market in the banner above to compare exchanges.`
+            : `Latest ${exchangeConfig.code} closes (${exchangeConfig.currency}) from DividendFlow cloud database. Full universes are loaded by scheduled GitHub Actions ingest; if the table is empty you may see a small Yahoo Finance preview instead.`
         }
       >
         <Link to="/dividend-calendar" className="btn-primary">
@@ -200,6 +200,7 @@ export default function MarketClosingPrices() {
               {filtered.length} stocks
               {shariahOnly && ` (Shariah list)`}
               {data.date && ` • Close ${data.date}`}
+              {data.source === 'yahoo_seeds' && ' • Preview (major names)'}
             </span>
           </div>
           {exchange === 'PSX' && (
@@ -328,23 +329,35 @@ export default function MarketClosingPrices() {
           </div>
         )}
         <p className="px-4 py-3 text-xs text-slate-500 border-t border-slate-100 bg-slate-50/80 space-y-1">
-          <span className="block">
-            <strong className="text-slate-600">Week %</strong> uses{' '}
-            <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices.csv</code>, updated by the PSX market closing prices workflow after each session.
-          </span>
-          <span className="block">
-            <strong className="text-slate-600">Shariah filter</strong> uses the PSX list of companies required to file Shariah disclosures (
-            {SHARIAH_LIST_META.symbolCount} symbols, notice dated {SHARIAH_LIST_META.asOf}).{' '}
-            <a
-              href={SHARIAH_LIST_META.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-teal-700 font-medium hover:underline"
-            >
-              View PSX notice (PDF)
-            </a>
-            . This reflects PSX &quot;nature of business&quot; classification, not personal fatwa or full Islamic finance screening.
-          </span>
+          {exchange === 'PSX' ? (
+            <>
+              <span className="block">
+                <strong className="text-slate-600">Week %</strong> uses{' '}
+                <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices.csv</code>, updated by the PSX market closing prices workflow after each session.
+              </span>
+              <span className="block">
+                <strong className="text-slate-600">Shariah filter</strong> uses the PSX list of companies required to file Shariah disclosures (
+                {SHARIAH_LIST_META.symbolCount} symbols, notice dated {SHARIAH_LIST_META.asOf}).{' '}
+                <a
+                  href={SHARIAH_LIST_META.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teal-700 font-medium hover:underline"
+                >
+                  View PSX notice (PDF)
+                </a>
+                . This reflects PSX &quot;nature of business&quot; classification, not personal fatwa or full Islamic finance screening.
+              </span>
+            </>
+          ) : (
+            <span className="block">
+              <strong className="text-slate-600">{exchangeConfig.code}</strong> prices come from Supabase (
+              <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices</code>
+              ), populated by the{' '}
+              <code className="text-[11px] bg-slate-200/80 px-1 rounded">global-ingest-{exchangeConfig.code.toLowerCase()}</code>{' '}
+              GitHub Actions workflow after each market close. Shariah filter is PSX-only.
+            </span>
+          )}
         </p>
       </div>
     </div>

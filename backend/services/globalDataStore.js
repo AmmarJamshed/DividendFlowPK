@@ -22,10 +22,29 @@ async function getClosingPrices(exchangeCode) {
     return formatPsxRows(rows, code);
   }
 
-  if (!isSupabaseConfigured()) return { exchange: code, rows: [], date: null, source: 'none' };
+  if (!isSupabaseConfigured()) {
+    const fallback = await fetchSeedClosingPrices(code);
+    if (fallback.rows.length) return fallback;
+    return { exchange: code, rows: [], date: null, source: 'none' };
+  }
 
+  try {
+    return await getGlobalClosingPricesFromSupabase(code);
+  } catch (err) {
+    console.warn('[globalDataStore] Supabase closing prices failed:', code, err.message);
+    const fallback = await fetchSeedClosingPrices(code);
+    if (fallback.rows.length) return fallback;
+    throw err;
+  }
+}
+
+async function getGlobalClosingPricesFromSupabase(code) {
   const exchangeId = await exchangeService.getExchangeId(code);
-  if (!exchangeId) return { exchange: code, rows: [], date: null, source: 'supabase' };
+  if (!exchangeId) {
+    const fallback = await fetchSeedClosingPrices(code);
+    if (fallback.rows.length) return fallback;
+    return { exchange: code, rows: [], date: null, source: 'supabase' };
+  }
 
   const supabase = getSupabase();
   const { data: secs, error: secErr } = await supabase
@@ -34,45 +53,82 @@ async function getClosingPrices(exchangeCode) {
     .eq('exchange_id', exchangeId)
     .eq('active', true);
   if (secErr) throw secErr;
-  if (!secs?.length) return { exchange: code, rows: [], date: null, source: 'supabase' };
+  if (!secs?.length) {
+    const fallback = await fetchSeedClosingPrices(code);
+    if (fallback.rows.length) return fallback;
+    return { exchange: code, rows: [], date: null, source: 'supabase' };
+  }
 
   const secMap = new Map(secs.map((s) => [s.id, s]));
   const secIds = secs.map((s) => s.id);
 
-  const { data, error } = await supabase
-    .from('daily_prices')
-    .select('security_id, trade_date, open, high, low, close, change_amount, change_pct, volume, currency')
-    .in('security_id', secIds)
-    .order('trade_date', { ascending: false })
-    .limit(8000);
-
-  if (error) throw error;
-
-  const latestBySymbol = new Map();
-  for (const r of data || []) {
-    const sec = secMap.get(r.security_id);
-    if (!sec) continue;
-    if (!latestBySymbol.has(sec.symbol)) latestBySymbol.set(sec.symbol, { ...r, securities: sec });
-  }
+  const latestBySecId = await fetchLatestPricesBatched(supabase, secIds);
 
   const cfg = exchangeService.getExchangeConfig(code);
-  const rows = [...latestBySymbol.values()].map((r) => ({
-    symbol: r.securities.symbol,
-    company: r.securities.name || r.securities.symbol,
-    sector: r.securities.sector || '',
-    close: num(r.close),
-    change: num(r.change_amount),
-    changePct: num(r.change_pct),
-    volume: r.volume || 0,
-    open: num(r.open),
-    high: num(r.high),
-    low: num(r.low),
-    currency: r.currency || cfg.currency,
-    exchange: code,
-  }));
+  let maxDate = null;
+  const rows = [];
+  for (const [secId, r] of latestBySecId) {
+    const sec = secMap.get(secId);
+    if (!sec) continue;
+    if (r.trade_date && (!maxDate || r.trade_date > maxDate)) maxDate = r.trade_date;
+    rows.push({
+      symbol: sec.symbol,
+      company: sec.name || sec.symbol,
+      sector: sec.sector || '',
+      close: num(r.close),
+      change: num(r.change_amount),
+      changePct: num(r.change_pct),
+      volume: r.volume || 0,
+      open: num(r.open),
+      high: num(r.high),
+      low: num(r.low),
+      currency: r.currency || cfg.currency,
+      exchange: code,
+    });
+  }
 
-  const date = rows[0] ? [...latestBySymbol.values()][0]?.trade_date : null;
-  return { exchange: code, currency: cfg.currency, rows, date, source: 'supabase' };
+  const date = maxDate;
+  const payload = { exchange: code, currency: cfg.currency, rows, date, source: 'supabase' };
+  if (!rows.length) {
+    const fallback = await fetchSeedClosingPrices(code);
+    if (fallback.rows.length) return fallback;
+  }
+  return payload;
+}
+
+const SEC_ID_CHUNK = 120;
+
+async function fetchLatestPricesBatched(supabase, secIds) {
+  const latestBySecId = new Map();
+  for (let i = 0; i < secIds.length; i += SEC_ID_CHUNK) {
+    const chunk = secIds.slice(i, i + SEC_ID_CHUNK);
+    const { data, error } = await supabase
+      .from('daily_prices')
+      .select('security_id, trade_date, open, high, low, close, change_amount, change_pct, volume, currency')
+      .in('security_id', chunk)
+      .order('trade_date', { ascending: false })
+      .limit(chunk.length * 4);
+    if (error) throw error;
+    for (const r of data || []) {
+      if (!latestBySecId.has(r.security_id)) latestBySecId.set(r.security_id, r);
+    }
+  }
+  return latestBySecId;
+}
+
+async function fetchSeedClosingPrices(exchangeCode) {
+  const { fetchSeedClosingRows } = require('./exchangeNews');
+  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const cfg = exchangeService.getExchangeConfig(code);
+  const rows = await fetchSeedClosingRows(code);
+  const date = rows[0]?.tradeDate || null;
+  return {
+    exchange: code,
+    currency: cfg.currency,
+    rows,
+    date,
+    source: 'yahoo_seeds',
+  };
 }
 
 function formatPsxRows(rows, code) {
