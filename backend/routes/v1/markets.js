@@ -9,6 +9,40 @@ router.get('/supported', (_req, res) => {
   res.json({ exchanges: exchangeNews.listSupportedExchanges() });
 });
 
+router.post('/:exchange/sync-universe', async (req, res) => {
+  try {
+    const code = exchangeService.normalizeExchangeCode(req.params.exchange);
+    const result = await ensureExchangeUniverse(code);
+    res.json({ exchange: code, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/:exchange/ingest/trigger', async (req, res) => {
+  try {
+    const code = exchangeService.normalizeExchangeCode(req.params.exchange);
+    const map = {
+      NASDAQ: 'global-ingest-nasdaq.yml',
+      NYSE: 'global-ingest-nyse.yml',
+      HKEX: 'global-ingest-hkex.yml',
+      LSE: 'global-ingest-lse.yml',
+    };
+    const workflow = map[code];
+    if (!workflow) {
+      return res.status(400).json({ error: `No GitHub ingest workflow mapped for ${code}` });
+    }
+    res.json({
+      exchange: code,
+      workflow,
+      hint: 'Trigger manually in GitHub Actions → workflow_dispatch, or wait for the scheduled cron.',
+      shardCount: code === 'NASDAQ' || code === 'NYSE' ? 10 : 1,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/:exchange/closing-prices', async (req, res) => {
   try {
     const code = exchangeService.normalizeExchangeCode(req.params.exchange);

@@ -1,6 +1,7 @@
 const { getSupabase, isSupabaseConfigured } = require('../db/supabaseClient');
 const exchangeService = require('./exchangeService');
 const dataStore = require('./dataStore');
+const { ensureExchangeUniverse, FULL_UNIVERSE } = require('./universeSync');
 
 async function getClosingPrices(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
@@ -46,53 +47,91 @@ async function getGlobalClosingPricesFromSupabase(code) {
     return { exchange: code, rows: [], date: null, source: 'supabase' };
   }
 
+  let universeMeta = null;
+  if (FULL_UNIVERSE.has(code)) {
+    try {
+      universeMeta = await Promise.race([
+        ensureExchangeUniverse(code),
+        new Promise((resolve) => setTimeout(() => resolve({ synced: false, reason: 'timeout' }), 20000)),
+      ]);
+    } catch (err) {
+      console.warn('[globalDataStore] universe sync:', code, err.message);
+    }
+  }
+
   const supabase = getSupabase();
   const { data: secs, error: secErr } = await supabase
     .from('securities')
     .select('id, symbol, name, sector')
     .eq('exchange_id', exchangeId)
-    .eq('active', true);
+    .eq('active', true)
+    .order('symbol', { ascending: true })
+    .limit(15000);
   if (secErr) throw secErr;
+
   if (!secs?.length) {
     const fallback = await fetchSeedClosingPrices(code);
-    if (fallback.rows.length) return fallback;
-    return { exchange: code, rows: [], date: null, source: 'supabase' };
+    if (fallback.rows.length) return { ...fallback, universe: universeMeta };
+    return { exchange: code, rows: [], date: null, source: 'supabase', universe: universeMeta };
   }
 
   const secMap = new Map(secs.map((s) => [s.id, s]));
   const secIds = secs.map((s) => s.id);
-
   const latestBySecId = await fetchLatestPricesBatched(supabase, secIds);
 
   const cfg = exchangeService.getExchangeConfig(code);
   let maxDate = null;
   const rows = [];
-  for (const [secId, r] of latestBySecId) {
-    const sec = secMap.get(secId);
-    if (!sec) continue;
-    if (r.trade_date && (!maxDate || r.trade_date > maxDate)) maxDate = r.trade_date;
+  for (const sec of secs) {
+    const r = latestBySecId.get(sec.id);
+    if (r?.trade_date && (!maxDate || r.trade_date > maxDate)) maxDate = r.trade_date;
     rows.push({
       symbol: sec.symbol,
       company: sec.name || sec.symbol,
       sector: sec.sector || '',
-      close: num(r.close),
-      change: num(r.change_amount),
-      changePct: num(r.change_pct),
-      volume: r.volume || 0,
-      open: num(r.open),
-      high: num(r.high),
-      low: num(r.low),
-      currency: r.currency || cfg.currency,
+      close: r ? num(r.close) : null,
+      change: r ? num(r.change_amount) : null,
+      changePct: r ? num(r.change_pct) : null,
+      volume: r?.volume || 0,
+      open: r ? num(r.open) : null,
+      high: r ? num(r.high) : null,
+      low: r ? num(r.low) : null,
+      currency: (r?.currency || cfg.currency),
       exchange: code,
+      weekChgPct: null,
     });
   }
 
+  const withPrices = rows.filter((row) => row.close != null).length;
   const date = maxDate;
-  const payload = { exchange: code, currency: cfg.currency, rows, date, source: 'supabase' };
-  if (!rows.length) {
+  const payload = {
+    exchange: code,
+    currency: cfg.currency,
+    rows,
+    date,
+    source: withPrices > 0 ? 'supabase' : 'supabase',
+    meta: {
+      totalSymbols: rows.length,
+      withPrices,
+      universe: universeMeta,
+    },
+  };
+
+  if (withPrices === 0) {
     const fallback = await fetchSeedClosingPrices(code);
-    if (fallback.rows.length) return fallback;
+    if (fallback.rows.length) {
+      return {
+        ...fallback,
+        meta: {
+          totalSymbols: fallback.rows.length,
+          withPrices: fallback.rows.length,
+          universe: universeMeta,
+          note: 'Preview quotes until full ingest completes',
+        },
+      };
+    }
   }
+
   return payload;
 }
 

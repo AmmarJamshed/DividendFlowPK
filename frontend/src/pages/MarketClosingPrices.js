@@ -60,7 +60,7 @@ export default function MarketClosingPrices() {
     setLoading(true);
     setPage(0);
     api.getMarketClosingPrices(exchange)
-      .then(res => setData(res.data))
+      .then((res) => setData(res.data || { rows: [], date: null, summary: null, meta: null }))
       .catch(() => setData({ rows: [], date: null, summary: null }))
       .finally(() => setLoading(false));
   }, [exchange]);
@@ -198,6 +198,12 @@ export default function MarketClosingPrices() {
             />
             <span className="text-sm text-slate-500 self-center text-right sm:text-left">
               {filtered.length} stocks
+              {data.meta?.totalSymbols != null && data.meta.totalSymbols !== filtered.length && (
+                <> • universe {data.meta.totalSymbols}</>
+              )}
+              {data.meta?.withPrices != null && (
+                <> • {data.meta.withPrices} with latest close</>
+              )}
               {shariahOnly && ` (Shariah list)`}
               {data.date && ` • Close ${data.date}`}
               {data.source === 'yahoo_seeds' && ' • Preview (major names)'}
@@ -287,10 +293,22 @@ export default function MarketClosingPrices() {
                       </td>
                       <td className="px-4 py-3 text-right text-slate-600">{formatNum(r.close)}</td>
                       <td className={`px-4 py-3 text-right font-medium ${(r.change || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {(r.change || 0) >= 0 ? '+' : ''}{formatNum(r.change)}
+                        {r.close != null ? (
+                          <>
+                            {(r.change || 0) >= 0 ? '+' : ''}{formatNum(r.change)}
+                          </>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className={`px-4 py-3 text-right font-medium ${(r.changePct || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {(r.changePct || 0) >= 0 ? '+' : ''}{formatNum(r.changePct)}%
+                        {r.changePct != null ? (
+                          <>
+                            {(r.changePct || 0) >= 0 ? '+' : ''}{formatNum(r.changePct)}%
+                          </>
+                        ) : (
+                          <span className="text-slate-400 text-xs">Pending ingest</span>
+                        )}
                       </td>
                       <td
                         className={`px-4 py-3 text-right text-xs font-medium tabular-nums ${(r.weekChgPct || 0) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}
