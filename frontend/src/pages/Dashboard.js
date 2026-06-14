@@ -104,7 +104,10 @@ export default function Dashboard() {
       setLoading(true);
       try {
         const [divRes, covRes, newsRes] = await Promise.all([
-          isPsx ? api.getDividends() : api.getMarketDividends(exchange),
+          (isPsx ? api.getDividends() : api.getMarketDividends(exchange)).catch((err) => {
+            console.warn('Dividends load failed:', err);
+            return { data: isPsx ? [] : { rows: [] } };
+          }),
           isPsx ? api.getMonthCoverage() : Promise.resolve({ data: null }),
           api.getExchangeDailyNews(exchange).catch(() => ({ data: {} })),
         ]);
@@ -166,7 +169,9 @@ export default function Dashboard() {
         }
       }
     }
-    const movers = (dailyNews.priceChanges || []).length;
+    const movers = (dailyNews.priceChanges || []).filter(
+      (p) => Math.abs(parseFloat(p.ChangePct || p.changePct) || 0) >= 0.5
+    ).length;
     const headlines = (dailyNews.news || []).length;
     return {
       companies: companies.size,

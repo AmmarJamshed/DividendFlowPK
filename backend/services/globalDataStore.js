@@ -607,16 +607,13 @@ async function getDividendsForExchange(exchangeCode, filters = {}) {
   if (!exchangeId) return [];
 
   const supabase = getSupabase();
-  const { data: secs } = await supabase.from('securities').select('id').eq('exchange_id', exchangeId);
-  const secIds = (secs || []).map((s) => s.id);
-  if (!secIds.length) return [];
 
   const { data, error } = await supabase
     .from('dividend_calendar')
     .select(
-      'dividend_per_share, payment_month, dividend_yield, price, year, securities!inner(symbol, sector)'
+      'dividend_per_share, payment_month, dividend_yield, price, year, securities!inner(symbol, sector, exchange_id)'
     )
-    .in('security_id', secIds);
+    .eq('securities.exchange_id', exchangeId);
 
   if (error) throw error;
   const mapped = (data || []).map((r) => ({
@@ -629,10 +626,12 @@ async function getDividendsForExchange(exchangeCode, filters = {}) {
     exchange: code,
   }));
 
-  const { data: profiles } = await supabase
+  const { data: profiles, error: profErr } = await supabase
     .from('dividend_profiles')
-    .select('frequency, dividend_yield, security_id, securities!inner(symbol)')
-    .in('security_id', secIds);
+    .select('frequency, dividend_yield, security_id, securities!inner(symbol, exchange_id)')
+    .eq('securities.exchange_id', exchangeId);
+
+  if (profErr) throw profErr;
 
   const freqBySymbol = new Map(
     (profiles || []).map((p) => [p.securities?.symbol || '', p.frequency])
