@@ -3,6 +3,16 @@ import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'dividendflow_cookie_consent';
 
+function grantAdConsent() {
+  if (!window.gtag) return;
+  window.gtag('consent', 'update', {
+    analytics_storage: 'granted',
+    ad_storage: 'granted',
+    ad_user_data: 'granted',
+    ad_personalization: 'granted',
+  });
+}
+
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
@@ -10,7 +20,7 @@ export default function CookieConsent() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'accepted' && window.gtag) {
-        window.gtag('consent', 'update', { analytics_storage: 'granted' });
+        grantAdConsent();
         setVisible(false);
         return;
       }
@@ -23,9 +33,7 @@ export default function CookieConsent() {
   const accept = () => {
     try {
       localStorage.setItem(STORAGE_KEY, 'accepted');
-      if (window.gtag) {
-        window.gtag('consent', 'update', { analytics_storage: 'granted' });
-      }
+      grantAdConsent();
     } catch {
       /* ignore */
     }
@@ -38,6 +46,9 @@ export default function CookieConsent() {
       if (window.gtag) {
         window.gtag('consent', 'update', {
           analytics_storage: 'denied',
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied',
         });
       }
     } catch {
@@ -56,9 +67,8 @@ export default function CookieConsent() {
     >
       <div className="max-w-3xl mx-auto pointer-events-auto rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-md shadow-xl shadow-slate-300/30 p-4 sm:p-5">
         <p className="text-sm text-slate-700 leading-relaxed">
-          We use <strong>cookies</strong> and similar technologies for site operation and{' '}
-          <strong>Google Analytics</strong> to understand traffic. If we show ads in the future, Google may use cookies
-          for advertising. See our{' '}
+          We use <strong>cookies</strong> for site operation, <strong>Google Analytics</strong>, and{' '}
+          <strong>Google AdSense</strong> advertising. See our{' '}
           <Link to="/privacy" className="text-teal-700 font-semibold hover:underline">
             Privacy Policy
           </Link>
