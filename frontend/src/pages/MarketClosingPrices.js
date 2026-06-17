@@ -6,6 +6,7 @@ import { stockPath } from '../config/exchanges';
 import { isShariahCompliant, SHARIAH_LIST_META } from '../utils/psxShariah';
 import PageHero from '../components/ui/PageHero';
 import MetricCard from '../components/ui/MetricCard';
+import Disclaimer from '../components/Disclaimer';
 
 const PAGE_SIZE = 25;
 
@@ -378,6 +379,7 @@ export default function MarketClosingPrices() {
           )}
         </p>
       </div>
+      <Disclaimer />
     </div>
   );
 }

@@ -8,6 +8,10 @@ import SalarySimulator from './pages/SalarySimulator';
 import ReportingCycles from './pages/ReportingCycles';
 import MarketClosingPrices from './pages/MarketClosingPrices';
 import StockPage from './pages/StockPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import { AIAssistanceProvider } from './context/AIAssistanceContext';
 import { MarketBuddyProvider } from './context/MarketBuddyContext';
 import { ExchangeProvider } from './context/ExchangeContext';
@@ -52,6 +56,10 @@ function App() {
                 <Route path="/forecast-engine" element={<ForecastEngine />} />
                 <Route path="/salary-simulator" element={<SalarySimulator />} />
                 <Route path="/reporting-cycles" element={<ReportingCycles />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
               </Routes>
             </Layout>
           </MarketBuddyProvider>

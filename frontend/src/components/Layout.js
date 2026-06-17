@@ -10,6 +10,8 @@ import { useExchange } from '../context/ExchangeContext';
 import ExchangeSelector from './ExchangeSelector';
 import GlobalSearch from './GlobalSearch';
 import ExchangeMarketBanner from './ExchangeMarketBanner';
+import SiteFooter from './SiteFooter';
+import CookieConsent from './CookieConsent';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
@@ -96,7 +98,10 @@ function SidebarDisclaimer() {
   const { exchangeConfig } = useExchange();
   return (
     <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-[11px] text-slate-600 bg-slate-50/90 leading-relaxed">
-      For learning and research only — not buy/sell advice. Confirm figures with {exchangeConfig.code} and your broker.
+      For learning and research only — not buy/sell advice. Confirm figures with {exchangeConfig.code} and your broker.{' '}
+      <Link to="/privacy" className="text-teal-700 font-medium hover:underline">Privacy</Link>
+      {' · '}
+      <Link to="/contact" className="text-teal-700 font-medium hover:underline">Contact</Link>
     </footer>
   );
 }
@@ -294,8 +299,12 @@ export default function Layout({ children }) {
 
           <div data-app-scroll-root className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
             <div className="max-w-6xl mx-auto">
-              {!location.pathname.startsWith('/stock/') && <ExchangeMarketBanner />}
+              {!location.pathname.startsWith('/stock/') &&
+                !['/privacy', '/terms', '/about', '/contact'].includes(location.pathname) && (
+                <ExchangeMarketBanner />
+              )}
               {children}
+              <SiteFooter />
             </div>
           </div>
         </main>
@@ -304,6 +313,7 @@ export default function Layout({ children }) {
       <RobotCursor />
       <AmmarCursorGuide />
       <AIGuidance />
+      <CookieConsent />
     </div>
   );
 }
