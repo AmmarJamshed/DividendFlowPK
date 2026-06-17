@@ -7,6 +7,7 @@ function watchlistHeaders(sessionId) {
 }
 
 export const api = {
+  postContact: (body) => axios.post(`${API_BASE}/contact`, body, { timeout: 30000 }),
   getDividends: () => axios.get(`${API_BASE}/dividends`),
   getMonthCoverage: () => axios.get(`${API_BASE}/month-coverage`),
   getRiskScore: (companyName) => axios.post(`${API_BASE}/risk-score`, { companyName }),

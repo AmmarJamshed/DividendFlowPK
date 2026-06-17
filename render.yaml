@@ -21,6 +21,20 @@ services:
         sync: false
       - key: NODE_ENV
         value: production
+      - key: CONTACT_EMAIL_TO
+        value: ammarjamshed123@gmail.com
+      - key: CONTACT_EMAIL_FROM
+        value: DividendFlow PK <contact@dividendflow.pk>
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
 
   # Frontend (React Static Site)
   - type: web

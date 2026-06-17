@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { OFFICIAL_CONTACT_EMAIL } from '../config/contact';
 
 const legalLinks = [
   { to: '/privacy', label: 'Privacy Policy' },
@@ -20,12 +21,9 @@ export default function SiteFooter() {
             {label}
           </Link>
         ))}
-        <a
-          href="mailto:contact@dividendflow.pk"
-          className="hover:text-teal-700 hover:underline"
-        >
-          contact@dividendflow.pk
-        </a>
+        <Link to="/contact" className="text-teal-700 hover:underline">
+          {OFFICIAL_CONTACT_EMAIL}
+        </Link>
       </nav>
       <p className="mt-3 text-[11px] text-slate-500 leading-relaxed max-w-3xl">
         © {year} DividendFlow PK. For research and education only — not investment, tax, or legal advice. Confirm all

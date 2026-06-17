@@ -17,6 +17,7 @@ const v1Router = require('./routes/v1');
 const aiPipeline = require('./services/aiPipeline');
 const exchangeService = require('./services/exchangeService');
 const exchangeNews = require('./services/exchangeNews');
+const contactMail = require('./services/contactMail');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -1585,6 +1586,7 @@ function buildMarketChatContextText(payload) {
 }
 
 const chatRateByIp = new Map();
+const contactRateByIp = new Map();
 const CHAT_MIN_INTERVAL_MS = 5000;
 
 async function groqMarketChat(systemPrompt, userBlock) {
@@ -1849,6 +1851,49 @@ app.get('/api/scrape-freshness', async (req, res) => {
 });
 
 // Health check
+app.post('/api/contact', async (req, res) => {
+  try {
+    if (req.body?.website) {
+      return res.json({ ok: true });
+    }
+
+    const rawIp = req.headers['x-forwarded-for'];
+    const ip =
+      typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : rawIp?.[0] || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const prev = contactRateByIp.get(ip) || 0;
+    if (now - prev < 60000) {
+      return res.status(429).json({ ok: false, error: 'Please wait a minute before sending another message.' });
+    }
+
+    const name = String(req.body?.name || '').trim().slice(0, 120);
+    const email = String(req.body?.email || '').trim().slice(0, 200);
+    const subject = String(req.body?.subject || '').trim().slice(0, 200);
+    const message = String(req.body?.message || '').trim().slice(0, 4000);
+
+    if (!name || !email || !message) {
+      return res.status(400).json({ ok: false, error: 'Name, email, and message are required.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ ok: false, error: 'Please enter a valid email address.' });
+    }
+
+    if (!contactMail.isContactConfigured()) {
+      return res.status(503).json({
+        ok: false,
+        error: 'Contact delivery is not configured on the server yet. Please try again later.',
+      });
+    }
+
+    await contactMail.sendContactMessage({ name, email, subject, message });
+    contactRateByIp.set(ip, now);
+    res.json({ ok: true, from: 'contact@dividendflow.pk' });
+  } catch (err) {
+    console.error('[contact]', err.message);
+    res.status(500).json({ ok: false, error: 'Failed to send message. Please try again later.' });
+  }
+});
+
 app.get('/api/health', async (req, res) => {
   const supabase = await dataStore.checkSupabaseHealth();
   res.json({
