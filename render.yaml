@@ -43,7 +43,19 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
+    headers:
+      - path: /ads.txt
+        name: Cache-Control
+        value: public, max-age=300, must-revalidate
     routes:
+      - type: redirect
+        source: /ads.txt/
+        destination: /ads.txt
+        status: 301
+      - type: redirect
+        source: /robots.txt/
+        destination: /robots.txt
+        status: 301
       - type: rewrite
         source: /*
         destination: /index.html
