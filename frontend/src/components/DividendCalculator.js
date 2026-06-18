@@ -358,7 +358,7 @@ export default function DividendCalculator({ symbolList = [] }) {
       data-ai-hint="Dividend calculator — enter holdings or upload a portfolio PDF"
     >
       <div className="fin-hero fin-hero--teal px-5 sm:px-6 py-5 relative rounded-t-2xl">
-        <img src={LOGO} alt="" className="absolute right-4 top-4 w-16 opacity-30 pointer-events-none" aria-hidden />
+        <img src={LOGO} alt="" className="absolute right-4 top-4 w-14 opacity-[0.06] pointer-events-none rounded-lg" aria-hidden />
         <div className="relative z-[1]">
           <p className="text-[11px] font-bold uppercase tracking-widest text-amber-100 mb-1">Portfolio income</p>
           <h3 className="text-xl sm:text-2xl font-bold tracking-tight">Dividend calculator</h3>

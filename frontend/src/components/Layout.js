@@ -169,17 +169,18 @@ export default function Layout({ children }) {
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         >
           <div className="px-5 py-5 border-b border-slate-200 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3 min-w-0 group">
+            <Link to="/" className="flex items-center gap-2.5 min-w-0 group">
               <img
                 src={LOGO}
-                alt="DividendFlow PK"
-                className="w-11 h-11 rounded-2xl shrink-0 border-2 border-teal-300/80 shadow-md shadow-teal-200/40 object-cover bg-white"
+                alt=""
+                className="w-8 h-8 rounded-[10px] shrink-0 object-cover"
+                aria-hidden
               />
               <div className="min-w-0">
-                <p className="text-base font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent leading-tight">
+                <p className="text-[15px] font-semibold text-slate-900 tracking-tight leading-tight group-hover:text-teal-700 transition-colors">
                   DividendFlow PK
                 </p>
-                <p className="text-[10px] text-slate-500 mt-0.5 hidden sm:block">{exchangeConfig.name} · {exchangeConfig.currency}</p>
+                <p className="text-[10px] text-slate-500 font-medium">{exchangeConfig.code} · {exchangeConfig.currency}</p>
               </div>
             </Link>
             <button

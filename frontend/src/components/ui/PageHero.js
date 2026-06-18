@@ -19,7 +19,7 @@ export default function PageHero({
         <img
           src={LOGO}
           alt=""
-          className="absolute -right-2 -top-2 w-24 sm:w-32 opacity-20 pointer-events-none select-none"
+          className="absolute right-3 top-3 w-16 sm:w-20 opacity-[0.07] pointer-events-none select-none rounded-lg"
           aria-hidden="true"
         />
       )}
