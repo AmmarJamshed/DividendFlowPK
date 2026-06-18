@@ -119,7 +119,15 @@ export default function Dashboard() {
         } else {
           const normalized = normalizeDividendRows(divRes.data?.rows || [], exchange);
           setDividends(normalized);
-          setMonthCoverage(buildMonthCoverageFromDividends(normalized));
+          const apiSummary = divRes.data?.summary;
+          if (apiSummary?.uniquePayers != null) {
+            setMonthCoverage({
+              monthCoverage: buildMonthCoverageFromDividends(normalized).monthCoverage,
+              dividendSummary: apiSummary,
+            });
+          } else {
+            setMonthCoverage(buildMonthCoverageFromDividends(normalized));
+          }
         }
 
         const newsPayload = newsRes.data || {};
@@ -158,9 +166,13 @@ export default function Dashboard() {
       const c = (d.Company || d.company || '').trim();
       if (c) companies.add(c);
     });
+    const uniquePayers = monthCoverage?.dividendSummary?.uniquePayers ?? companies.size;
     let busiestMonth = '—';
     let busiestCount = 0;
-    if (monthCoverage?.monthCoverage) {
+    if (monthCoverage?.dividendSummary?.busiestMonth) {
+      busiestCount = monthCoverage.dividendSummary.busiestCount || 0;
+      busiestMonth = monthNames[monthCoverage.dividendSummary.busiestMonth - 1] || '—';
+    } else if (monthCoverage?.monthCoverage) {
       for (let i = 1; i <= 12; i++) {
         const c = monthCoverage.monthCoverage[i]?.count || 0;
         if (c > busiestCount) {
@@ -174,7 +186,7 @@ export default function Dashboard() {
     ).length;
     const headlines = (dailyNews.news || []).length;
     return {
-      companies: companies.size,
+      companies: uniquePayers,
       busiestMonth,
       busiestCount,
       movers,
@@ -299,7 +311,7 @@ export default function Dashboard() {
             value={dashboardStats.busiestMonth}
             hint={
               dashboardStats.busiestCount
-                ? `${dashboardStats.busiestCount} payout records`
+                ? `${dashboardStats.busiestCount} companies with payouts`
                 : 'Calendar dataset'
             }
             tip="The calendar month when the most companies pay dividends — useful for planning cash flow."

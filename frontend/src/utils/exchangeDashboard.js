@@ -14,22 +14,23 @@ export function normalizeDividendRows(rows = [], exchange = 'PSX') {
 
 export function buildMonthCoverageFromDividends(dividends = []) {
   const monthCoverage = {};
+  const monthSymbols = {};
   for (let i = 1; i <= 12; i += 1) {
-    monthCoverage[i] = { count: 0, companies: [] };
+    monthSymbols[i] = new Set();
   }
-  const seen = new Set();
   dividends.forEach((d) => {
     const m = parseInt(d.Payment_month ?? d.payment_month ?? d.paymentMonth, 10);
     const sym = (d.Company || d.company || d.symbol || '').trim();
     if (!m || m < 1 || m > 12 || !sym) return;
-    monthCoverage[m].count += 1;
-    const key = `${m}:${sym}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      monthCoverage[m].companies.push(sym);
-    }
+    monthSymbols[m].add(sym);
   });
-  const avg = dividends.length / 12;
+  let totalUnique = 0;
+  for (let i = 1; i <= 12; i += 1) {
+    const companies = [...monthSymbols[i]];
+    monthCoverage[i] = { count: companies.length, companies };
+    totalUnique += companies.length;
+  }
+  const avg = totalUnique / 12;
   const weakMonths = Object.entries(monthCoverage)
     .filter(([, v]) => v.count > 0 && v.count < avg * 0.5)
     .map(([month, v]) => ({ month: parseInt(month, 10), count: v.count }));

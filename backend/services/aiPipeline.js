@@ -333,7 +333,8 @@ async function retrieveEnhanced(exchangeCode, symbol, question, holdings) {
   }
 
   if (intent === 'dividend_hunt' && !tools.dividends) {
-    tools.dividendList = await globalDataStore.getDividendsForExchange(code, { minYield: 2 });
+    const dividendResult = await globalDataStore.getDividendsForExchange(code, { minYield: 2 });
+    tools.dividendList = Array.isArray(dividendResult) ? dividendResult : dividendResult.rows;
   }
 
   return { exchange: code, symbol: symbol || null, intent, tools };

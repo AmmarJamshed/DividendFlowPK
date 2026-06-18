@@ -571,6 +571,182 @@ async function getStockDetail(exchangeCode, symbol) {
   };
 }
 
+function isDividendPayerProfile(profile) {
+  return (
+    num(profile?.annual_rate) > 0 ||
+    num(profile?.dividend_yield) > 0 ||
+    num(profile?.trailing_12m_total) > 0
+  );
+}
+
+function paymentMonthFromDate(dateStr) {
+  if (!dateStr) return null;
+  const m = parseInt(String(dateStr).slice(5, 7), 10);
+  return m >= 1 && m <= 12 ? m : null;
+}
+
+function calendarRowKey(symbol, year, month) {
+  return `${symbol}:${year || ''}:${month || ''}`;
+}
+
+async function fetchPaginatedForExchange(supabase, table, exchangeId, select) {
+  const pageSize = 1000;
+  const all = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(select)
+      .eq('securities.exchange_id', exchangeId)
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const batch = data || [];
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+  return all;
+}
+
+function mapCalendarRow(r, code) {
+  return {
+    symbol: r.securities.symbol,
+    sector: r.securities.sector || '',
+    paymentMonth: r.payment_month,
+    yield: num(r.dividend_yield),
+    dps: num(r.dividend_per_share),
+    year: r.year,
+    exchange: code,
+    frequency: null,
+  };
+}
+
+function profileToCalendarRow(profile, code) {
+  const symbol = profile.securities?.symbol || '';
+  if (!symbol) return null;
+  const exMonth = paymentMonthFromDate(profile.ex_dividend_date);
+  const year = profile.ex_dividend_date
+    ? parseInt(String(profile.ex_dividend_date).slice(0, 4), 10)
+    : new Date().getFullYear();
+  let divYield = num(profile.dividend_yield);
+  if (divYield != null && divYield > 0 && divYield < 1) divYield *= 100;
+  return {
+    symbol,
+    sector: profile.securities?.sector || '',
+    paymentMonth: exMonth,
+    yield: divYield,
+    dps: num(profile.annual_rate) || num(profile.trailing_12m_total),
+    year,
+    exchange: code,
+    frequency: profile.frequency || null,
+  };
+}
+
+function buildDividendSummary(rows) {
+  const symbols = new Set();
+  const monthSymbols = {};
+  for (let i = 1; i <= 12; i += 1) monthSymbols[i] = new Set();
+
+  for (const r of rows) {
+    const sym = (r.symbol || '').trim();
+    if (!sym) continue;
+    symbols.add(sym);
+    const m = parseInt(r.paymentMonth, 10);
+    if (m >= 1 && m <= 12) monthSymbols[m].add(sym);
+  }
+
+  let busiestMonth = null;
+  let busiestCount = 0;
+  for (let i = 1; i <= 12; i += 1) {
+    const c = monthSymbols[i].size;
+    if (c > busiestCount) {
+      busiestCount = c;
+      busiestMonth = i;
+    }
+  }
+
+  return {
+    uniquePayers: symbols.size,
+    totalRecords: rows.length,
+    busiestMonth,
+    busiestCount,
+  };
+}
+
+async function getGlobalDividendsForExchange(code, filters = {}) {
+  const exchangeId = await exchangeService.getExchangeId(code);
+  if (!exchangeId) return { rows: [], summary: buildDividendSummary([]) };
+
+  const supabase = getSupabase();
+  const calendarSelect =
+    'dividend_per_share, payment_month, dividend_yield, price, year, securities!inner(symbol, sector, exchange_id)';
+  const profileSelect =
+    'annual_rate, dividend_yield, frequency, ex_dividend_date, trailing_12m_total, securities!inner(symbol, sector, exchange_id)';
+  const eventSelect =
+    'payment_date, amount, securities!inner(symbol, sector, exchange_id)';
+
+  const [calendarData, profileData, eventData] = await Promise.all([
+    fetchPaginatedForExchange(supabase, 'dividend_calendar', exchangeId, calendarSelect),
+    fetchPaginatedForExchange(supabase, 'dividend_profiles', exchangeId, profileSelect),
+    fetchPaginatedForExchange(supabase, 'dividend_events', exchangeId, eventSelect),
+  ]);
+
+  const freqBySymbol = new Map(
+    profileData.map((p) => [p.securities?.symbol || '', p.frequency || null])
+  );
+
+  const rowsByKey = new Map();
+  const symbolsSeen = new Set();
+
+  for (const r of calendarData) {
+    const row = mapCalendarRow(r, code);
+    row.frequency = freqBySymbol.get(row.symbol) || null;
+    rowsByKey.set(calendarRowKey(row.symbol, row.year, row.paymentMonth), row);
+    symbolsSeen.add(row.symbol);
+  }
+
+  for (const ev of eventData) {
+    const symbol = ev.securities?.symbol || '';
+    const dateStr = ev.payment_date;
+    if (!symbol || !dateStr) continue;
+    const year = parseInt(String(dateStr).slice(0, 4), 10);
+    const month = paymentMonthFromDate(dateStr);
+    if (!month) continue;
+    const key = calendarRowKey(symbol, year, month);
+    const amount = num(ev.amount) || 0;
+    if (rowsByKey.has(key)) {
+      const existing = rowsByKey.get(key);
+      existing.dps = (existing.dps || 0) + amount;
+      continue;
+    }
+    rowsByKey.set(key, {
+      symbol,
+      sector: ev.securities?.sector || '',
+      paymentMonth: month,
+      yield: null,
+      dps: amount,
+      year,
+      exchange: code,
+      frequency: freqBySymbol.get(symbol) || null,
+    });
+    symbolsSeen.add(symbol);
+  }
+
+  for (const profile of profileData) {
+    if (!isDividendPayerProfile(profile)) continue;
+    const symbol = profile.securities?.symbol || '';
+    if (!symbol || symbolsSeen.has(symbol)) continue;
+    const row = profileToCalendarRow(profile, code);
+    if (!row) continue;
+    const key = calendarRowKey(row.symbol, row.year, row.paymentMonth);
+    if (rowsByKey.has(key)) continue;
+    rowsByKey.set(key, row);
+    symbolsSeen.add(symbol);
+  }
+
+  const merged = [...rowsByKey.values()];
+  const filtered = applyDividendFilters(merged, filters);
+  return { rows: filtered, summary: buildDividendSummary(merged) };
+}
+
 async function getDividendsForExchange(exchangeCode, filters = {}) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
 
@@ -588,61 +764,20 @@ async function getDividendsForExchange(exchangeCode, filters = {}) {
           .on('error', reject);
       });
     });
-    return applyDividendFilters(
-      (rows || []).map((r) => ({
-        symbol: r.Company || r.company,
-        sector: r.Sector || '',
-        paymentMonth: parseInt(r.Payment_month, 10) || null,
-        yield: parseFloat(r.Dividend_yield) || null,
-        dps: parseFloat(r.Dividend_per_share) || null,
-        year: parseInt(r.Year, 10) || null,
-        exchange: 'PSX',
-      })),
-      filters
-    );
+    const mapped = (rows || []).map((r) => ({
+      symbol: r.Company || r.company,
+      sector: r.Sector || '',
+      paymentMonth: parseInt(r.Payment_month, 10) || null,
+      yield: parseFloat(r.Dividend_yield) || null,
+      dps: parseFloat(r.Dividend_per_share) || null,
+      year: parseInt(r.Year, 10) || null,
+      exchange: 'PSX',
+    }));
+    return applyDividendFilters(mapped, filters);
   }
 
-  if (!isSupabaseConfigured()) return [];
-  const exchangeId = await exchangeService.getExchangeId(code);
-  if (!exchangeId) return [];
-
-  const supabase = getSupabase();
-
-  const { data, error } = await supabase
-    .from('dividend_calendar')
-    .select(
-      'dividend_per_share, payment_month, dividend_yield, price, year, securities!inner(symbol, sector, exchange_id)'
-    )
-    .eq('securities.exchange_id', exchangeId);
-
-  if (error) throw error;
-  const mapped = (data || []).map((r) => ({
-    symbol: r.securities.symbol,
-    sector: r.securities.sector || '',
-    paymentMonth: r.payment_month,
-    yield: num(r.dividend_yield),
-    dps: num(r.dividend_per_share),
-    year: r.year,
-    exchange: code,
-  }));
-
-  const { data: profiles, error: profErr } = await supabase
-    .from('dividend_profiles')
-    .select('frequency, dividend_yield, security_id, securities!inner(symbol, exchange_id)')
-    .eq('securities.exchange_id', exchangeId);
-
-  if (profErr) throw profErr;
-
-  const freqBySymbol = new Map(
-    (profiles || []).map((p) => [p.securities?.symbol || '', p.frequency])
-  );
-
-  const enriched = mapped.map((r) => ({
-    ...r,
-    frequency: freqBySymbol.get(r.symbol) || null,
-  }));
-
-  return applyDividendFilters(enriched, filters);
+  if (!isSupabaseConfigured()) return { rows: [], summary: buildDividendSummary([]) };
+  return getGlobalDividendsForExchange(code, filters);
 }
 
 function applyDividendFilters(rows, filters) {

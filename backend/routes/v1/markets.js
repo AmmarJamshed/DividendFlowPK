@@ -67,12 +67,15 @@ router.get('/:exchange/closing-prices', async (req, res) => {
 router.get('/:exchange/dividends', async (req, res) => {
   try {
     const code = exchangeService.normalizeExchangeCode(req.params.exchange);
-    const rows = await globalDataStore.getDividendsForExchange(code, {
+    const filters = {
       month: req.query.month,
       sector: req.query.sector,
       minYield: req.query.minYield,
-    });
-    res.json({ exchange: code, rows });
+    };
+    const result = await globalDataStore.getDividendsForExchange(code, filters);
+    const rows = Array.isArray(result) ? result : result.rows;
+    const summary = Array.isArray(result) ? null : result.summary;
+    res.json({ exchange: code, rows, summary });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
