@@ -47,11 +47,16 @@ router.get('/:exchange/closing-prices', async (req, res) => {
   try {
     const code = exchangeService.normalizeExchangeCode(req.params.exchange);
     const payload = await globalDataStore.getClosingPrices(code);
-    const rows = payload.rows || [];
-    const gainers = [...rows].sort((a, b) => (b.changePct || 0) - (a.changePct || 0)).slice(0, 5);
-    const losers = [...rows].sort((a, b) => (a.changePct || 0) - (b.changePct || 0)).slice(0, 5);
+    const rows = (payload.rows || []).filter((r) => r.close != null && r.close > 0);
+    const gainers = rows
+      .filter((r) => typeof r.changePct === 'number' && r.changePct > 0)
+      .sort((a, b) => b.changePct - a.changePct);
+    const losers = rows
+      .filter((r) => typeof r.changePct === 'number' && r.changePct < 0)
+      .sort((a, b) => a.changePct - b.changePct);
     res.json({
       ...payload,
+      rows,
       summary: {
         totalCompanies: rows.length,
         topGainer: gainers[0] || null,

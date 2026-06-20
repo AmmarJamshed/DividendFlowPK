@@ -33,6 +33,10 @@ const ROUTE_TIPS = {
     'Sort columns to find top gainers and losers.',
     'Use the search bar to find a stock quickly.',
   ],
+  '/market-brokers': [
+    'Market brokers will list stock brokers by country — coming soon.',
+    'Use this directory to compare where to open a trading account.',
+  ],
 };
 
 const DEFAULT_TIPS = [

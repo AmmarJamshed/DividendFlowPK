@@ -67,39 +67,43 @@ async function getGlobalClosingPricesFromSupabase(code) {
     return { exchange: code, rows: [], date: null, source: 'supabase', universe: universeMeta };
   }
 
-  const secMap = new Map(secs.map((s) => [s.id, s]));
   const secIds = secs.map((s) => s.id);
-  const latestBySecId = await fetchLatestPricesBatched(supabase, secIds);
+  const recentBySecId = await fetchRecentPricesBatched(supabase, secIds);
 
   const cfg = exchangeService.getExchangeConfig(code);
   let maxDate = null;
   const rows = [];
   for (const sec of secs) {
-    const r = latestBySecId.get(sec.id);
-    if (r?.trade_date && (!maxDate || r.trade_date > maxDate)) maxDate = r.trade_date;
+    const history = recentBySecId.get(sec.id) || [];
+    const latest = history[0];
+    const derived = deriveSessionMove(history);
+    const weekChgPct = deriveWeekChange(history, latest?.trade_date);
+    if (latest?.trade_date && (!maxDate || latest.trade_date > maxDate)) maxDate = latest.trade_date;
+    const listingSymbol = exchangeService.normalizeListingSymbol(sec.symbol, code);
     rows.push({
-      symbol: sec.symbol,
-      company: sec.name || sec.symbol,
+      symbol: listingSymbol,
+      company: sec.name || listingSymbol,
       sector: sec.sector || '',
-      close: r ? num(r.close) : null,
-      change: r ? num(r.change_amount) : null,
-      changePct: r ? num(r.change_pct) : null,
-      volume: r?.volume || 0,
-      open: r ? num(r.open) : null,
-      high: r ? num(r.high) : null,
-      low: r ? num(r.low) : null,
-      currency: (r?.currency || cfg.currency),
+      close: latest ? num(latest.close) : null,
+      change: derived.change,
+      changePct: derived.changePct,
+      volume: latest?.volume || 0,
+      open: latest ? num(latest.open) : null,
+      high: latest ? num(latest.high) : null,
+      low: latest ? num(latest.low) : null,
+      currency: (latest?.currency || cfg.currency),
       exchange: code,
-      weekChgPct: null,
+      weekChgPct,
     });
   }
 
-  const withPrices = rows.filter((row) => row.close != null).length;
+  const withPrices = rows.filter((row) => row.close != null && row.close > 0).length;
   const date = maxDate;
+  const displayRows = rows.filter((row) => row.close != null && row.close > 0);
   const payload = {
     exchange: code,
     currency: cfg.currency,
-    rows,
+    rows: displayRows,
     date,
     source: withPrices > 0 ? 'supabase' : 'supabase',
     meta: {
@@ -128,6 +132,46 @@ async function getGlobalClosingPricesFromSupabase(code) {
 }
 
 const SEC_ID_CHUNK = 120;
+const RECENT_ROWS_PER_SECURITY = 12;
+
+function subtractDaysIso(isoDateStr, days) {
+  if (!isoDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoDateStr)) return null;
+  const [y, m, d] = isoDateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - days);
+  return dt.toISOString().slice(0, 10);
+}
+
+function deriveSessionMove(history) {
+  const latest = history[0];
+  const previous = history[1];
+  const close = num(latest?.close);
+  const prevClose = num(previous?.close);
+  if (close == null || prevClose == null || prevClose <= 0) {
+    return { change: null, changePct: null };
+  }
+  const change = Math.round((close - prevClose) * 10000) / 10000;
+  const changePct = Math.round((change / prevClose) * 10000) / 100;
+  return { change, changePct };
+}
+
+function deriveWeekChange(history, sessionDate) {
+  const latest = history[0];
+  const close = num(latest?.close);
+  if (close == null || close <= 0 || !sessionDate) return null;
+  const targetDate = subtractDaysIso(sessionDate, 7);
+  if (!targetDate) return null;
+  let weekClose = null;
+  for (const row of history.slice(1)) {
+    if (!row?.trade_date || row.trade_date > sessionDate) continue;
+    if (row.trade_date <= targetDate) {
+      weekClose = num(row.close);
+      break;
+    }
+  }
+  if (weekClose == null || weekClose <= 0) return null;
+  return Math.round(((close - weekClose) / weekClose) * 10000) / 100;
+}
 
 async function fetchAllActiveSecurities(supabase, exchangeId) {
   const pageSize = 1000;
@@ -148,8 +192,8 @@ async function fetchAllActiveSecurities(supabase, exchangeId) {
   return all;
 }
 
-async function fetchLatestPricesBatched(supabase, secIds) {
-  const latestBySecId = new Map();
+async function fetchRecentPricesBatched(supabase, secIds) {
+  const recentBySecId = new Map();
   for (let i = 0; i < secIds.length; i += SEC_ID_CHUNK) {
     const chunk = secIds.slice(i, i + SEC_ID_CHUNK);
     const { data, error } = await supabase
@@ -157,13 +201,15 @@ async function fetchLatestPricesBatched(supabase, secIds) {
       .select('security_id, trade_date, open, high, low, close, change_amount, change_pct, volume, currency')
       .in('security_id', chunk)
       .order('trade_date', { ascending: false })
-      .limit(chunk.length * 4);
+      .limit(chunk.length * RECENT_ROWS_PER_SECURITY);
     if (error) throw error;
     for (const r of data || []) {
-      if (!latestBySecId.has(r.security_id)) latestBySecId.set(r.security_id, r);
+      if (!recentBySecId.has(r.security_id)) recentBySecId.set(r.security_id, []);
+      const arr = recentBySecId.get(r.security_id);
+      if (arr.length < RECENT_ROWS_PER_SECURITY) arr.push(r);
     }
   }
-  return latestBySecId;
+  return recentBySecId;
 }
 
 async function fetchSeedClosingPrices(exchangeCode) {
@@ -457,7 +503,7 @@ async function getPsxStockDetailFromLocal(sym) {
 
 async function getStockDetail(exchangeCode, symbol) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
-  const sym = String(symbol || '').toUpperCase().trim();
+  const sym = exchangeService.normalizeListingSymbol(symbol, code);
   if (!sym) return null;
 
   if (code === 'PSX' && !isSupabaseConfigured()) {
@@ -475,7 +521,21 @@ async function getStockDetail(exchangeCode, symbol) {
     .eq('exchange_id', exchangeId)
     .eq('symbol', sym)
     .maybeSingle();
-  if (!sec) {
+
+  let security = sec;
+  if (!security && code === 'HKEX') {
+    const alt = sym.replace(/^0+/, '') || sym;
+    if (alt !== sym) {
+      const { data: altSec } = await supabase
+        .from('securities')
+        .select('id, symbol, name, sector, industry')
+        .eq('exchange_id', exchangeId)
+        .eq('symbol', alt)
+        .maybeSingle();
+      security = altSec;
+    }
+  }
+  if (!security) {
     if (code === 'PSX') return getPsxStockDetailFromLocal(sym);
     return null;
   }
@@ -484,69 +544,72 @@ async function getStockDetail(exchangeCode, symbol) {
     supabase
       .from('daily_prices')
       .select('trade_date, open, high, low, close, change_amount, change_pct, volume, currency')
-      .eq('security_id', sec.id)
+      .eq('security_id', security.id)
       .order('trade_date', { ascending: false })
       .limit(90),
     supabase
       .from('dividend_calendar')
       .select('dividend_per_share, payment_month, dividend_yield, price, year')
-      .eq('security_id', sec.id)
+      .eq('security_id', security.id)
       .order('year', { ascending: false })
       .limit(24),
     supabase
       .from('dividend_payouts')
       .select('dividend_announcement, announcement_date, payment_month, year')
-      .eq('security_id', sec.id)
+      .eq('security_id', security.id)
       .order('year', { ascending: false })
       .limit(24),
     supabase
       .from('dividend_events')
       .select('ex_date, payment_date, amount, currency, frequency, dividend_type')
-      .eq('security_id', sec.id)
+      .eq('security_id', security.id)
       .order('payment_date', { ascending: false })
       .limit(48),
     supabase
       .from('dividend_profiles')
       .select('annual_rate, dividend_yield, frequency, ex_dividend_date, trailing_12m_total, last_updated')
-      .eq('security_id', sec.id)
+      .eq('security_id', security.id)
       .maybeSingle(),
     supabase
       .from('financial_metrics')
       .select('*')
-      .eq('security_id', sec.id)
+      .eq('security_id', security.id)
       .order('as_of_date', { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase
       .from('news_articles')
       .select('headline, published_date, source, url')
-      .eq('security_id', sec.id)
+      .eq('security_id', security.id)
       .order('published_date', { ascending: false })
       .limit(10),
     supabase
       .from('ai_insights')
       .select('content, confidence, insight_type, created_at')
-      .eq('security_id', sec.id)
+      .eq('security_id', security.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
   ]);
 
-  const latest = pricesRes.data?.[0];
+  const priceHistory = pricesRes.data || [];
+  const latest = priceHistory[0];
+  const derived = deriveSessionMove(priceHistory);
+  const listingSymbol = exchangeService.normalizeListingSymbol(security.symbol, code);
   const cfg = exchangeService.getExchangeConfig(code);
 
   return {
     exchange: code,
-    symbol: sec.symbol,
-    name: sec.name || sec.symbol,
-    sector: sec.sector || '',
-    industry: sec.industry || '',
+    symbol: listingSymbol,
+    name: security.name || listingSymbol,
+    sector: security.sector || '',
+    industry: security.industry || '',
     currency: latest?.currency || cfg.currency,
     price: latest
       ? {
           close: num(latest.close),
-          change: num(latest.change_amount),
-          changePct: num(latest.change_pct),
+          change: derived.change,
+          changePct: derived.changePct,
           open: num(latest.open),
           high: num(latest.high),
           low: num(latest.low),

@@ -21,8 +21,7 @@ function dbSymbolFromYahoo(yahooTicker, exchangeCode) {
   const suffix = (cfg.yfinanceSuffix || '').toUpperCase();
   let s = String(yahooTicker || '').toUpperCase();
   if (suffix && s.endsWith(suffix)) s = s.slice(0, -suffix.length);
-  if (suffix === '.HK' && /^\d+$/.test(s)) return s.padStart(4, '0');
-  return s;
+  return exchangeService.normalizeListingSymbol(s, exchangeCode);
 }
 
 async function fetchYahooNewsForQuery(query) {

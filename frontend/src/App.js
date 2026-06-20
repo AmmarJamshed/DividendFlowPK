@@ -6,6 +6,7 @@ import DividendCalendar from './pages/DividendCalendar';
 import ForecastEngine from './pages/ForecastEngine';
 import SalarySimulator from './pages/SalarySimulator';
 import ReportingCycles from './pages/ReportingCycles';
+import MarketBrokers from './pages/MarketBrokers';
 import MarketClosingPrices from './pages/MarketClosingPrices';
 import StockPage from './pages/StockPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/forecast-engine" element={<ForecastEngine />} />
                 <Route path="/salary-simulator" element={<SalarySimulator />} />
                 <Route path="/reporting-cycles" element={<ReportingCycles />} />
+                <Route path="/market-brokers" element={<MarketBrokers />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/about" element={<About />} />

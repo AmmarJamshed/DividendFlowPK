@@ -374,7 +374,8 @@ export default function MarketClosingPrices() {
               <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices</code>
               ), populated by the{' '}
               <code className="text-[11px] bg-slate-200/80 px-1 rounded">global-ingest-{exchangeConfig.code.toLowerCase()}</code>{' '}
-              GitHub Actions workflow after each market close. Shariah filter is PSX-only.
+              GitHub Actions workflow after each market close. Daily % and Week % are recomputed from the last two
+              closes and ~7 calendar days ago. Shariah filter is PSX-only.
             </span>
           )}
         </p>

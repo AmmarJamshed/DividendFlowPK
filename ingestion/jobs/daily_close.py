@@ -41,7 +41,9 @@ def db_symbol(yahoo_ticker: str, cfg: dict) -> str:
     s = yahoo_ticker.strip().upper()
     suffix = (cfg.get("yfinance_suffix") or "").upper()
     if suffix and s.endswith(suffix):
-        return s[: -len(suffix)]
+        s = s[: -len(suffix)]
+    if suffix == ".HK" and s.isdigit():
+        return s.zfill(4)
     return s
 
 

@@ -46,9 +46,18 @@ async function getExchangeId(code) {
   return data?.id || null;
 }
 
+function normalizeListingSymbol(symbol, exchangeCode) {
+  const code = normalizeExchangeCode(exchangeCode);
+  let sym = String(symbol || '').toUpperCase().trim();
+  if (code === 'HKEX' && /^\d+$/.test(sym)) {
+    sym = sym.padStart(4, '0');
+  }
+  return sym;
+}
+
 function yfinanceTicker(symbol, exchangeCode) {
   const cfg = getExchangeConfig(exchangeCode);
-  const sym = String(symbol).toUpperCase().trim();
+  const sym = normalizeListingSymbol(symbol, exchangeCode);
   const suffix = cfg?.yfinanceSuffix || '';
   if (suffix && sym.endsWith(suffix.replace('.', ''))) return sym;
   return `${sym}${suffix}`;
@@ -60,6 +69,7 @@ module.exports = {
   listExchanges,
   getExchangeConfig,
   normalizeExchangeCode,
+  normalizeListingSymbol,
   getExchangeId,
   yfinanceTicker,
 };

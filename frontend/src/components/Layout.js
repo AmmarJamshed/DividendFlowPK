@@ -22,6 +22,7 @@ const navItems = [
   { path: '/forecast-engine', label: 'Forecast', icon: 'trend' },
   { path: '/salary-simulator', label: 'Income planner', icon: 'wallet' },
   { path: '/reporting-cycles', label: 'Reporting cycles', icon: 'document' },
+  { path: '/market-brokers', label: 'Market brokers', icon: 'broker' },
 ];
 
 function NavIcon({ name, active = false }) {
@@ -68,6 +69,15 @@ function NavIcon({ name, active = false }) {
         <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
           <path d="M7 3.5h7l4 4V20H7z" />
           <path d="M14 3.5v4h4M9.5 12h5M9.5 15h5" />
+        </svg>
+      );
+    case 'broker':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M3 21h18" />
+          <path d="M5 21V7l7-4 7 4v14" />
+          <path d="M9 21v-6h6v6" />
+          <path d="M9 10h6M9 14h6" />
         </svg>
       );
     default:

@@ -76,12 +76,23 @@ def fetch_hkex_symbols() -> list[str]:
             df.columns = [cols[c] for c in df.columns]
             sym_col = next((c for c in df.columns if "stock" in c and "code" in c), df.columns[0])
             type_col = next((c for c in df.columns if "category" in c), None)
+            name_col = next((c for c in df.columns if "name" in c), None)
             if type_col:
-                df = df[df[type_col].astype(str).str.contains("Equity", case=False, na=False)]
+                cat = df[type_col].astype(str).str.strip().str.lower()
+                allowed = cat.isin(["equity", "real estate investment trusts"])
+                excluded = cat.str.contains(
+                    r"warrant|debt|bond|etf|exchange traded|rights|unit|preference|preferred",
+                    case=False,
+                    na=False,
+                )
+                df = df[allowed & ~excluded]
+            if name_col:
+                nm = df[name_col].astype(str).str.lower()
+                df = df[~nm.str.contains(r"\bwarrant\b|\bbond\b|\betf\b|\brights\b", case=False, na=False)]
             syms = []
             for raw in df[sym_col].dropna().astype(str):
                 digits = re.sub(r"\D", "", raw.strip())
-                if digits:
+                if digits and len(digits) <= 5:
                     syms.append(f"{digits.zfill(4)}.HK")
             if syms:
                 return sorted(set(syms))
