@@ -78,6 +78,8 @@ export default function Dashboard() {
     priceChanges: [],
     priceCommentary: [],
   });
+  const [marketMeta, setMarketMeta] = useState({ symbolsTracked: 0, source: null });
+  const [dividendPreview, setDividendPreview] = useState(false);
   const [loading, setLoading] = useState(true);
   /** Full headline + AI text for a selected alert */
   const [alertDetailOpen, setAlertDetailOpen] = useState(null);
@@ -103,13 +105,16 @@ export default function Dashboard() {
     const load = async () => {
       setLoading(true);
       try {
-        const [divRes, covRes, newsRes] = await Promise.all([
+        const [divRes, covRes, newsRes, pricesRes] = await Promise.all([
           (isPsx ? api.getDividends() : api.getMarketDividends(exchange)).catch((err) => {
             console.warn('Dividends load failed:', err);
             return { data: isPsx ? [] : { rows: [] } };
           }),
           isPsx ? api.getMonthCoverage() : Promise.resolve({ data: null }),
           api.getExchangeDailyNews(exchange).catch(() => ({ data: {} })),
+          !isPsx
+            ? api.getMarketClosingPrices(exchange).catch(() => ({ data: null }))
+            : Promise.resolve({ data: null }),
         ]);
         if (cancelled) return;
 
@@ -119,6 +124,7 @@ export default function Dashboard() {
         } else {
           const normalized = normalizeDividendRows(divRes.data?.rows || [], exchange);
           setDividends(normalized);
+          setDividendPreview(Boolean(divRes.data?.preview));
           const apiSummary = divRes.data?.summary;
           if (apiSummary?.uniquePayers != null) {
             setMonthCoverage({
@@ -128,6 +134,15 @@ export default function Dashboard() {
           } else {
             setMonthCoverage(buildMonthCoverageFromDividends(normalized));
           }
+          const pricePayload = pricesRes?.data;
+          const tracked =
+            pricePayload?.summary?.totalCompanies ??
+            pricePayload?.meta?.withPrices ??
+            (pricePayload?.rows || []).filter((r) => r.close != null && r.close > 0).length;
+          setMarketMeta({
+            symbolsTracked: tracked,
+            source: pricePayload?.source || pricePayload?.meta?.source || null,
+          });
         }
 
         const newsPayload = newsRes.data || {};
@@ -167,6 +182,7 @@ export default function Dashboard() {
       if (c) companies.add(c);
     });
     const uniquePayers = monthCoverage?.dividendSummary?.uniquePayers ?? companies.size;
+    const hasDividendCalendar = uniquePayers > 0;
     let busiestMonth = '—';
     let busiestCount = 0;
     if (monthCoverage?.dividendSummary?.busiestMonth) {
@@ -187,24 +203,34 @@ export default function Dashboard() {
     const headlines = (dailyNews.news || []).length;
     return {
       companies: uniquePayers,
+      hasDividendCalendar,
+      symbolsTracked: marketMeta.symbolsTracked,
+      dividendPreview,
       busiestMonth,
       busiestCount,
       movers,
       headlines,
       alerts: riskAlerts.length,
     };
-  }, [dividends, monthCoverage, dailyNews, riskAlerts]);
+  }, [dividends, monthCoverage, dailyNews, riskAlerts, marketMeta, dividendPreview]);
 
   const quickActions = [
     { to: '/market-closing-prices', icon: 'chart', label: `${exchangeConfig.code} market data`, hint: 'Session moves and volume', xp: 10 },
     { to: '/dividend-calendar#dividend-calculator', icon: 'calc', label: 'Dividend income calculator', hint: isPsx ? 'Holdings or portfolio PDF' : `${exchangeConfig.currency} holdings`, xp: 25 },
-    { to: '/salary-simulator', icon: 'wallet', label: 'Income replacement model', hint: isPsx ? 'Salary vs dividend yield' : 'PSX-focused tool', xp: 15 },
+    {
+      to: isPsx ? '/salary-simulator' : '/dividend-calendar#dividend-calculator',
+      icon: 'wallet',
+      label: isPsx ? 'Income replacement model' : 'Income planning',
+      hint: isPsx ? 'Salary vs dividend yield' : `${exchangeConfig.currency} dividend targets`,
+      xp: 15,
+    },
     { to: '/#market-chat', icon: 'chat', label: 'Market Buddy', hint: `Research Q&A for ${exchangeConfig.code}`, xp: 20 },
   ];
 
   const missionProgress = useMemo(() => {
     let done = 0;
-    if (dashboardStats.companies > 0) done += 1;
+    const marketCoverage = dashboardStats.hasDividendCalendar || dashboardStats.symbolsTracked > 0;
+    if (marketCoverage) done += 1;
     if (dashboardStats.movers > 0) done += 1;
     if (dashboardStats.headlines > 0) done += 1;
     if (dashboardStats.alerts > 0) done += 1;
@@ -300,21 +326,39 @@ export default function Dashboard() {
         <span className="section-zone-tag">Market snapshot</span>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard
-            label="Dividend payers"
-            value={dashboardStats.companies}
-            hint="Unique names in payout calendar"
-            tip={`How many different ${exchangeConfig.code} symbols have dividend data in our database.`}
+            label={dashboardStats.hasDividendCalendar ? 'Dividend payers' : 'Symbols tracked'}
+            value={dashboardStats.hasDividendCalendar ? dashboardStats.companies : dashboardStats.symbolsTracked}
+            hint={
+              dashboardStats.hasDividendCalendar
+                ? dashboardStats.dividendPreview
+                  ? 'Yahoo Finance preview · leaders'
+                  : 'Unique names in payout calendar'
+                : marketMeta.source === 'yahoo_seeds'
+                  ? 'Latest closes via Yahoo seeds'
+                  : 'Latest closes in database'
+            }
+            tip={
+              dashboardStats.hasDividendCalendar
+                ? `How many different ${exchangeConfig.code} symbols have dividend data${dashboardStats.dividendPreview ? ' (preview from market leaders until quarterly sync)' : ''}.`
+                : `How many ${exchangeConfig.code} symbols have a saved close in our database.`
+            }
             accent="teal"
           />
           <MetricCard
             label="Peak payout month"
-            value={dashboardStats.busiestMonth}
+            value={dashboardStats.hasDividendCalendar ? dashboardStats.busiestMonth : '—'}
             hint={
-              dashboardStats.busiestCount
+              dashboardStats.hasDividendCalendar && dashboardStats.busiestCount
                 ? `${dashboardStats.busiestCount} companies with payouts`
-                : 'Calendar dataset'
+                : dashboardStats.hasDividendCalendar
+                  ? 'Calendar dataset'
+                  : 'Dividend sync pending'
             }
-            tip="The calendar month when the most companies pay dividends — useful for planning cash flow."
+            tip={
+              dashboardStats.hasDividendCalendar
+                ? 'The calendar month when the most companies pay dividends — useful for planning cash flow.'
+                : `Full ${exchangeConfig.code} dividend calendar syncs quarterly. Preview uses leader symbols when available.`
+            }
             accent="violet"
           />
           <MetricCard
@@ -350,9 +394,27 @@ export default function Dashboard() {
           </h3>
           <p className="card-subtitle">
             Taller bar = more companies paying in that month. Helps you spread income through the year.
+            {dashboardStats.dividendPreview && (
+              <span className="block text-amber-700 text-xs mt-1">
+                Preview from Yahoo Finance leader symbols — full {exchangeConfig.code} calendar syncs quarterly.
+              </span>
+            )}
           </p>
           <div className="h-56 mt-4">
-            <Bar data={chartData} options={chartOptions} />
+            {dashboardStats.hasDividendCalendar ? (
+              <Bar data={chartData} options={chartOptions} />
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 text-center">
+                <p className="text-sm font-medium text-slate-700">No dividend calendar yet</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  {exchangeConfig.code} dividend profiles sync quarterly. Track {dashboardStats.symbolsTracked || 'market'}{' '}
+                  symbols on the closing prices page meanwhile.
+                </p>
+                <Link to="/dividend-calendar" className="text-xs text-teal-700 font-semibold mt-3 hover:underline">
+                  Open dividend calendar →
+                </Link>
+              </div>
+            )}
           </div>
         </div>
         <div className="section-zone section-zone--yields p-6 lg:col-span-6">
@@ -383,7 +445,17 @@ export default function Dashboard() {
             )}
           </p>
           <ul className="mt-4 space-y-4">
-            {topYield.map((d, i) => {
+            {topYield.length === 0 ? (
+              <li className="py-6 text-center text-sm text-slate-500 border border-dashed border-slate-200 rounded-xl bg-slate-50/80">
+                No yield data for {exchangeConfig.code} yet.
+                {dashboardStats.symbolsTracked > 0 ? (
+                  <span className="block text-xs mt-1">
+                    {dashboardStats.symbolsTracked} symbols tracked — yields appear after dividend sync.
+                  </span>
+                ) : null}
+              </li>
+            ) : (
+              topYield.map((d, i) => {
               const symbol = (d.Company || d.company || '').trim();
               const dps = d.Dividend_per_share || d.dividend_per_share;
               const ann = (d.Dividend_announcement || d.dividend_announcement || '').trim();
@@ -414,7 +486,8 @@ export default function Dashboard() {
                   </div>
                 </li>
               );
-            })}
+            })
+            )}
           </ul>
         </div>
       </div>

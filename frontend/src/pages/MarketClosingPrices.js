@@ -15,9 +15,25 @@ function formatNum(n) {
   return Number(n).toLocaleString('en-PK', { maximumFractionDigits: 2 });
 }
 
-function AICommentary({ summary, exchangeName }) {
+function formatStockLabel(row) {
+  if (!row) return '—';
+  const sym = row.symbol || '';
+  const name = (row.company || '').trim();
+  if (name && name !== sym && !/^\d+$/.test(name)) return name;
+  return sym || '—';
+}
+
+function AICommentary({ summary, exchangeName, rowsBySymbol }) {
   if (!summary) return null;
   const { totalCompanies, topGainer, topLoser, date } = summary;
+  const gainerRow = topGainer ? rowsBySymbol?.get(topGainer.symbol) : null;
+  const loserRow = topLoser ? rowsBySymbol?.get(topLoser.symbol) : null;
+  const gainerLabel = topGainer
+    ? `${formatStockLabel(gainerRow || topGainer)} +${topGainer.changePct?.toFixed(1)}%`
+    : null;
+  const loserLabel = topLoser
+    ? `${formatStockLabel(loserRow || topLoser)} ${topLoser.changePct?.toFixed(1)}%`
+    : null;
   const sentiment = totalCompanies > 0
     ? topGainer?.changePct > 0 && (!topLoser || Math.abs(topGainer.changePct) >= Math.abs(topLoser.changePct))
       ? 'Moderately positive'
@@ -37,10 +53,10 @@ function AICommentary({ summary, exchangeName }) {
         Latest {exchangeName} session closed {sentiment.toLowerCase()}{sectorNote}
         {' '}Total companies traded: <strong className="text-slate-700">{formatNum(totalCompanies)}</strong>.
         {topGainer && (
-          <> Top performer: <strong className="text-emerald-600">{topGainer.symbol} +{topGainer.changePct.toFixed(1)}%</strong>.</>
+          <> Top performer: <strong className="text-emerald-600">{gainerLabel}</strong>.</>
         )}
         {topLoser && (
-          <> Worst performer: <strong className="text-red-400">{topLoser.symbol} {topLoser.changePct.toFixed(1)}%</strong>.</>
+          <> Worst performer: <strong className="text-red-400">{loserLabel}</strong>.</>
         )}
         {' '}Overall market sentiment: <strong className="text-slate-700">{sentiment}</strong>.
       </p>
@@ -74,6 +90,14 @@ export default function MarketClosingPrices() {
     return n;
   }, [data.rows]);
 
+  const rowsBySymbol = useMemo(() => {
+    const map = new Map();
+    for (const r of data.rows || []) {
+      if (r.symbol) map.set(r.symbol, r);
+    }
+    return map;
+  }, [data.rows]);
+
   const marketPulse = useMemo(() => {
     const rows = data.rows || [];
     let gainers = 0;
@@ -92,10 +116,10 @@ export default function MarketClosingPrices() {
       gainers,
       losers,
       flat,
-      topGainerLabel: topG ? `${topG.symbol} +${topG.changePct?.toFixed(1)}%` : '—',
-      topLoserLabel: topL ? `${topL.symbol} ${topL.changePct?.toFixed(1)}%` : '—',
+      topGainerLabel: topG ? `${formatStockLabel(rowsBySymbol.get(topG.symbol) || topG)} +${topG.changePct?.toFixed(1)}%` : '—',
+      topLoserLabel: topL ? `${formatStockLabel(rowsBySymbol.get(topL.symbol) || topL)} ${topL.changePct?.toFixed(1)}%` : '—',
     };
-  }, [data.rows, data.summary]);
+  }, [data.rows, data.summary, rowsBySymbol]);
 
   const filtered = useMemo(() => {
     let list = data.rows || [];
@@ -186,7 +210,7 @@ export default function MarketClosingPrices() {
         />
       </div>
 
-      <AICommentary summary={data.summary} exchangeName={exchangeConfig.name} />
+      <AICommentary summary={data.summary} exchangeName={exchangeConfig.name} rowsBySymbol={rowsBySymbol} />
       <div className="rounded-2xl bg-white/90 border border-slate-200 shadow-lg shadow-slate-300/20 overflow-hidden backdrop-blur-sm">
         <div className="p-4 border-b border-slate-200 flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
@@ -272,16 +296,23 @@ export default function MarketClosingPrices() {
               ) : (
                 pageRows.map((r, i) => {
                   const shariah = isShariahCompliant(r.symbol);
+                  const displayName = formatStockLabel(r);
+                  const showSymbol = r.symbol && displayName !== r.symbol;
                   return (
                     <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
                       <td className="px-4 py-3 font-medium text-slate-700">
                         <span className="inline-flex items-center gap-2 flex-wrap">
-                          <Link
-                            to={stockPath(exchange, r.symbol || r.company)}
-                            className="text-teal-700 hover:underline font-semibold"
-                          >
-                            {r.symbol || r.company}
-                          </Link>
+                          <span className="min-w-0">
+                            <Link
+                              to={stockPath(exchange, r.symbol || r.company)}
+                              className="text-teal-700 hover:underline font-semibold block"
+                            >
+                              {displayName}
+                            </Link>
+                            {showSymbol && (
+                              <span className="text-[11px] font-mono text-slate-500 mt-0.5 block">{r.symbol}</span>
+                            )}
+                          </span>
                           {exchange === 'PSX' && shariah && (
                             <span
                               className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200"
@@ -372,10 +403,11 @@ export default function MarketClosingPrices() {
             <span className="block">
               <strong className="text-slate-600">{exchangeConfig.code}</strong> prices come from Supabase (
               <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices</code>
-              ), populated by the{' '}
-              <code className="text-[11px] bg-slate-200/80 px-1 rounded">global-ingest-{exchangeConfig.code.toLowerCase()}</code>{' '}
-              GitHub Actions workflow after each market close. Daily % and Week % are recomputed from the last two
-              closes and ~7 calendar days ago. Shariah filter is PSX-only.
+              ), populated by{' '}
+              <code className="text-[11px] bg-slate-200/80 px-1 rounded">global-market-ingest</code> (curated
+              leaders) after each market close. Company names are shown from the database or Yahoo Finance when
+              symbols are numeric. Daily % and Week % are recomputed from saved closes (~7 calendar days for week).
+              Shariah filter is PSX-only.
             </span>
           )}
         </p>

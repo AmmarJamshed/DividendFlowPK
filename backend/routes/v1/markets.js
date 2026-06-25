@@ -80,7 +80,8 @@ router.get('/:exchange/dividends', async (req, res) => {
     const result = await globalDataStore.getDividendsForExchange(code, filters);
     const rows = Array.isArray(result) ? result : result.rows;
     const summary = Array.isArray(result) ? null : result.summary;
-    res.json({ exchange: code, rows, summary });
+    const preview = Array.isArray(result) ? false : Boolean(result.preview);
+    res.json({ exchange: code, rows, summary, preview });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

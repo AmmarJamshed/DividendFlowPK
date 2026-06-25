@@ -9,6 +9,8 @@ on:
       exchanges:
         description: "TADAWUL,TSE,SSE or any single exchange"
         default: "TADAWUL,TSE,SSE"
+  schedule:
+    - cron: "30 12 * * 0-4"
 
 jobs:
   ingest:
@@ -24,5 +26,10 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          IFS=',' read -ra ARR <<< "${{ github.event.inputs.exchanges }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            EXCHANGES="TADAWUL,TSE,SSE"
+          else
+            EXCHANGES="${{ github.event.inputs.exchanges }}"
+          fi
+          IFS=',' read -ra ARR <<< "$EXCHANGES"
           python ingestion/jobs/daily_close.py "${ARR[@]}"

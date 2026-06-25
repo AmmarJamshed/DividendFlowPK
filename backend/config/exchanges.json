@@ -63,7 +63,25 @@
     "shariahFilter": false,
     "marketLabel": "Tadawul",
     "macroNewsQuery": "Tadawul Saudi stocks",
-    "newsSeedSymbols": ["2222", "1180", "2010", "1120", "7010", "1211", "2010"]
+    "newsSeedSymbols": ["2222", "1120", "2010", "1180", "7010", "1211", "1010", "4030", "2082", "2280", "1150", "1020", "2350", "4200", "8230"],
+    "curatedSymbols": ["2222.SR", "1120.SR", "2010.SR", "1180.SR", "7010.SR", "1211.SR", "1010.SR", "4030.SR", "2082.SR", "2280.SR", "1150.SR", "1020.SR", "2350.SR", "4200.SR", "8230.SR"],
+    "symbolDisplayNames": {
+      "2222": "Saudi Arabian Oil Co. (Aramco)",
+      "1120": "Al Rajhi Bank",
+      "2010": "SABIC",
+      "1180": "Saudi National Bank",
+      "7010": "Saudi Telecom (STC)",
+      "1211": "Saudi Arabian Mining (Ma'aden)",
+      "1010": "Riyad Bank",
+      "4030": "Bahri",
+      "2082": "ACWA Power",
+      "2280": "Almarai",
+      "1150": "Alinma Bank",
+      "1020": "Bank AlJazira",
+      "2350": "Saudi Kayan",
+      "4200": "Aldrees Petroleum",
+      "8230": "Al Rajhi REIT"
+    }
   },
   {
     "code": "SSE",

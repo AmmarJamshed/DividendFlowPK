@@ -47,11 +47,23 @@ def db_symbol(yahoo_ticker: str, cfg: dict) -> str:
     return s
 
 
+def fetch_yahoo_name(ticker: str) -> str | None:
+    try:
+        info = yf.Ticker(ticker).info or {}
+        return info.get("longName") or info.get("shortName")
+    except Exception:
+        return None
+
+
 def upsert_security(client, ex_id: str, symbol: str, name: str | None = None):
+    sym = symbol.upper()
+    display = (name or "").strip()
+    if not display or display == sym:
+        display = sym
     payload = {
         "exchange_id": ex_id,
-        "symbol": symbol.upper(),
-        "name": name or symbol,
+        "symbol": sym,
+        "name": display,
         "active": True,
     }
     client.table("securities").upsert(payload, on_conflict="exchange_id,symbol").execute()
@@ -139,42 +151,45 @@ def parse_batch_download(data: pd.DataFrame, tickers: list[str]) -> dict[str, pd
     return out
 
 
-def upsert_price_row(client, sec_id: str, hist: pd.DataFrame, currency: str, now: str) -> bool:
-    hist = normalize_hist(hist).dropna(how="all")
+def upsert_price_row(client, sec_id: str, hist: pd.DataFrame, currency: str, now: str) -> int:
+    hist = normalize_hist(hist).dropna(subset=["Close"])
     if hist.empty:
-        return False
+        return 0
     if "Close" not in hist.columns:
-        return False
-    last = hist.iloc[-1]
-    prev = hist.iloc[-2] if len(hist) > 1 else last
-    trade_date = hist.index[-1].strftime("%Y-%m-%d")
-    close = scalar(last["Close"])
-    prev_close = scalar(prev["Close"])
-    if pd.isna(close) or pd.isna(prev_close):
-        return False
-    chg = close - prev_close
-    chg_pct = (chg / prev_close * 100) if prev_close else 0
-    vol = scalar(last["Volume"]) if "Volume" in hist.columns else float("nan")
-    volume = int(vol) if pd.notna(vol) else None
+        return 0
+    written = 0
+    for idx in range(len(hist)):
+        row = hist.iloc[idx]
+        prev = hist.iloc[idx - 1] if idx > 0 else row
+        trade_date = hist.index[idx].strftime("%Y-%m-%d")
+        close = scalar(row["Close"])
+        prev_close = scalar(prev["Close"])
+        if pd.isna(close) or pd.isna(prev_close):
+            continue
+        chg = close - prev_close
+        chg_pct = (chg / prev_close * 100) if prev_close else 0
+        vol = scalar(row["Volume"]) if "Volume" in hist.columns else float("nan")
+        volume = int(vol) if pd.notna(vol) else None
 
-    client.table("daily_prices").upsert(
-        {
-            "security_id": sec_id,
-            "trade_date": trade_date,
-            "open": scalar(last["Open"]) if "Open" in hist.columns and pd.notna(scalar(last["Open"])) else None,
-            "high": scalar(last["High"]) if "High" in hist.columns and pd.notna(scalar(last["High"])) else None,
-            "low": scalar(last["Low"]) if "Low" in hist.columns and pd.notna(scalar(last["Low"])) else None,
-            "close": close,
-            "change_amount": round(chg, 4),
-            "change_pct": round(chg_pct, 4),
-            "volume": volume,
-            "currency": currency,
-            "source": "yfinance",
-            "scraped_at": now,
-        },
-        on_conflict="security_id,trade_date",
-    ).execute()
-    return True
+        client.table("daily_prices").upsert(
+            {
+                "security_id": sec_id,
+                "trade_date": trade_date,
+                "open": scalar(row["Open"]) if "Open" in hist.columns and pd.notna(scalar(row["Open"])) else None,
+                "high": scalar(row["High"]) if "High" in hist.columns and pd.notna(scalar(row["High"])) else None,
+                "low": scalar(row["Low"]) if "Low" in hist.columns and pd.notna(scalar(row["Low"])) else None,
+                "close": close,
+                "change_amount": round(chg, 4),
+                "change_pct": round(chg_pct, 4),
+                "volume": volume,
+                "currency": currency,
+                "source": "yfinance",
+                "scraped_at": now,
+            },
+            on_conflict="security_id,trade_date",
+        ).execute()
+        written += 1
+    return written
 
 
 def ingest_exchange(code: str):
@@ -201,7 +216,7 @@ def ingest_exchange(code: str):
         try:
             data = yf.download(
                 batch,
-                period="5d",
+                period="1mo",
                 group_by="column",
                 threads=True,
                 progress=False,
@@ -221,8 +236,10 @@ def ingest_exchange(code: str):
                 continue
             sym = db_symbol(ticker, cfg)
             try:
-                sec_id = upsert_security(client, ex_id, sym, sym)
-                if upsert_price_row(client, sec_id, hist, cfg["currency"], now):
+                yahoo_name = fetch_yahoo_name(ticker)
+                sec_id = upsert_security(client, ex_id, sym, yahoo_name or sym)
+                written = upsert_price_row(client, sec_id, hist, cfg["currency"], now)
+                if written > 0:
                     n_ok += 1
                 else:
                     n_skip += 1

@@ -55,6 +55,16 @@ function normalizeListingSymbol(symbol, exchangeCode) {
   return sym;
 }
 
+function resolveCompanyName(symbol, exchangeCode, storedName) {
+  const sym = normalizeListingSymbol(symbol, exchangeCode);
+  const cfg = getExchangeConfig(exchangeCode);
+  const mapped = cfg?.symbolDisplayNames?.[sym];
+  if (mapped) return mapped;
+  const name = String(storedName || '').trim();
+  if (name && name.toUpperCase() !== sym && !/^\d+$/.test(name)) return name;
+  return name || sym;
+}
+
 function yfinanceTicker(symbol, exchangeCode) {
   const cfg = getExchangeConfig(exchangeCode);
   const sym = normalizeListingSymbol(symbol, exchangeCode);
@@ -70,6 +80,7 @@ module.exports = {
   getExchangeConfig,
   normalizeExchangeCode,
   normalizeListingSymbol,
+  resolveCompanyName,
   getExchangeId,
   yfinanceTicker,
 };

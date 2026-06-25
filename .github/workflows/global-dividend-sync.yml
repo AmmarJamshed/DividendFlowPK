@@ -108,3 +108,20 @@ jobs:
           SHARD_COUNT: "6"
           EXCHANGES: LSE
         run: python ingestion/jobs/dividend_sync.py
+
+  asia_gcc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r ingestion/requirements.txt
+      - name: Sync TADAWUL / TSE / SSE dividends (seed universe)
+        if: contains(github.event.inputs.exchanges || 'NYSE,NASDAQ,HKEX,LSE,TADAWUL,TSE,SSE', 'TADAWUL') || github.event_name == 'schedule'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          EXCHANGES: TADAWUL,TSE,SSE
+        run: python ingestion/jobs/dividend_sync.py

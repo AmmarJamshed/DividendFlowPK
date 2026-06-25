@@ -8,7 +8,8 @@ const YAHOO_UA = 'Mozilla/5.0 (compatible; DividendFlow/1.0)';
 
 function getSeeds(exchangeCode) {
   const cfg = exchangeService.getExchangeConfig(exchangeCode);
-  return cfg?.newsSeedSymbols || [];
+  const raw = cfg?.newsSeedSymbols || [];
+  return [...new Set(raw.map((s) => String(s).toUpperCase()))];
 }
 
 function getMacroQuery(exchangeCode) {
@@ -64,38 +65,65 @@ async function fetchYahooNewsBatch(exchangeCode, symbols, limit = 14) {
   return out;
 }
 
-async function fetchYahooChartMover(symbol, exchangeCode) {
+async function fetchYahooChartQuote(symbol, exchangeCode) {
   const ticker = exchangeService.yfinanceTicker(symbol, exchangeCode);
   try {
     const { data } = await axios.get(
       `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`,
       {
-        params: { interval: '1d', range: '5d' },
+        params: { interval: '1d', range: '1mo' },
         headers: { 'User-Agent': YAHOO_UA },
         timeout: 12000,
       }
     );
     const result = data?.chart?.result?.[0];
-    const closes = (result?.indicators?.quote?.[0]?.close || []).filter((v) => v != null);
-    if (closes.length < 2) return null;
-    const prev = closes[closes.length - 2];
+    const timestamps = result?.timestamp || [];
+    const closes = (result?.indicators?.quote?.[0]?.close || []).map((v, i) => ({
+      close: v,
+      ts: timestamps[i],
+    })).filter((r) => r.close != null && r.ts != null);
+    if (closes.length < 1) return null;
+
     const last = closes[closes.length - 1];
-    if (!prev || !last) return null;
-    const changePct = ((last - prev) / prev) * 100;
-    const tradeDate = result?.timestamp?.length
-      ? new Date(result.timestamp[result.timestamp.length - 1] * 1000).toISOString().slice(0, 10)
-      : new Date().toISOString().slice(0, 10);
+    const prev = closes.length > 1 ? closes[closes.length - 2] : last;
+    const changePct = prev.close > 0 ? ((last.close - prev.close) / prev.close) * 100 : 0;
+    const tradeDate = new Date(last.ts * 1000).toISOString().slice(0, 10);
+
+    let weekChgPct = null;
+    const weekTarget = last.ts - 7 * 24 * 3600;
+    for (let i = closes.length - 2; i >= 0; i -= 1) {
+      if (closes[i].ts <= weekTarget) {
+        if (closes[i].close > 0) {
+          weekChgPct = Math.round(((last.close - closes[i].close) / closes[i].close) * 10000) / 100;
+        }
+        break;
+      }
+    }
+
+    const listingSymbol = dbSymbolFromYahoo(result?.meta?.symbol || symbol, exchangeCode);
+    const companyName =
+      result?.meta?.longName ||
+      result?.meta?.shortName ||
+      exchangeService.resolveCompanyName(listingSymbol, exchangeCode, null);
+
     return {
-      Company: dbSymbolFromYahoo(result?.meta?.symbol || symbol, exchangeCode),
-      Price: last,
-      Change: last - prev,
+      Company: listingSymbol,
+      CompanyName: companyName,
+      Price: last.close,
+      Change: last.close - prev.close,
       ChangePct: changePct,
+      WeekChgPct: weekChgPct,
+      Volume: result?.meta?.regularMarketVolume || 0,
       Date: tradeDate,
     };
   } catch (err) {
     console.warn('[exchangeNews] Yahoo chart failed:', ticker, err.message);
     return null;
   }
+}
+
+async function fetchYahooChartMover(symbol, exchangeCode) {
+  return fetchYahooChartQuote(symbol, exchangeCode);
 }
 
 async function fetchMoversFromSeeds(exchangeCode) {
@@ -110,22 +138,92 @@ async function fetchMoversFromSeeds(exchangeCode) {
   return movers.sort((a, b) => Math.abs(b.ChangePct) - Math.abs(a.ChangePct));
 }
 
+async function fetchYahooDividendFromChart(symbol, exchangeCode) {
+  const ticker = exchangeService.yfinanceTicker(symbol, exchangeCode);
+  try {
+    const { data } = await axios.get(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}`,
+      {
+        params: { interval: '1mo', range: '2y', events: 'dividends' },
+        headers: { 'User-Agent': YAHOO_UA },
+        timeout: 12000,
+      }
+    );
+    const result = data?.chart?.result?.[0];
+    const dividends = result?.events?.dividends;
+    const price = result?.meta?.regularMarketPrice;
+    if (!dividends || !price) return null;
+
+    const entries = Object.values(dividends).filter((d) => d?.amount > 0);
+    if (!entries.length) return null;
+
+    const latest = entries.sort((a, b) => b.date - a.date)[0];
+    const annualDps = entries
+      .filter((d) => d.date >= latest.date - 365 * 24 * 3600)
+      .reduce((sum, d) => sum + d.amount, 0);
+    const dps = annualDps > 0 ? annualDps : latest.amount * 4;
+    const yieldPct = price > 0 ? (dps / price) * 100 : null;
+    const exDate = new Date(latest.date * 1000);
+
+    return {
+      symbol: dbSymbolFromYahoo(result?.meta?.symbol || symbol, exchangeCode),
+      paymentMonth: exDate.getMonth() + 1,
+      dps: Math.round(dps * 10000) / 10000,
+      yield: yieldPct != null ? Math.round(yieldPct * 100) / 100 : null,
+      year: exDate.getFullYear(),
+    };
+  } catch (err) {
+    console.warn('[exchangeNews] Yahoo dividend chart failed:', ticker, err.message);
+    return null;
+  }
+}
+
+async function fetchSeedDividendRows(exchangeCode) {
+  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const seeds = getSeeds(code);
+  if (!seeds.length) return [];
+
+  const rows = [];
+  for (const sym of seeds) {
+    const row = await fetchYahooDividendFromChart(sym, code);
+    if (!row) continue;
+    rows.push({
+      symbol: row.symbol,
+      sector: '',
+      paymentMonth: row.paymentMonth,
+      yield: row.yield,
+      dps: row.dps,
+      year: row.year,
+      exchange: code,
+      frequency: null,
+      source: 'yahoo_seeds',
+    });
+    await new Promise((r) => setTimeout(r, 80));
+  }
+
+  return rows;
+}
+
 async function fetchSeedClosingRows(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
   const cfg = exchangeService.getExchangeConfig(code);
   const seeds = getSeeds(code);
+  const seen = new Set();
   const rows = [];
   for (const sym of seeds) {
-    const m = await fetchYahooChartMover(sym, code);
+    const m = await fetchYahooChartQuote(sym, code);
     if (!m || m.Price == null) continue;
+    if (seen.has(m.Company)) continue;
+    seen.add(m.Company);
     rows.push({
       symbol: m.Company,
-      company: m.Company,
+      company: m.CompanyName || exchangeService.resolveCompanyName(m.Company, code, m.Company),
       sector: '',
       close: m.Price,
       change: m.Change,
       changePct: m.ChangePct,
-      volume: 0,
+      weekChgPct: m.WeekChgPct,
+      volume: m.Volume || 0,
       currency: cfg.currency,
       exchange: code,
       tradeDate: m.Date,
@@ -133,6 +231,47 @@ async function fetchSeedClosingRows(exchangeCode) {
     await new Promise((r) => setTimeout(r, 60));
   }
   return rows.sort((a, b) => Math.abs(b.changePct || 0) - Math.abs(a.changePct || 0));
+}
+
+function rowNeedsYahooEnrichment(row, exchangeCode) {
+  const sym = exchangeService.normalizeListingSymbol(row.symbol, exchangeCode);
+  const company = String(row.company || '').trim();
+  const nameMissing = !company || company === sym || /^\d+$/.test(company);
+  const weekMissing = row.weekChgPct == null;
+  const volMissing = !row.volume;
+  return nameMissing || weekMissing || volMissing;
+}
+
+async function enrichClosingRowsFromYahoo(exchangeCode, rows) {
+  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const out = [];
+  for (const row of rows) {
+    if (!rowNeedsYahooEnrichment(row, code)) {
+      out.push({
+        ...row,
+        company: exchangeService.resolveCompanyName(row.symbol, code, row.company),
+      });
+      continue;
+    }
+    const quote = await fetchYahooChartQuote(row.symbol, code);
+    if (!quote) {
+      out.push({
+        ...row,
+        company: exchangeService.resolveCompanyName(row.symbol, code, row.company),
+      });
+      continue;
+    }
+    out.push({
+      ...row,
+      company: quote.CompanyName || exchangeService.resolveCompanyName(row.symbol, code, row.company),
+      change: row.change ?? quote.Change,
+      changePct: row.changePct ?? quote.ChangePct,
+      weekChgPct: row.weekChgPct ?? quote.WeekChgPct,
+      volume: row.volume || quote.Volume || 0,
+    });
+    await new Promise((r) => setTimeout(r, 60));
+  }
+  return out;
 }
 
 async function fetchExchangeMacroArticle(exchangeCode) {
@@ -371,4 +510,6 @@ module.exports = {
   getDailyNewsForExchange,
   listSupportedExchanges,
   fetchSeedClosingRows,
+  fetchSeedDividendRows,
+  enrichClosingRowsFromYahoo,
 };

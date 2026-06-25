@@ -3,6 +3,46 @@ const exchangeService = require('./exchangeService');
 const dataStore = require('./dataStore');
 const { ensureExchangeUniverse, FULL_UNIVERSE } = require('./universeSync');
 
+const CURATED_ENRICH_MAX = 40;
+
+function dedupeRowsBySymbol(rows) {
+  const bySymbol = new Map();
+  for (const row of rows) {
+    const sym = row.symbol;
+    if (!sym) continue;
+    const existing = bySymbol.get(sym);
+    if (!existing || (row.close != null && existing.close == null)) {
+      bySymbol.set(sym, row);
+    }
+  }
+  return [...bySymbol.values()];
+}
+
+async function supplementCuratedFromSeeds(code, displayRows) {
+  if (FULL_UNIVERSE.has(code)) return displayRows;
+  const cfg = exchangeService.getExchangeConfig(code);
+  const target = (cfg?.newsSeedSymbols || []).length;
+  if (!target || displayRows.length >= target) return displayRows;
+
+  const have = new Set(displayRows.map((r) => r.symbol));
+  const { fetchSeedClosingRows } = require('./exchangeNews');
+  const seeds = await fetchSeedClosingRows(code);
+  const extra = seeds.filter((r) => r.symbol && !have.has(r.symbol));
+  return extra.length ? [...displayRows, ...extra] : displayRows;
+}
+
+async function finalizeClosingRows(code, displayRows) {
+  const { enrichClosingRowsFromYahoo } = require('./exchangeNews');
+  let rows = displayRows.map((row) => ({
+    ...row,
+    company: exchangeService.resolveCompanyName(row.symbol, code, row.company),
+  }));
+  if (!FULL_UNIVERSE.has(code) && rows.length > 0 && rows.length <= CURATED_ENRICH_MAX) {
+    rows = await enrichClosingRowsFromYahoo(code, rows);
+  }
+  return rows;
+}
+
 async function getClosingPrices(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
 
@@ -82,7 +122,7 @@ async function getGlobalClosingPricesFromSupabase(code) {
     const listingSymbol = exchangeService.normalizeListingSymbol(sec.symbol, code);
     rows.push({
       symbol: listingSymbol,
-      company: sec.name || listingSymbol,
+      company: exchangeService.resolveCompanyName(listingSymbol, code, sec.name || listingSymbol),
       sector: sec.sector || '',
       close: latest ? num(latest.close) : null,
       change: derived.change,
@@ -99,7 +139,13 @@ async function getGlobalClosingPricesFromSupabase(code) {
 
   const withPrices = rows.filter((row) => row.close != null && row.close > 0).length;
   const date = maxDate;
-  const displayRows = rows.filter((row) => row.close != null && row.close > 0);
+  let displayRows = dedupeRowsBySymbol(rows.filter((row) => row.close != null && row.close > 0));
+
+  if (displayRows.length > 0) {
+    displayRows = await supplementCuratedFromSeeds(code, displayRows);
+    displayRows = await finalizeClosingRows(code, displayRows);
+  }
+
   const payload = {
     exchange: code,
     currency: cfg.currency,
@@ -216,7 +262,8 @@ async function fetchSeedClosingPrices(exchangeCode) {
   const { fetchSeedClosingRows } = require('./exchangeNews');
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
   const cfg = exchangeService.getExchangeConfig(code);
-  const rows = await fetchSeedClosingRows(code);
+  const rawRows = await fetchSeedClosingRows(code);
+  const rows = await finalizeClosingRows(code, rawRows);
   const date = rows[0]?.tradeDate || null;
   return {
     exchange: code,
@@ -805,9 +852,20 @@ async function getGlobalDividendsForExchange(code, filters = {}) {
     symbolsSeen.add(symbol);
   }
 
-  const merged = [...rowsByKey.values()];
+  let merged = [...rowsByKey.values()];
+  let preview = false;
+
+  if (!merged.length) {
+    const { fetchSeedDividendRows } = require('./exchangeNews');
+    const seedRows = await fetchSeedDividendRows(code);
+    if (seedRows.length) {
+      merged = seedRows;
+      preview = true;
+    }
+  }
+
   const filtered = applyDividendFilters(merged, filters);
-  return { rows: filtered, summary: buildDividendSummary(merged) };
+  return { rows: filtered, summary: buildDividendSummary(merged), preview };
 }
 
 async function getDividendsForExchange(exchangeCode, filters = {}) {
