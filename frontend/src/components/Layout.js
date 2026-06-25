@@ -90,6 +90,13 @@ function NavIcon({ name, active = false }) {
           <path d="M9 10h6M9 14h6" />
         </svg>
       );
+    case 'user':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <circle cx="12" cy="8" r="3.5" />
+          <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -132,7 +139,7 @@ export default function Layout({ children }) {
   const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
   const { exchange, exchangeConfig } = useExchange();
   const { open: buddyOpen, toggle: toggleBuddy, setOpen: setBuddyOpen } = useMarketBuddy();
-  const { signedIn, profileComplete, canAccessTools, profile, signOut, authConfigured } = useAuth();
+  const { signedIn, canAccessTools, profile, signOut, authConfigured } = useAuth();
   const [isAiTogglePending, startAiToggleTransition] = useTransition();
   const [aiToggleMinSpin, setAiToggleMinSpin] = useState(false);
   const aiSpinTimerRef = useRef(null);
@@ -171,6 +178,9 @@ export default function Layout({ children }) {
   const stockMatch = location.pathname.match(/^\/stock\/([^/]+)\/([^/]+)/i);
   const pageTitle =
     navItems.find((n) => n.path === location.pathname)?.label ||
+    (location.pathname === '/account' ? 'My account' : null) ||
+    (location.pathname === '/sign-in' ? 'Sign in' : null) ||
+    (location.pathname === '/sign-up' ? 'Sign up' : null) ||
     (stockMatch
       ? `${stockMatch[1].toUpperCase()} · ${stockMatch[2].toUpperCase()}`
       : `${exchangeConfig.code} · Overview`);
@@ -248,6 +258,36 @@ export default function Layout({ children }) {
                 </Link>
               );
             })}
+            <div className="px-2 pt-2 mt-2 border-t border-slate-200/80">
+              {signedIn ? (
+                <Link
+                  to="/account"
+                  className={`group flex items-center gap-3 px-4 py-3 mx-0 rounded-xl text-sm font-semibold transition-all ${
+                    location.pathname === '/account'
+                      ? 'nav-link-active shadow-md'
+                      : 'text-slate-600 hover:bg-teal-50/80 hover:text-teal-800'
+                  }`}
+                >
+                  <NavIcon name="user" active={location.pathname === '/account'} />
+                  My account
+                </Link>
+              ) : (
+                <div className="space-y-1 px-2 pb-1">
+                  <Link
+                    to={`/sign-up?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
+                    className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3 text-sm font-bold text-white shadow-md hover:from-teal-600 hover:to-cyan-600"
+                  >
+                    Create free account
+                  </Link>
+                  <Link
+                    to={`/sign-in?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
+                    className="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-teal-300 hover:text-teal-700"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              )}
+            </div>
           </nav>
           <SidebarDisclaimer />
         </aside>
@@ -270,40 +310,44 @@ export default function Layout({ children }) {
               </h2>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto flex-wrap justify-end">
-              {authConfigured && (
-                signedIn ? (
-                  <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline text-xs font-semibold text-slate-600 max-w-[120px] truncate">
-                      {profile?.first_name || 'Account'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => signOut()}
-                      className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to={`/sign-in?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                      className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
-                    >
-                      Sign in
-                    </Link>
-                    <Link
-                      to={`/sign-up?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                      className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-teal-400 bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-sm hover:from-teal-600 hover:to-cyan-600 transition-colors"
-                    >
-                      Sign up
-                    </Link>
-                  </div>
-                )
+              {signedIn ? (
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/account"
+                    className="hidden sm:inline-flex text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                  >
+                    Account
+                  </Link>
+                  <span className="hidden md:inline text-xs font-semibold text-slate-600 max-w-[120px] truncate">
+                    {profile?.first_name || 'Signed in'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => signOut()}
+                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 order-first sm:order-none w-full sm:w-auto justify-end">
+                  <Link
+                    to={`/sign-in?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
+                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    to={`/sign-up?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
+                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-teal-400 bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-sm hover:from-teal-600 hover:to-cyan-600 transition-colors"
+                  >
+                    Sign up
+                  </Link>
+                </div>
               )}
-              {!signedIn && authConfigured && !profileComplete && location.pathname !== '/' && (
-                <span className="hidden lg:inline text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
-                  Tools require a free account
+              {!signedIn && location.pathname !== '/' && (
+                <span className="hidden xl:inline text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                  Free account required for tools
                 </span>
               )}
               <GlobalSearch />

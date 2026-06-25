@@ -19,6 +19,7 @@ import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import CompleteProfile from './pages/CompleteProfile';
 import AuthCallback from './pages/AuthCallback';
+import Account from './pages/Account';
 import { AIAssistanceProvider } from './context/AIAssistanceContext';
 import { MarketBuddyProvider } from './context/MarketBuddyContext';
 import { ExchangeProvider } from './context/ExchangeContext';
@@ -61,6 +62,7 @@ function App() {
                   <Route path="/sign-up" element={<SignUp />} />
                   <Route path="/complete-profile" element={<CompleteProfile />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/account" element={<Account />} />
                   <Route path="/dividend-calendar" element={<ProtectedRoute><DividendCalendar /></ProtectedRoute>} />
                   <Route path="/market-closing-prices" element={<ProtectedRoute><MarketClosingPrices /></ProtectedRoute>} />
                   <Route path="/ipo-calendar" element={<ProtectedRoute><IpoCalendar /></ProtectedRoute>} />
