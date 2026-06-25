@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { initSupabaseAuth } from '../lib/supabase';
-import { isProfileComplete } from '../utils/profileFields';
+import { isUserProfileComplete } from '../utils/profileFields';
 import {
   clearAuthHash,
   formatAuthError,
@@ -58,7 +58,7 @@ export default function AuthCallback() {
       try {
         const profile = await refreshProfile(session.user);
         if (!active) return;
-        if (isProfileComplete(profile)) {
+        if (isUserProfileComplete(profile, session.user)) {
           setDestination(nextPath);
         } else {
           setDestination(`/complete-profile?next=${encodeURIComponent(nextPath)}`);

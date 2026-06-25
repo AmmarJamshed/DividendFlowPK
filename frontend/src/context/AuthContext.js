@@ -1,76 +1,45 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { loadUserProfile, primeProfileCache, resetProfileCache } from '../lib/authProfile';
 import { getSupabase, initSupabaseAuth } from '../lib/supabase';
 import { authCallbackUrl } from '../utils/authRedirect';
-import { isProfileComplete, namesFromUserMetadata } from '../utils/profileFields';
+import { isUserProfileComplete } from '../utils/profileFields';
 
 const AuthContext = createContext(null);
-
-async function fetchProfileRow(client, userId) {
-  const { data, error } = await client
-    .from('user_profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-async function ensureProfileFromUser(client, user, { allowUpsert = true } = {}) {
-  if (!user) return null;
-
-  let profile = await fetchProfileRow(client, user.id);
-  if (profile) return profile;
-  if (!allowUpsert) return null;
-
-  const { data: sessionData } = await client.auth.getSession();
-  if (!sessionData.session?.user || sessionData.session.user.id !== user.id) {
-    return null;
-  }
-
-  const fromMeta = namesFromUserMetadata(user);
-  const payload = {
-    id: user.id,
-    email: user.email,
-    first_name: fromMeta.firstName || '',
-    last_name: fromMeta.lastName || '',
-    phone_number: fromMeta.phone || null,
-    date_of_birth: fromMeta.dateOfBirth || null,
-    gender: ['male', 'female', 'other', 'prefer_not_to_say'].includes(fromMeta.gender)
-      ? fromMeta.gender
-      : null,
-    auth_provider: user.app_metadata?.provider || 'email',
-  };
-
-  const { data, error } = await client
-    .from('user_profiles')
-    .upsert(payload, { onConflict: 'id' })
-    .select('*')
-    .single();
-
-  if (error) {
-    profile = await fetchProfileRow(client, user.id);
-    if (profile) return profile;
-    throw error;
-  }
-  return data;
-}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authConfigured, setAuthConfigured] = useState(false);
+  const profileUserIdRef = useRef(null);
+  const profileRef = useRef(null);
+  profileRef.current = profile;
 
-  const refreshProfile = useCallback(async (user = session?.user) => {
+  const hydrateProfile = useCallback(async (user) => {
     const client = getSupabase();
     if (!user || !client) {
       setProfile(null);
+      profileUserIdRef.current = null;
       return null;
     }
-    const row = await ensureProfileFromUser(client, user);
-    setProfile(row);
-    return row;
-  }, [session?.user]);
+
+    if (profileUserIdRef.current === user.id && profileRef.current) {
+      return profileRef.current;
+    }
+
+    try {
+      const row = await loadUserProfile(client, user);
+      profileUserIdRef.current = user.id;
+      profileRef.current = row;
+      setProfile(row);
+      return row;
+    } catch {
+      profileUserIdRef.current = user.id;
+      profileRef.current = null;
+      setProfile(null);
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -87,33 +56,19 @@ export function AuthProvider({ children }) {
 
       setAuthConfigured(true);
 
-      client.auth.getSession().then(async ({ data: { session: initial } }) => {
+      const { data: listener } = client.auth.onAuthStateChange((_event, nextSession) => {
         if (!mounted) return;
-        setSession(initial);
-        if (initial?.user) {
-          try {
-            const row = await ensureProfileFromUser(client, initial.user);
-            if (mounted) setProfile(row);
-          } catch {
-            if (mounted) setProfile(null);
-          }
-        }
-        if (mounted) setLoading(false);
-      });
 
-      const { data: listener } = client.auth.onAuthStateChange(async (_event, nextSession) => {
         setSession(nextSession);
-        if (nextSession?.user) {
-          try {
-            const row = await ensureProfileFromUser(client, nextSession.user);
-            setProfile(row);
-          } catch {
-            setProfile(null);
-          }
-        } else {
-          setProfile(null);
-        }
         setLoading(false);
+
+        if (nextSession?.user) {
+          hydrateProfile(nextSession.user);
+        } else {
+          profileUserIdRef.current = null;
+          setProfile(null);
+          resetProfileCache();
+        }
       });
 
       unsubscribe = () => listener.subscription.unsubscribe();
@@ -123,7 +78,18 @@ export function AuthProvider({ children }) {
       mounted = false;
       unsubscribe();
     };
-  }, []);
+  }, [hydrateProfile]);
+
+  const refreshProfile = useCallback(async (user = session?.user) => {
+    const client = getSupabase();
+    if (!user || !client) {
+      setProfile(null);
+      profileUserIdRef.current = null;
+      return null;
+    }
+    profileUserIdRef.current = null;
+    return hydrateProfile(user);
+  }, [hydrateProfile, session?.user]);
 
   const signInWithEmail = useCallback(async (email, password) => {
     const client = getSupabase();
@@ -189,6 +155,8 @@ export function AuthProvider({ children }) {
       .select('*')
       .single();
     if (error) throw error;
+    primeProfileCache(session.user.id, data);
+    profileUserIdRef.current = session.user.id;
     setProfile(data);
     return data;
   }, [session?.user]);
@@ -197,17 +165,20 @@ export function AuthProvider({ children }) {
     const client = getSupabase();
     if (!client) return;
     await client.auth.signOut();
+    profileUserIdRef.current = null;
     setProfile(null);
+    resetProfileCache();
   }, []);
 
   const value = useMemo(() => {
-    const profileComplete = isProfileComplete(profile);
-    const signedIn = Boolean(session?.user);
+    const user = session?.user ?? null;
+    const profileComplete = isUserProfileComplete(profile, user);
+    const signedIn = Boolean(user);
     const canAccessTools = !authConfigured || (signedIn && profileComplete);
 
     return {
       session,
-      user: session?.user ?? null,
+      user,
       profile,
       loading,
       authConfigured,

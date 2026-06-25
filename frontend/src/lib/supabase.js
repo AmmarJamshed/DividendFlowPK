@@ -15,34 +15,42 @@ function createSupabaseClient(url, anonKey) {
 
 async function loadRuntimeConfig() {
   const apiBase = process.env.REACT_APP_API_URL || `${window.location.origin}/api`;
-  const res = await fetch(`${String(apiBase).replace(/\/$/, '')}/public-config`);
-  if (!res.ok) throw new Error('Could not load auth config');
-  return res.json();
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(`${String(apiBase).replace(/\/$/, '')}/public-config`, {
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error('Could not load auth config');
+    return res.json();
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
 
 /** Resolve Supabase client from build-time env or backend public config. */
-export async function initSupabaseAuth() {
-  if (supabaseClient) return supabaseClient;
+export function initSupabaseAuth() {
+  if (supabaseClient) return Promise.resolve(supabaseClient);
   if (initPromise) return initPromise;
 
+  const buildUrl = process.env.REACT_APP_SUPABASE_URL || '';
+  const buildAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+  if (buildUrl && buildAnonKey) {
+    supabaseClient = createSupabaseClient(buildUrl, buildAnonKey);
+    return Promise.resolve(supabaseClient);
+  }
+
   initPromise = (async () => {
-    let url = process.env.REACT_APP_SUPABASE_URL || '';
-    let anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
-
-    if (!url || !anonKey) {
-      try {
-        const runtime = await loadRuntimeConfig();
-        url = runtime.supabaseUrl || '';
-        anonKey = runtime.supabaseAnonKey || '';
-      } catch {
-        return null;
-      }
+    try {
+      const runtime = await loadRuntimeConfig();
+      const url = runtime.supabaseUrl || '';
+      const anonKey = runtime.supabaseAnonKey || '';
+      if (!url || !anonKey) return null;
+      supabaseClient = createSupabaseClient(url, anonKey);
+      return supabaseClient;
+    } catch {
+      return null;
     }
-
-    if (!url || !anonKey) return null;
-
-    supabaseClient = createSupabaseClient(url, anonKey);
-    return supabaseClient;
   })();
 
   return initPromise;

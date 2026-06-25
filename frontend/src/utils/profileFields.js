@@ -19,6 +19,22 @@ export function isProfileComplete(profile) {
   );
 }
 
+export function isProfileCompleteFromMetadata(user) {
+  if (!user) return false;
+  const meta = namesFromUserMetadata(user);
+  return Boolean(
+    meta.firstName
+    && meta.lastName
+    && meta.dateOfBirth
+    && meta.phone
+    && GENDER_OPTIONS.some((option) => option.value === meta.gender)
+  );
+}
+
+export function isUserProfileComplete(profile, user) {
+  return isProfileComplete(profile) || isProfileCompleteFromMetadata(user);
+}
+
 export function namesFromUserMetadata(user) {
   const meta = user?.user_metadata || {};
   let firstName = meta.first_name || '';

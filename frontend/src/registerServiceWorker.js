@@ -17,7 +17,7 @@ export function registerServiceWorker() {
   if (process.env.NODE_ENV !== 'production') return;
   if (!('serviceWorker' in navigator)) return;
 
-  window.addEventListener('load', () => {
+  const register = () => {
     const storedVersion = localStorage.getItem(VERSION_KEY);
     if (storedVersion && storedVersion !== APP_VERSION) {
       Promise.all([resetServiceWorkers(), clearLegacyCaches()])
@@ -52,5 +52,11 @@ export function registerServiceWorker() {
       .catch(() => {
         /* PWA still works where SW registration fails */
       });
-  });
+  };
+
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(register, { timeout: 4000 });
+  } else {
+    window.setTimeout(register, 2000);
+  }
 }
