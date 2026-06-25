@@ -14,11 +14,17 @@ async function fetchProfileRow(client, userId) {
   return data;
 }
 
-async function ensureProfileFromUser(client, user) {
+async function ensureProfileFromUser(client, user, { allowUpsert = true } = {}) {
   if (!user) return null;
 
   let profile = await fetchProfileRow(client, user.id);
   if (profile) return profile;
+  if (!allowUpsert) return null;
+
+  const { data: sessionData } = await client.auth.getSession();
+  if (!sessionData.session?.user || sessionData.session.user.id !== user.id) {
+    return null;
+  }
 
   const fromMeta = namesFromUserMetadata(user);
   const payload = {
@@ -41,11 +47,9 @@ async function ensureProfileFromUser(client, user) {
     .single();
 
   if (error) {
-    const meta = user.user_metadata || {};
-    if (meta.first_name || fromMeta.firstName) {
-      throw error;
-    }
-    return null;
+    profile = await fetchProfileRow(client, user.id);
+    if (profile) return profile;
+    throw error;
   }
   return data;
 }
@@ -146,7 +150,9 @@ export function AuthProvider({ children }) {
       },
     });
     if (error) throw error;
-    if (data.user) await refreshProfile(data.user);
+    if (data.session?.user) {
+      await refreshProfile(data.session.user);
+    }
     return data;
   }, [refreshProfile]);
 

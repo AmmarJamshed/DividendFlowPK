@@ -48,7 +48,9 @@ export default function SignUp() {
         gender: values.gender,
       });
       if (result.user && !result.session) {
-        setInfo('Check your email for a confirmation link, then sign in.');
+        setInfo('Account created. Check your email for a confirmation link, then sign in.');
+      } else if (result.session) {
+        setInfo('Account created. You can now use DividendFlow PK tools.');
       }
     } catch (err) {
       setError(err.message || 'Could not create your account.');
