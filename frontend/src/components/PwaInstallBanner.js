@@ -26,15 +26,15 @@ function WizardSteps({ platform }) {
     return (
       <ol className="mt-4 space-y-3 text-sm text-slate-700">
         <li className="flex gap-3">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-800 text-xs font-bold">1</span>
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ice-100 text-ink text-xs font-bold">1</span>
           <span>Tap the <strong>Share</strong> button in Safari (square with an arrow pointing up).</span>
         </li>
         <li className="flex gap-3">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-800 text-xs font-bold">2</span>
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ice-100 text-ink text-xs font-bold">2</span>
           <span>Scroll down and choose <strong>Add to Home Screen</strong>.</span>
         </li>
         <li className="flex gap-3">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-800 text-xs font-bold">3</span>
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ice-100 text-ink text-xs font-bold">3</span>
           <span>Tap <strong>Add</strong> — DividendFlow PK opens like a native app.</span>
         </li>
       </ol>
@@ -44,15 +44,15 @@ function WizardSteps({ platform }) {
   return (
     <ol className="mt-4 space-y-3 text-sm text-slate-700">
       <li className="flex gap-3">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-800 text-xs font-bold">1</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ice-100 text-ink text-xs font-bold">1</span>
         <span>Open your browser menu (usually the <strong>⋮</strong> or <strong>⋯</strong> icon).</span>
       </li>
       <li className="flex gap-3">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-800 text-xs font-bold">2</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ice-100 text-ink text-xs font-bold">2</span>
         <span>Tap <strong>Install app</strong>, <strong>Add to Home screen</strong>, or <strong>Install DividendFlow</strong>.</span>
       </li>
       <li className="flex gap-3">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-800 text-xs font-bold">3</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ice-100 text-ink text-xs font-bold">3</span>
         <span>Confirm — the app icon lands on your home screen for one-tap access.</span>
       </li>
     </ol>
@@ -69,13 +69,13 @@ function InstallWizard({ open, onClose, platform, onNativeInstall, nativeReady }
       aria-modal="true"
       aria-label="Install DividendFlow as an app"
     >
-      <div className="w-full max-w-md rounded-3xl border border-teal-200/80 bg-white shadow-2xl shadow-teal-900/20 overflow-hidden">
-        <div className="bg-gradient-to-br from-teal-600 via-teal-500 to-cyan-500 px-5 py-6 text-white">
+      <div className="w-full max-w-md rounded-3xl border border-ice-200/80 bg-white shadow-2xl shadow-ink/20 overflow-hidden">
+        <div className="bg-gradient-to-br from-ink via-ink-soft to-ice-700 px-5 py-6 text-white">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <img src={LOGO} alt="" className="h-12 w-12 rounded-2xl border border-white/30 shadow-lg" />
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-teal-100/90">Install wizard</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-ice-200/90">Install wizard</p>
                 <h3 className="text-lg font-extrabold leading-tight">See the wizardry ✨</h3>
               </div>
             </div>
@@ -106,7 +106,7 @@ function InstallWizard({ open, onClose, platform, onNativeInstall, nativeReady }
             <button
               type="button"
               onClick={onNativeInstall}
-              className="mt-4 w-full rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-teal-500/30"
+              className="mt-4 w-full rounded-2xl bg-gradient-to-r from-ink to-ink-soft px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-ink/20"
             >
               Install DividendFlow PK now
             </button>
@@ -172,7 +172,7 @@ export default function PwaInstallBanner() {
         role="dialog"
         aria-label="Install DividendFlow as an app"
       >
-        <div className="pointer-events-auto mx-auto max-w-lg overflow-hidden rounded-3xl border border-teal-300/60 bg-gradient-to-br from-teal-600 via-teal-500 to-cyan-500 shadow-2xl shadow-teal-900/25">
+        <div className="pointer-events-auto mx-auto max-w-lg overflow-hidden rounded-3xl border border-ice-300/60 bg-gradient-to-br from-ink via-ink-soft to-ice-700 shadow-2xl shadow-ink/25">
           <div className="relative px-5 pb-5 pt-4 text-white">
             <button
               type="button"
@@ -200,12 +200,12 @@ export default function PwaInstallBanner() {
             <button
               type="button"
               onClick={handleInstallClick}
-              className="mt-4 w-full rounded-2xl bg-white px-4 py-3.5 text-sm font-extrabold text-teal-800 shadow-lg shadow-teal-900/20 hover:bg-teal-50 active:scale-[0.99] transition-transform"
+              className="mt-4 w-full rounded-2xl bg-white px-4 py-3.5 text-sm font-extrabold text-ink shadow-lg shadow-ink/20 hover:bg-ice-50 active:scale-[0.99] transition-transform"
             >
               Click here below and see the Wizardry
             </button>
 
-            <p className="mt-2 text-center text-[11px] font-medium text-teal-50/90">
+            <p className="mt-2 text-center text-[11px] font-medium text-ice-100/90">
               Free · No app store · Opens full-screen from your home screen
             </p>
           </div>

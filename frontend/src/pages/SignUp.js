@@ -85,7 +85,7 @@ export default function SignUp() {
         <button
           type="submit"
           disabled={!authConfigured || busy}
-          className="w-full rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-3 text-sm font-bold text-white shadow-md hover:from-teal-700 hover:to-cyan-700 disabled:opacity-60"
+          className="w-full rounded-xl bg-gradient-to-r from-ink to-ink-soft px-4 py-3 text-sm font-bold text-white shadow-md hover:from-ink-soft hover:to-ink-muted disabled:opacity-60"
         >
           {busy ? 'Creating account…' : 'Create account'}
         </button>
@@ -95,7 +95,7 @@ export default function SignUp() {
         Already have an account?{' '}
         <Link
           to={`/sign-in?next=${encodeURIComponent(nextPath)}`}
-          className="font-semibold text-teal-700 hover:underline"
+          className="font-semibold text-ice-700 hover:underline"
         >
           Sign in
         </Link>

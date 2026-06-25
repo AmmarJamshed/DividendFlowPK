@@ -77,7 +77,7 @@ export default function StockPage() {
     return (
       <div>
         <PageHero title={`${symbol} not found`} subtitle={`No data for ${exchange}`} />
-        <Link to="/market-closing-prices" className="text-teal-600 text-sm font-semibold">
+        <Link to="/market-closing-prices" className="text-ice-600 text-sm font-semibold">
           ← Back to market data
         </Link>
       </div>
@@ -91,7 +91,7 @@ export default function StockPage() {
       {
         label: 'Close',
         data: history.map((h) => h.close),
-        borderColor: '#0d9488',
+        borderColor: '#0a0e14',
         backgroundColor: 'rgba(13,148,136,0.1)',
         tension: 0.25,
         fill: true,
@@ -116,14 +116,14 @@ export default function StockPage() {
           className={`text-xs font-bold uppercase px-3 py-2 rounded-xl border ${
             watchlisted
               ? 'bg-amber-50 border-amber-300 text-amber-800'
-              : 'bg-white border-slate-200 text-slate-600 hover:border-teal-300'
+              : 'bg-white border-slate-200 text-slate-600 hover:border-ice-300'
           }`}
         >
           {watchlisted ? '★ Watchlisted' : '☆ Add to watchlist'}
         </button>
         <Link
           to="/forecast-engine"
-          className="text-xs font-bold uppercase px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-teal-300"
+          className="text-xs font-bold uppercase px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-ice-300"
         >
           Forecast
         </Link>
@@ -190,8 +190,8 @@ export default function StockPage() {
       )}
 
       {insight?.content && (
-        <div className="card p-4 mb-6 border-teal-100 bg-teal-50/40">
-          <h3 className="text-xs font-semibold uppercase text-teal-700 mb-2">AI insight</h3>
+        <div className="card p-4 mb-6 border-ice-100 bg-ice-50/40">
+          <h3 className="text-xs font-semibold uppercase text-ice-700 mb-2">AI insight</h3>
           <p className="text-sm text-slate-700 whitespace-pre-wrap">{insight.content}</p>
           {insight.confidence != null && (
             <p className="text-xs text-slate-500 mt-2">Confidence: {insight.confidence}/100</p>
@@ -206,7 +206,7 @@ export default function StockPage() {
             {data.news.map((n, i) => (
               <li key={i}>
                 {n.url ? (
-                  <a href={n.url} target="_blank" rel="noreferrer" className="text-teal-700 hover:underline">
+                  <a href={n.url} target="_blank" rel="noreferrer" className="text-ice-700 hover:underline">
                     {n.headline}
                   </a>
                 ) : (

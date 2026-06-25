@@ -46,7 +46,7 @@ export default function SymbolAutocomplete({ value, onChange, options = [], plac
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
-        className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600 focus:outline-none uppercase font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400"
+        className="w-full px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-ice-500/30 focus:border-ink focus:outline-none uppercase font-semibold text-slate-800 placeholder:font-normal placeholder:text-slate-400"
         aria-autocomplete="list"
         aria-expanded={open}
       />
@@ -61,7 +61,7 @@ export default function SymbolAutocomplete({ value, onChange, options = [], plac
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(opt)}
-                className="w-full text-left px-3 py-2 hover:bg-teal-50 text-sm"
+                className="w-full text-left px-3 py-2 hover:bg-ice-50 text-sm"
               >
                 <span className="font-bold text-slate-800">{opt.symbol}</span>
                 {opt.companyName ? (

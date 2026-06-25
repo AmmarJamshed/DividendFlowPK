@@ -20,7 +20,7 @@ export default function MarketBrokers() {
         description="A Pakistan-focused directory of stock brokers so you can compare where to open a PSX trading account."
       />
 
-      <div className="card p-8 sm:p-10 text-center border-dashed border-2 border-teal-200/80 bg-gradient-to-b from-teal-50/50 to-white">
+      <div className="card p-8 sm:p-10 text-center border-dashed border-2 border-ice-200/80 bg-gradient-to-b from-ice-50/50 to-white">
         <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-100 text-amber-800 border border-amber-200/80 mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" aria-hidden />
           Coming soon

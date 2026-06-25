@@ -69,7 +69,7 @@ export default function CookieConsent() {
         <p className="text-sm text-slate-700 leading-relaxed">
           We use <strong>cookies</strong> for site operation, <strong>Google Analytics</strong>, and{' '}
           <strong>Google AdSense</strong> advertising. See our{' '}
-          <Link to="/privacy" className="text-teal-700 font-semibold hover:underline">
+          <Link to="/privacy" className="text-ice-700 font-semibold hover:underline">
             Privacy Policy
           </Link>
           .
@@ -78,7 +78,7 @@ export default function CookieConsent() {
           <button
             type="button"
             onClick={accept}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 border border-teal-600"
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-ink hover:bg-ink border border-ink"
           >
             Accept
           </button>

@@ -4,7 +4,7 @@ import { useMarketBuddy } from '../context/MarketBuddyContext';
 function Spinner() {
   return (
     <div
-      className="w-5 h-5 border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin shrink-0"
+      className="w-5 h-5 border-2 border-ice-200 border-t-ice-500 rounded-full animate-spin shrink-0"
       aria-hidden
     />
   );
@@ -14,7 +14,7 @@ function BuddyAvatar({ size = 'md' }) {
   const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-9 h-9 text-xs';
   return (
     <div
-      className={`${dim} shrink-0 rounded-xl bg-gradient-to-br from-teal-500 to-violet-500 text-white font-bold flex items-center justify-center shadow-md shadow-teal-300/40`}
+      className={`${dim} shrink-0 rounded-xl bg-gradient-to-br from-ink to-ice-600 text-white font-bold flex items-center justify-center shadow-md shadow-ink/25`}
       aria-hidden
     >
       MB
@@ -83,21 +83,21 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
   const inner = (
     <>
       <div
-        className={`fin-hero fin-hero--teal px-4 sm:px-5 py-4 border-b border-teal-400/30 ${
+        className={`fin-hero fin-hero--brand px-4 sm:px-5 py-4 border-b border-ice-400/30 ${
           isDrawer ? 'rounded-none shrink-0' : 'rounded-none border-x-0 border-t-0'
         }`}
       >
         <div className="flex items-start gap-3">
           <BuddyAvatar />
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-teal-100 mb-0.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-ice-200 mb-0.5">
               {isDrawer ? 'Market Buddy' : 'Research assistant · +20 XP'}
             </p>
             <h2 className={`font-bold tracking-tight leading-tight text-white ${isDrawer ? 'text-lg' : 'text-xl sm:text-2xl'}`}>
               {isDrawer ? 'Ask about PSX' : 'PSX research chat'}
             </h2>
             {!isDrawer && (
-              <p className="mt-2 text-sm text-teal-50/95 leading-relaxed max-w-2xl">
+              <p className="mt-2 text-sm text-ice-100/95 leading-relaxed max-w-2xl">
                 Archived PSX prices, dividends, and news from our database. Short answers — research only, not buy/sell advice.
               </p>
             )}
@@ -134,9 +134,9 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => send(prompt)}
                 disabled={loading}
-                className="group text-left px-3 py-2 rounded-xl bg-white border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50 transition-colors disabled:opacity-50 text-xs"
+                className="group text-left px-3 py-2 rounded-xl bg-white border border-slate-200 hover:border-ice-400 hover:bg-ice-50/50 transition-colors disabled:opacity-50 text-xs"
               >
-                <span className="block font-semibold text-slate-800 group-hover:text-teal-700">{label}</span>
+                <span className="block font-semibold text-slate-800 group-hover:text-ice-700">{label}</span>
               </button>
             ))}
           </div>
@@ -161,7 +161,7 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">Buddy</p>
                       {typeof msg.confidence === 'number' && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-ice-50 text-ice-700 border border-ice-200">
                           Data confidence {msg.confidence}/100
                         </span>
                       )}
@@ -170,7 +170,7 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
                   <div
                     className={`px-3 py-2.5 rounded-xl ${
                       isUser
-                        ? 'bg-gradient-to-r from-teal-600 to-teal-500 text-white'
+                        ? 'bg-gradient-to-r from-ink to-ink-soft text-white'
                         : 'bg-white border border-neutral-200 text-neutral-800'
                     }`}
                   >
@@ -200,7 +200,7 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
           )}
         </div>
 
-        <div className={`border border-slate-200 bg-white p-2 rounded-xl focus-within:ring-2 focus-within:ring-teal-400/40 shrink-0`}>
+        <div className={`border border-slate-200 bg-white p-2 rounded-xl focus-within:ring-2 focus-within:ring-ice-400/40 shrink-0`}>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               ref={inputRef}

@@ -1,22 +1,22 @@
 import HelpTip from './HelpTip';
 
 /**
- * KPI tile — teal / violet accents with hover lift.
+ * KPI tile — ink / ice accents with hover lift.
  */
-export default function MetricCard({ label, value, hint, tip, trend, accent = 'teal' }) {
+export default function MetricCard({ label, value, hint, tip, trend, accent = 'brand' }) {
   const border =
     accent === 'violet'
       ? 'border-l-violet-500 border-t-violet-400'
       : accent === 'emerald'
         ? 'border-l-emerald-500 border-t-emerald-400'
-        : 'border-l-teal-500 border-t-teal-400';
+        : 'border-l-ink border-t-ice-400';
 
   const glow =
     accent === 'violet'
       ? 'radial-gradient(circle at top right, #a5b4fc, transparent 70%)'
       : accent === 'emerald'
         ? 'radial-gradient(circle at top right, #6ee7b7, transparent 70%)'
-        : 'radial-gradient(circle at top right, #5eead4, transparent 70%)';
+        : 'radial-gradient(circle at top right, #94d0f0, transparent 70%)';
 
   return (
     <div

@@ -17,7 +17,7 @@ export default function ReportingCycles() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-ice-200 border-t-ice-500 rounded-full animate-spin" />
           <p className="text-slate-500">Loading reporting cycles...</p>
         </div>
       </div>
@@ -46,14 +46,14 @@ export default function ReportingCycles() {
             </thead>
             <tbody>
               {data.map((d, i) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-teal-50/50 transition-colors">
+                <tr key={i} className="border-t border-slate-100 hover:bg-ice-50/50 transition-colors">
                   <td className="p-4 font-medium text-slate-700">{d.Company || d.company}</td>
                   <td className="p-4 text-slate-500">{d.Sector || d.sector}</td>
                   <td className="p-4">{d.Fiscal_Year_End || d.fiscal_year_end}</td>
                   <td className="p-4">{d.Quarter_End_Months || d.quarter_end_months}</td>
                   <td className="p-4">{d.Dividend_Announcement_Period || d.dividend_announcement_period}</td>
                   <td className="p-4">{d.Book_Closure_Month || d.book_closure_month}</td>
-                  <td className="p-4"><span className="px-2 py-1 rounded-lg bg-teal-100 text-teal-700 font-medium">{d.Estimated_Payment_Month || d.estimated_payment_month}</span></td>
+                  <td className="p-4"><span className="px-2 py-1 rounded-lg bg-ice-100 text-ice-700 font-medium">{d.Estimated_Payment_Month || d.estimated_payment_month}</span></td>
                 </tr>
               ))}
             </tbody>

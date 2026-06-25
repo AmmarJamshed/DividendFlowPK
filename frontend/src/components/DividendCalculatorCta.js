@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 export default function DividendCalculatorCta({ className = '' }) {
   return (
     <div
-      className={`rounded-2xl border-2 border-teal-300 bg-gradient-to-r from-teal-50 via-white to-emerald-50/80 px-5 py-4 shadow-sm ${className}`}
+      className={`rounded-2xl border-2 border-ice-300 bg-gradient-to-r from-ice-50 via-white to-emerald-50/80 px-5 py-4 shadow-sm ${className}`}
     >
       <p className="text-base sm:text-lg font-semibold text-slate-800 leading-snug">
         If you wish to know how much dividends you&apos;ll get this time,{' '}
         <Link
           to="/dividend-calendar#dividend-calculator"
-          className="text-teal-700 underline decoration-2 underline-offset-2 hover:text-teal-900"
+          className="text-ice-700 underline decoration-2 underline-offset-2 hover:text-ink"
         >
           please click here
         </Link>

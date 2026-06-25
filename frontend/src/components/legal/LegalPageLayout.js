@@ -22,8 +22,8 @@ export default function LegalPageLayout({ eyebrow, title, description, children,
         )}
         {children}
         <p className="mt-8 pt-6 border-t border-slate-100 text-xs text-slate-500">
-          Questions? See our <Link to="/contact" className="text-teal-700 font-medium hover:underline">Contact</Link> page
-          {' '}or <Link to="/about" className="text-teal-700 font-medium hover:underline">About</Link> page for more on DividendFlow PK.
+          Questions? See our <Link to="/contact" className="text-ice-700 font-medium hover:underline">Contact</Link> page
+          {' '}or <Link to="/about" className="text-ice-700 font-medium hover:underline">About</Link> page for more on DividendFlow PK.
         </p>
       </article>
     </div>

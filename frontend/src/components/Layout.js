@@ -28,7 +28,7 @@ const navItems = [
 ];
 
 function NavIcon({ name, active = false }) {
-  const cls = `w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-500 group-hover:text-teal-600'}`;
+  const cls = `w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-500 group-hover:text-ice-600'}`;
   switch (name) {
     case 'home':
       return (
@@ -126,9 +126,9 @@ function SidebarDisclaimer() {
   return (
     <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-[11px] text-slate-600 bg-slate-50/90 leading-relaxed">
       For learning and research only — not buy/sell advice. Confirm figures with {exchangeConfig.code} and your broker.{' '}
-      <Link to="/privacy" className="text-teal-700 font-medium hover:underline">Privacy</Link>
+      <Link to="/privacy" className="text-ice-700 font-medium hover:underline">Privacy</Link>
       {' · '}
-      <Link to="/contact" className="text-teal-700 font-medium hover:underline">Contact</Link>
+      <Link to="/contact" className="text-ice-700 font-medium hover:underline">Contact</Link>
     </footer>
   );
 }
@@ -209,7 +209,7 @@ export default function Layout({ children }) {
                 aria-hidden
               />
               <div className="min-w-0">
-                <p className="text-[15px] font-semibold text-slate-900 tracking-tight leading-tight group-hover:text-teal-700 transition-colors">
+                <p className="text-[15px] font-semibold text-slate-900 tracking-tight leading-tight group-hover:text-ice-700 transition-colors">
                   DividendFlow PK
                 </p>
                 <p className="text-[10px] text-slate-500 font-medium">{exchangeConfig.code} · {exchangeConfig.currency}</p>
@@ -244,7 +244,7 @@ export default function Layout({ children }) {
                   className={`group flex items-center gap-3 px-4 py-3 mx-2 rounded-xl text-sm font-semibold transition-all ${
                     active
                       ? 'nav-link-active shadow-md'
-                      : 'text-slate-600 hover:bg-teal-50/80 hover:text-teal-800'
+                      : 'text-slate-600 hover:bg-ice-50/80 hover:text-ink'
                   }`}
                 >
                   <NavIcon name={icon} active={active} />
@@ -265,7 +265,7 @@ export default function Layout({ children }) {
                   className={`group flex items-center gap-3 px-4 py-3 mx-0 rounded-xl text-sm font-semibold transition-all ${
                     location.pathname === '/account'
                       ? 'nav-link-active shadow-md'
-                      : 'text-slate-600 hover:bg-teal-50/80 hover:text-teal-800'
+                      : 'text-slate-600 hover:bg-ice-50/80 hover:text-ink'
                   }`}
                 >
                   <NavIcon name="user" active={location.pathname === '/account'} />
@@ -275,13 +275,13 @@ export default function Layout({ children }) {
                 <div className="space-y-1 px-2 pb-1">
                   <Link
                     to={`/sign-up?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                    className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3 text-sm font-bold text-white shadow-md hover:from-teal-600 hover:to-cyan-600"
+                    className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-ink to-ink-soft px-4 py-3 text-sm font-bold text-white shadow-md hover:from-ink-soft hover:to-ink-muted"
                   >
                     Create free account
                   </Link>
                   <Link
                     to={`/sign-in?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                    className="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-teal-300 hover:text-teal-700"
+                    className="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-ice-300 hover:text-ice-700"
                   >
                     Sign in
                   </Link>
@@ -314,7 +314,7 @@ export default function Layout({ children }) {
                 <div className="flex items-center gap-2">
                   <Link
                     to="/account"
-                    className="hidden sm:inline-flex text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                    className="hidden sm:inline-flex text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-ice-300 hover:text-ice-700 transition-colors"
                   >
                     Account
                   </Link>
@@ -324,7 +324,7 @@ export default function Layout({ children }) {
                   <button
                     type="button"
                     onClick={() => signOut()}
-                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-ice-300 hover:text-ice-700 transition-colors"
                   >
                     Sign out
                   </button>
@@ -333,13 +333,13 @@ export default function Layout({ children }) {
                 <div className="flex items-center gap-2 order-first sm:order-none w-full sm:w-auto justify-end">
                   <Link
                     to={`/sign-in?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-ice-300 hover:text-ice-700 transition-colors"
                   >
                     Sign in
                   </Link>
                   <Link
                     to={`/sign-up?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-teal-400 bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-sm hover:from-teal-600 hover:to-cyan-600 transition-colors"
+                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-ice-400 bg-gradient-to-r from-ink to-ink-soft text-white shadow-sm hover:from-ink-soft hover:to-ink-muted transition-colors"
                   >
                     Sign up
                   </Link>
@@ -359,8 +359,8 @@ export default function Layout({ children }) {
                 aria-label={buddyOpen ? 'Close Market Buddy chat' : 'Open Market Buddy chat'}
                 className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
                   buddyOpen
-                    ? 'text-white border-blue-500 bg-gradient-to-r from-blue-600 to-blue-500 shadow-md shadow-blue-300/40'
-                    : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100 hover:border-blue-300'
+                    ? 'text-white border-ice-400 bg-gradient-to-r from-ink to-ink-soft shadow-md shadow-ink/20'
+                    : 'bg-ice-50 text-ink border-ice-200 hover:bg-ice-100 hover:border-ice-300'
                 }`}
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -389,8 +389,8 @@ export default function Layout({ children }) {
                 disabled={aiToggleLoading}
                 className={`text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
                   aiAssistanceOn
-                    ? 'text-white border-teal-400 bg-gradient-to-r from-teal-500 to-cyan-500 shadow-md shadow-teal-300/30'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-teal-300 hover:text-teal-700'
+                    ? 'text-white border-ice-400 bg-gradient-to-r from-ink to-ink-soft shadow-md shadow-ink/20'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-ice-300 hover:text-ice-700'
                 } ${aiToggleLoading ? 'opacity-70 cursor-wait' : ''}`}
               >
                 {aiToggleLoading ? (

@@ -9,13 +9,13 @@ export default function PageHero({
   className = '',
   showLogo = true,
 }) {
-  const isTeal = variant === 'teal';
+  const isBrand = variant === 'brand' || variant === 'teal';
 
   return (
     <div
-      className={`fin-hero p-6 sm:p-8 lg:p-10 ${isTeal ? 'fin-hero--teal' : ''} ${className}`}
+      className={`fin-hero p-6 sm:p-8 lg:p-10 ${isBrand ? 'fin-hero--brand' : ''} ${className}`}
     >
-      {showLogo && !isTeal && (
+      {showLogo && !isBrand && (
         <img
           src={LOGO}
           alt=""
@@ -27,11 +27,11 @@ export default function PageHero({
         {eyebrow && (
           <p
             className={`inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest mb-3 px-2.5 py-1 rounded-full ${
-              isTeal ? 'bg-white/15 text-teal-50' : 'bg-teal-100/80 text-teal-700 border border-teal-200/60'
+              isBrand ? 'bg-white/10 text-ice-100' : 'bg-ice-100/80 text-ice-700 border border-ice-200/60'
             }`}
           >
             <span
-              className={`w-1.5 h-1.5 rounded-full ${isTeal ? 'bg-amber-300 animate-pulse' : 'bg-teal-500'}`}
+              className={`w-1.5 h-1.5 rounded-full ${isBrand ? 'bg-ice-300 animate-pulse' : 'bg-ice-500'}`}
               aria-hidden
             />
             {eyebrow}
@@ -39,7 +39,7 @@ export default function PageHero({
         )}
         <h1
           className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight max-w-4xl ${
-            isTeal ? 'text-white' : 'text-slate-900'
+            isBrand ? 'text-white' : 'text-slate-900'
           }`}
         >
           {title}
@@ -47,7 +47,7 @@ export default function PageHero({
         {description && (
           <p
             className={`mt-4 text-sm sm:text-base leading-relaxed max-w-3xl ${
-              isTeal ? 'text-teal-50/95' : 'text-slate-600'
+              isBrand ? 'text-ice-100/95' : 'text-slate-600'
             }`}
           >
             {description}

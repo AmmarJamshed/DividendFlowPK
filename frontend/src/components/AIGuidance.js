@@ -53,13 +53,13 @@ const DEFAULT_TIPS = [
 function RobotIcon({ className }) {
   return (
     <svg viewBox="0 0 64 64" width="32" height="32" className={className}>
-      <rect x="12" y="20" width="40" height="36" rx="6" fill="#0d9488" stroke="#14b8a6" strokeWidth="2" />
+      <rect x="12" y="20" width="40" height="36" rx="6" fill="#0a0e14" stroke="#5eb8e8" strokeWidth="2" />
       <text x="32" y="42" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="system-ui">₨</text>
-      <rect x="18" y="8" width="28" height="16" rx="4" fill="#0f766e" stroke="#14b8a6" strokeWidth="1.5" />
+      <rect x="18" y="8" width="28" height="16" rx="4" fill="#141c28" stroke="#5eb8e8" strokeWidth="1.5" />
       <circle cx="24" cy="16" r="2.5" fill="white" />
       <circle cx="40" cy="16" r="2.5" fill="white" />
-      <line x1="32" y1="8" x2="32" y2="2" stroke="#14b8a6" strokeWidth="1.5" />
-      <circle cx="32" cy="2" r="2" fill="#14b8a6" />
+      <line x1="32" y1="8" x2="32" y2="2" stroke="#5eb8e8" strokeWidth="1.5" />
+      <circle cx="32" cy="2" r="2" fill="#5eb8e8" />
     </svg>
   );
 }
@@ -117,11 +117,11 @@ export default function AIGuidance() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask something..."
-              className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50"
+              className="flex-1 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-ice-400/50"
             />
             <button
               onClick={handleSend}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white text-sm font-semibold transition-colors shadow-md shadow-teal-300/30"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-ink to-ink-soft hover:from-ink-soft hover:to-ink-muted text-white text-sm font-semibold transition-colors shadow-md shadow-ink/20"
             >
               Send
             </button>
@@ -130,7 +130,7 @@ export default function AIGuidance() {
       )}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-teal-500 to-violet-500 hover:from-teal-400 hover:to-violet-400 transition-colors flex items-center justify-center shadow-lg shadow-teal-300/40"
+        className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-ink to-ice-600 hover:from-ink-soft hover:to-ice-500 transition-colors flex items-center justify-center shadow-lg shadow-ink/25"
         aria-label="Toggle Ammar quick tips"
       >
         <RobotIcon className="w-[22px] h-[22px] sm:w-6 sm:h-6" />

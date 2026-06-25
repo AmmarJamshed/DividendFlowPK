@@ -162,7 +162,7 @@ export default function MarketClosingPrices() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <div className="animate-spin w-10 h-10 border-2 border-teal-400 border-t-transparent rounded-full" />
+        <div className="animate-spin w-10 h-10 border-2 border-ice-400 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -219,7 +219,7 @@ export default function MarketClosingPrices() {
               placeholder="Search by stock or symbol..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-              className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300 w-full sm:w-64"
+              className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-ice-400/50 focus:border-ice-300 w-full sm:w-64"
             />
             <span className="text-sm text-slate-500 self-center text-right sm:text-left">
               {filtered.length} stocks
@@ -242,8 +242,8 @@ export default function MarketClosingPrices() {
               onClick={() => { setShariahOnly(false); setPage(0); }}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
                 !shariahOnly
-                  ? 'bg-teal-600 text-white border-teal-600'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-teal-300'
+                  ? 'bg-ink text-white border-ink'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-ice-300'
               }`}
             >
               All PSX (in dataset)
@@ -270,18 +270,18 @@ export default function MarketClosingPrices() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 text-slate-600">
-                <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-teal-600 rounded-tl-2xl" onClick={() => toggleSort('symbol')}>Stock</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('close')}>Close</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('change')}>Change</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600" onClick={() => toggleSort('changePct')}>Daily %</th>
+                <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-ice-600 rounded-tl-2xl" onClick={() => toggleSort('symbol')}>Stock</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600" onClick={() => toggleSort('close')}>Close</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600" onClick={() => toggleSort('change')}>Change</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600" onClick={() => toggleSort('changePct')}>Daily %</th>
                 <th
-                  className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600"
+                  className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600"
                   onClick={() => toggleSort('weekChgPct')}
                   title="Approx. change vs price ~7 calendar days ago (daily_prices.csv)."
                 >
                   Week %
                 </th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-teal-600 rounded-tr-2xl" onClick={() => toggleSort('volume')}>Shares Traded</th>
+                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600 rounded-tr-2xl" onClick={() => toggleSort('volume')}>Shares Traded</th>
               </tr>
             </thead>
             <tbody>
@@ -299,13 +299,13 @@ export default function MarketClosingPrices() {
                   const displayName = formatStockLabel(r);
                   const hasCompanyName = displayName && displayName !== r.symbol;
                   return (
-                    <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
+                    <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-ice-50/50">
                       <td className="px-4 py-3 font-medium text-slate-700">
                         <span className="inline-flex items-center gap-2 flex-wrap">
                           <span className="min-w-0">
                             <Link
                               to={stockPath(exchange, r.symbol || r.company)}
-                              className="text-teal-700 hover:underline font-semibold block"
+                              className="text-ice-700 hover:underline font-semibold block"
                             >
                               {displayName}
                             </Link>
@@ -366,7 +366,7 @@ export default function MarketClosingPrices() {
             <button
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-3 py-2 rounded-xl bg-teal-50 text-teal-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-teal-100 border border-teal-200"
+              className="px-3 py-2 rounded-xl bg-ice-50 text-ice-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-ice-100 border border-ice-200"
             >
               Previous
             </button>
@@ -374,7 +374,7 @@ export default function MarketClosingPrices() {
             <button
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="px-3 py-2 rounded-xl bg-teal-50 text-teal-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-teal-100 border border-teal-200"
+              className="px-3 py-2 rounded-xl bg-ice-50 text-ice-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-ice-100 border border-ice-200"
             >
               Next
             </button>
@@ -394,7 +394,7 @@ export default function MarketClosingPrices() {
                   href={SHARIAH_LIST_META.sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-teal-700 font-medium hover:underline"
+                  className="text-ice-700 font-medium hover:underline"
                 >
                   View PSX notice (PDF)
                 </a>

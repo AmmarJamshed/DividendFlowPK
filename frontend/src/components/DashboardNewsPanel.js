@@ -78,7 +78,7 @@ export default function DashboardNewsPanel({
                 <div
                   role="button"
                   tabIndex={0}
-                  className="w-full text-left p-4 rounded-xl bg-white border border-slate-200 cursor-pointer transition-all hover:border-teal-300 hover:bg-teal-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                  className="w-full text-left p-4 rounded-xl bg-white border border-slate-200 cursor-pointer transition-all hover:border-ice-300 hover:bg-ice-50/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-ice-400"
                   onClick={() => onSelectAlert(r)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -92,7 +92,7 @@ export default function DashboardNewsPanel({
                       <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${levelStyles.dot}`} aria-hidden />
                       <Link
                         to={stockPath(exchange, r.company)}
-                        className="font-semibold text-teal-700 hover:underline"
+                        className="font-semibold text-ice-700 hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {r.company}
@@ -101,7 +101,7 @@ export default function DashboardNewsPanel({
                         {r.level}
                       </span>
                       {r.kind === 'news' && (
-                        <span className="text-[10px] uppercase tracking-wide text-teal-700 font-semibold">
+                        <span className="text-[10px] uppercase tracking-wide text-ice-700 font-semibold">
                           News + move
                         </span>
                       )}
@@ -116,7 +116,7 @@ export default function DashboardNewsPanel({
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-teal-600 shrink-0">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-ice-600 shrink-0">
                       Details →
                     </span>
                   </div>
@@ -137,7 +137,7 @@ export default function DashboardNewsPanel({
                         href={r.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-teal-600 font-medium hover:underline break-all"
+                        className="text-ice-600 font-medium hover:underline break-all"
                         onClick={(e) => e.stopPropagation()}
                       >
                         {r.source}

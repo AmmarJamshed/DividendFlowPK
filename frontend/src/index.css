@@ -2,14 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* DividendFlow — original approachable fintech palette + gamification */
+/* DividendFlow — logo palette: charcoal ink + icy cyan */
 :root {
-  --cream: #f8fafc;
-  --cream-warm: #f1f5f9;
-  --ink: #0f172a;
+  --cream: #f4f9fd;
+  --cream-warm: #e8f0f6;
+  --ink: #0a0e14;
+  --ink-soft: #141c28;
   --muted: #64748b;
-  --teal: #0d9488;
-  --teal-soft: #ccfbf1;
+  --ice: #5eb8e8;
+  --ice-soft: #e5f2fa;
   --violet: #6366f1;
   --violet-soft: #e0e7ff;
   --positive: #059669;
@@ -26,11 +27,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  background-color: #f1f5f9;
+  background-color: #e8f0f6;
   background-image:
-    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(45, 212, 191, 0.14), transparent 50%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(99, 102, 241, 0.1), transparent 45%),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(94, 184, 232, 0.14), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(10, 14, 20, 0.05), transparent 45%),
+    linear-gradient(180deg, #f4f9fd 0%, #e8f0f6 100%);
   background-attachment: fixed;
   color: var(--ink);
 }
@@ -64,22 +65,22 @@ html.df-robot-cursor label[for] {
     @apply rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-sm shadow-md shadow-slate-200/40 transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50;
   }
   .fin-hero {
-    @apply relative overflow-hidden rounded-3xl border border-teal-200/60 shadow-md shadow-teal-100/40;
-    background-image: linear-gradient(to bottom right, #ffffff, rgb(240 253 250 / 0.9), rgb(238 242 255 / 0.85));
+    @apply relative overflow-hidden rounded-3xl border border-ice-200/70 shadow-md shadow-ice-100/30;
+    background-image: linear-gradient(to bottom right, #ffffff, rgb(244 249 253 / 0.95), rgb(229 242 250 / 0.9));
   }
-  .fin-hero--teal {
-    @apply text-white border-teal-400/30 shadow-lg shadow-teal-300/30;
-    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 42%, #6366f1 100%);
+  .fin-hero--brand {
+    @apply text-white border-ice-400/25 shadow-lg shadow-ink/30;
+    background: linear-gradient(135deg, #0a0e14 0%, #141c28 48%, #1a3a52 100%);
   }
   .fin-hero--light {
-    @apply rounded-3xl border border-teal-200/60 text-slate-900;
-    background-image: linear-gradient(to bottom right, #ffffff, rgb(240 253 250 / 0.9), rgb(238 242 255 / 0.85));
+    @apply rounded-3xl border border-ice-200/70 text-slate-900;
+    background-image: linear-gradient(to bottom right, #ffffff, rgb(244 249 253 / 0.95), rgb(229 242 250 / 0.9));
   }
   .metric-card {
     @apply transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg;
   }
   .plain-label {
-    @apply text-[11px] font-bold uppercase tracking-wider text-teal-700/90;
+    @apply text-[11px] font-bold uppercase tracking-wider text-ice-700;
   }
   .chip-up {
     @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800;
@@ -105,19 +106,19 @@ html.df-robot-cursor label[for] {
     @apply text-slate-600 text-sm mt-0.5;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center px-5 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl font-semibold text-white shadow-lg shadow-teal-300/40 hover:from-teal-400 hover:to-teal-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-gradient-to-r from-ink to-ink-soft rounded-xl font-semibold text-white shadow-lg shadow-ink/25 hover:from-ink-soft hover:to-ink-muted transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-semibold text-teal-700 bg-white/90 border border-teal-200 hover:bg-teal-50 transition-colors;
+    @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-semibold text-ice-700 bg-white/90 border border-ice-200 hover:bg-ice-50 transition-colors;
   }
   .btn-ghost-dark {
     @apply inline-flex items-center justify-center px-5 py-2.5 rounded-xl font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors;
   }
   .btn-link {
-    @apply text-sm font-semibold text-teal-600 hover:text-teal-700 hover:underline;
+    @apply text-sm font-semibold text-ice-600 hover:text-ice-700 hover:underline;
   }
   .input-field {
-    @apply w-full bg-white/90 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300 transition-colors text-sm;
+    @apply w-full bg-white/90 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-ice-400/50 focus:border-ice-300 transition-colors text-sm;
   }
   .table-responsive {
     @apply overflow-x-auto -mx-4 sm:mx-0;
@@ -130,17 +131,17 @@ html.df-robot-cursor label[for] {
     @apply px-2 py-3 sm:px-4 sm:py-4 text-xs sm:text-sm;
   }
   .nav-link-active {
-    @apply text-white bg-gradient-to-r from-teal-500 to-cyan-500 shadow-md shadow-teal-300/30;
+    @apply text-white bg-gradient-to-r from-ink to-ink-soft shadow-md shadow-ink/25;
   }
   .action-card {
-    @apply rounded-2xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-200/50 hover:border-teal-300/80;
+    @apply rounded-2xl transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-ice-200/50 hover:border-ice-300/80;
   }
   .xp-track {
-    @apply h-2.5 rounded-full bg-teal-100/80 overflow-hidden border border-teal-200/50;
+    @apply h-2.5 rounded-full bg-ice-100/80 overflow-hidden border border-ice-200/50;
   }
   .xp-fill {
     @apply h-full rounded-full transition-all duration-500;
-    background: linear-gradient(90deg, #14b8a6 0%, #6366f1 55%, #a855f7 100%);
+    background: linear-gradient(90deg, #5eb8e8 0%, #38a0d9 55%, #1a6a9a 100%);
   }
   .badge-pill {
     @apply inline-flex items-center text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border;
@@ -149,7 +150,7 @@ html.df-robot-cursor label[for] {
     @apply inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full text-violet-800 bg-violet-100 border border-violet-200;
   }
   .level-pill {
-    @apply inline-flex items-center gap-1.5 text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200;
+    @apply inline-flex items-center gap-1.5 text-xs font-bold text-ink bg-ice-50 px-2.5 py-1 rounded-full border border-ice-200;
   }
   .section-zone {
     @apply rounded-2xl border-2 shadow-sm overflow-hidden;
@@ -170,28 +171,28 @@ html.df-robot-cursor label[for] {
     @apply bg-amber-500 text-white border-amber-600;
   }
   .section-zone--snapshot {
-    @apply border-sky-300 bg-gradient-to-br from-sky-50 via-white to-cyan-50/70 p-4 sm:p-5;
+    @apply border-ice-300 bg-gradient-to-br from-ice-50 via-white to-ice-100/70 p-4 sm:p-5;
   }
   .section-zone--snapshot .section-zone-tag {
-    @apply bg-sky-600 text-white border-sky-700;
+    @apply bg-ink text-white border-ink-soft;
   }
   .section-zone--missions {
-    @apply border-teal-300 bg-gradient-to-br from-teal-50 via-white to-cyan-50/60 p-4 sm:p-5;
+    @apply border-ice-300 bg-gradient-to-br from-ice-50 via-white to-ice-100/60 p-4 sm:p-5;
   }
   .section-zone--missions .section-zone-tag {
-    @apply bg-teal-600 text-white border-teal-700;
+    @apply bg-ink text-white border-ink-soft;
   }
   .section-zone--chat {
-    @apply border-blue-300 bg-gradient-to-br from-blue-50/80 via-white to-sky-50;
+    @apply border-ice-300 bg-gradient-to-br from-ice-50/80 via-white to-ice-100;
   }
   .section-zone--chat .section-zone-tag {
-    @apply bg-blue-600 text-white border-blue-700;
+    @apply bg-ink-soft text-white border-ink-muted;
   }
   .section-zone--dividends {
-    @apply border-teal-400 bg-gradient-to-br from-teal-50 to-white;
+    @apply border-ice-400 bg-gradient-to-br from-ice-50 to-white;
   }
   .section-zone--dividends .section-zone-tag {
-    @apply bg-teal-700 text-white border-teal-800;
+    @apply bg-ink text-white border-ink-soft;
   }
   .section-zone--yields {
     @apply border-emerald-400 bg-gradient-to-br from-emerald-50 to-white;
@@ -212,7 +213,7 @@ html.df-robot-cursor label[for] {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f5f2ed;
+  background: #e8f0f6;
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;

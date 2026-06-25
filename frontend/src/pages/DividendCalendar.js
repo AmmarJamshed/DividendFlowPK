@@ -101,7 +101,7 @@ export default function DividendCalendar() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-ice-200 border-t-ice-500 rounded-full animate-spin" />
           <p className="text-slate-500">Loading {exchangeConfig.name} dividend calendar…</p>
         </div>
       </div>
@@ -129,8 +129,8 @@ export default function DividendCalendar() {
         }
       />
 
-      <details className="card p-4 sm:p-5 border-teal-200/80 bg-teal-50/40">
-        <summary className="cursor-pointer font-semibold text-teal-800 text-sm">
+      <details className="card p-4 sm:p-5 border-ice-200/80 bg-ice-50/40">
+        <summary className="cursor-pointer font-semibold text-ink text-sm">
           New here? Quick glossary (tap to expand)
         </summary>
         <ul className="mt-3 space-y-2 text-sm text-slate-600 list-disc pl-5">
@@ -152,7 +152,7 @@ export default function DividendCalendar() {
           </li>
           <li>
             Always confirm on{' '}
-            <a href="https://dps.psx.com.pk/payouts" className="text-teal-700 underline" target="_blank" rel="noopener noreferrer">
+            <a href="https://dps.psx.com.pk/payouts" className="text-ice-700 underline" target="_blank" rel="noopener noreferrer">
               dps.psx.com.pk/payouts
             </a>{' '}
             and your broker before acting.
@@ -175,7 +175,7 @@ export default function DividendCalendar() {
             href="https://dps.psx.com.pk/payouts"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-teal-600 hover:underline"
+            className="text-ice-600 hover:underline"
           >
             dps.psx.com.pk/payouts
           </a>
@@ -189,18 +189,18 @@ export default function DividendCalendar() {
             const count = cov.count || 0;
             const weak = weakByMonth.has(monthNum);
             const strongColor =
-              count >= 20 ? 'bg-emerald-500' : count >= 10 ? 'bg-teal-500' : count >= 5 ? 'bg-violet-500' : 'bg-sky-400';
+              count >= 20 ? 'bg-emerald-500' : count >= 10 ? 'bg-ice-500' : count >= 5 ? 'bg-violet-500' : 'bg-sky-400';
             const selected = selectedMonth === monthNum;
             return (
               <button
                 type="button"
                 key={m}
                 onClick={() => setSelectedMonth(monthNum)}
-                className={`p-4 rounded-2xl text-left transition-all duration-200 hover:scale-[1.03] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 ${
+                className={`p-4 rounded-2xl text-left transition-all duration-200 hover:scale-[1.03] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ice-400 focus-visible:ring-offset-2 ${
                   weak
                     ? 'bg-gradient-to-br from-orange-400 to-amber-500 text-white shadow-lg shadow-orange-300/50'
                     : `${strongColor} text-white shadow-lg`
-                } ${selected ? 'ring-4 ring-teal-300 ring-offset-2 scale-[1.02]' : ''}`}
+                } ${selected ? 'ring-4 ring-ice-300 ring-offset-2 scale-[1.02]' : ''}`}
               >
                 <div className="font-bold text-lg">{m}</div>
                 <div className="font-semibold opacity-95">{count} payout{count !== 1 ? 's' : ''}</div>
@@ -214,7 +214,7 @@ export default function DividendCalendar() {
 
       {selectedMonth && (
         <div className="card overflow-hidden">
-          <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-teal-50/50 to-transparent">
+          <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-ice-50/50 to-transparent">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div>
                 <h3 className="card-header text-lg">{MONTH_LONG[selectedMonth - 1]} — payouts &amp; analysis</h3>
@@ -295,7 +295,7 @@ export default function DividendCalendar() {
                     const isFinal = type === 'Final';
                     const ann = (d.Dividend_announcement || d.dividend_announcement || '').trim();
                     return (
-                      <tr key={`${d.Company || d.company}-${idx}`} className="border-t border-slate-100 hover:bg-teal-50/50 transition-colors">
+                      <tr key={`${d.Company || d.company}-${idx}`} className="border-t border-slate-100 hover:bg-ice-50/50 transition-colors">
                         <td className="p-4 font-medium text-slate-700">{d.Company || d.company}</td>
                         <td className="p-4 text-slate-500">{d.Sector || d.sector}</td>
                         <td className="p-4 text-slate-600 text-sm max-w-[14rem]">
@@ -341,7 +341,7 @@ export default function DividendCalendar() {
                           <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 font-medium">{period}</span>
                         </td>
                         <td className="p-4">
-                          <span className="px-2 py-1 rounded-lg bg-teal-100 text-teal-700 font-medium">
+                          <span className="px-2 py-1 rounded-lg bg-ice-100 text-ice-700 font-medium">
                             {(d.Dividend_yield || d.dividend_yield) || '-'}%
                           </span>
                         </td>

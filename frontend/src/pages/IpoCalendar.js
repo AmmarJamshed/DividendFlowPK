@@ -57,8 +57,8 @@ function RegistrationLinks({ registrationLinks, ipoRegisterUrl }) {
           rel="noopener noreferrer"
           className={
             primary
-              ? 'inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-teal-600 text-white hover:bg-teal-500 transition-colors shadow-md shadow-teal-300/30'
-              : 'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-700 hover:border-teal-300 hover:text-teal-700 bg-white transition-colors'
+              ? 'inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-ink text-white hover:bg-ink-soft transition-colors shadow-md shadow-ink/20'
+              : 'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-700 hover:border-ice-300 hover:text-ice-700 bg-white transition-colors'
           }
         >
           {label}
@@ -103,7 +103,7 @@ function IpoCard({ ipo }) {
             {ipo.parentCompany && (
               <p className="text-sm text-slate-500 mt-1">Subsidiary of {ipo.parentCompany}</p>
             )}
-            {ipo.sector && <p className="text-sm text-teal-700 mt-1">{ipo.sector}</p>}
+            {ipo.sector && <p className="text-sm text-ice-700 mt-1">{ipo.sector}</p>}
           </div>
           <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-bold border ${phaseClass}`}>
             {ipo.phaseLabel}
@@ -146,7 +146,7 @@ function IpoCard({ ipo }) {
                 href={ipo.prospectusUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-semibold text-teal-700 hover:underline"
+                className="text-sm font-semibold text-ice-700 hover:underline"
               >
                 Download prospectus ↗
               </a>
@@ -156,7 +156,7 @@ function IpoCard({ ipo }) {
                 href={ipo.companyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-semibold text-slate-600 hover:text-teal-700 hover:underline"
+                className="text-sm font-semibold text-slate-600 hover:text-ice-700 hover:underline"
               >
                 Company website ↗
               </a>
@@ -166,7 +166,7 @@ function IpoCard({ ipo }) {
       </div>
 
       {showRegister && (
-        <div className="px-5 sm:px-6 py-4 bg-teal-50/60 border-t border-teal-100">
+        <div className="px-5 sm:px-6 py-4 bg-ice-50/60 border-t border-ice-100">
           <p className="text-sm text-slate-700 leading-relaxed">{phaseHelpText(ipo, ipo.exchange)}</p>
           <RegistrationLinks registrationLinks={ipo.registrationLinks} ipoRegisterUrl={ipo.registerUrl} />
         </div>
@@ -200,7 +200,7 @@ export default function IpoCalendar() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <div className="animate-spin w-10 h-10 border-2 border-teal-400 border-t-transparent rounded-full" />
+        <div className="animate-spin w-10 h-10 border-2 border-ice-400 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -223,7 +223,7 @@ export default function IpoCalendar() {
       </div>
 
       {links && (
-        <div className="card p-5 sm:p-6 border-teal-200/80 bg-gradient-to-br from-teal-50/80 to-white">
+        <div className="card p-5 sm:p-6 border-ice-200/80 bg-gradient-to-br from-ice-50/80 to-white">
           <h3 className="text-sm font-bold text-slate-900">How to register for {exchangeConfig.code} IPOs</h3>
           {links.note && (
             <p className="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">{links.note}</p>

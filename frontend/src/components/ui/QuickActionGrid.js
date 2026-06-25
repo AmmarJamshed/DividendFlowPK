@@ -38,12 +38,12 @@ export default function QuickActionGrid({ actions }) {
           to={a.to}
           className="action-card group flex items-start gap-4 p-4 border border-slate-200/90 bg-white/95"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-teal-700 bg-gradient-to-br from-teal-50 to-violet-50 border border-teal-200/80 group-hover:from-teal-100 group-hover:to-violet-100 group-hover:scale-105 transition-all">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-ice-700 bg-gradient-to-br from-ice-50 to-violet-50 border border-ice-200/80 group-hover:from-ice-100 group-hover:to-violet-100 group-hover:scale-105 transition-all">
             {ICONS[a.icon] || ICONS.chart}
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="block text-sm font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
+              <span className="block text-sm font-bold text-slate-900 group-hover:text-ice-700 transition-colors">
                 {a.label}
               </span>
               {a.xp != null && (
@@ -51,7 +51,7 @@ export default function QuickActionGrid({ actions }) {
               )}
             </span>
             {a.hint && <span className="block text-xs text-slate-500 mt-1 leading-snug">{a.hint}</span>}
-            <span className="inline-block mt-2 text-[10px] font-semibold text-teal-600 opacity-80 group-hover:opacity-100">
+            <span className="inline-block mt-2 text-[10px] font-semibold text-ice-600 opacity-80 group-hover:opacity-100">
               Start mission →
             </span>
           </span>

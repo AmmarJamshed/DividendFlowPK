@@ -15,9 +15,9 @@ export default function TermsOfService() {
     >
       <LegalSection title="1. Agreement">
         <p>
-          By accessing <a href="https://dividendflow.pk" className="text-teal-700 hover:underline">dividendflow.pk</a>
+          By accessing <a href="https://dividendflow.pk" className="text-ice-700 hover:underline">dividendflow.pk</a>
           , you agree to these Terms of Service and our{' '}
-          <Link to="/privacy" className="text-teal-700 hover:underline">Privacy Policy</Link>. If you do not agree, do
+          <Link to="/privacy" className="text-ice-700 hover:underline">Privacy Policy</Link>. If you do not agree, do
           not use the site.
         </p>
       </LegalSection>
@@ -106,10 +106,10 @@ export default function TermsOfService() {
 
       <LegalSection title="12. Contact">
         <p>
-          <a href="mailto:contact@dividendflow.pk" className="text-teal-700 hover:underline">
+          <a href="mailto:contact@dividendflow.pk" className="text-ice-700 hover:underline">
             contact@dividendflow.pk
           </a>
-          {' '}· <Link to="/contact" className="text-teal-700 hover:underline">Contact page</Link>
+          {' '}· <Link to="/contact" className="text-ice-700 hover:underline">Contact page</Link>
         </p>
       </LegalSection>
     </LegalPageLayout>

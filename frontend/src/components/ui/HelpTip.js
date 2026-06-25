@@ -7,7 +7,7 @@ export default function HelpTip({ text, className = '' }) {
     <span className={`group/tip relative inline-flex align-middle ${className}`}>
       <button
         type="button"
-        className="w-4 h-4 rounded-full bg-slate-200/90 text-slate-600 text-[10px] font-bold leading-none hover:bg-teal-100 hover:text-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-1"
+        className="w-4 h-4 rounded-full bg-slate-200/90 text-slate-600 text-[10px] font-bold leading-none hover:bg-ice-100 hover:text-ink focus:outline-none focus:ring-2 focus:ring-ice-400 focus:ring-offset-1"
         aria-label={text}
       >
         ?

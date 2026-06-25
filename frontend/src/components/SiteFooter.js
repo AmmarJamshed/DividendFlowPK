@@ -17,11 +17,11 @@ export default function SiteFooter() {
         aria-label="Legal and site information"
       >
         {legalLinks.map(({ to, label }) => (
-          <Link key={to} to={to} className="hover:text-teal-700 hover:underline">
+          <Link key={to} to={to} className="hover:text-ice-700 hover:underline">
             {label}
           </Link>
         ))}
-        <Link to="/contact" className="text-teal-700 hover:underline">
+        <Link to="/contact" className="text-ice-700 hover:underline">
           {OFFICIAL_CONTACT_EMAIL}
         </Link>
       </nav>

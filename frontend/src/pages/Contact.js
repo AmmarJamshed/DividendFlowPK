@@ -42,7 +42,7 @@ export default function Contact() {
       <LegalSection title="Official channel">
         <p>
           <strong>Email:</strong>{' '}
-          <span className="text-teal-700 font-semibold">{OFFICIAL_CONTACT_EMAIL}</span>
+          <span className="text-ice-700 font-semibold">{OFFICIAL_CONTACT_EMAIL}</span>
         </p>
         <p className="text-slate-500 text-xs mt-2">
           Use the form below — messages are delivered to our team from the official DividendFlow contact
@@ -68,7 +68,7 @@ export default function Contact() {
                   maxLength={120}
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300"
+                  className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-ice-400/50 focus:border-ice-300"
                 />
               </label>
               <label className="block text-sm">
@@ -79,7 +79,7 @@ export default function Contact() {
                   maxLength={200}
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300"
+                  className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-ice-400/50 focus:border-ice-300"
                 />
               </label>
             </div>
@@ -91,7 +91,7 @@ export default function Contact() {
                 value={form.subject}
                 onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                 placeholder="Data correction, privacy request, partnership…"
-                className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300"
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-ice-400/50 focus:border-ice-300"
               />
             </label>
             <label className="block text-sm">
@@ -102,7 +102,7 @@ export default function Contact() {
                 maxLength={4000}
                 value={form.message}
                 onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-400/50 focus:border-teal-300 resize-y"
+                className="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-ice-400/50 focus:border-ice-300 resize-y"
               />
             </label>
             <input
@@ -119,7 +119,7 @@ export default function Contact() {
             <button
               type="submit"
               disabled={status === 'sending'}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-60 border border-teal-600"
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-ink hover:bg-ink disabled:opacity-60 border border-ink"
             >
               {status === 'sending' ? 'Sending…' : `Send via ${OFFICIAL_CONTACT_EMAIL}`}
             </button>
@@ -142,7 +142,7 @@ export default function Contact() {
           urgent trading decisions, contact your broker or the relevant exchange.
         </p>
         <p>
-          Privacy questions: <Link to="/privacy" className="text-teal-700 hover:underline">Privacy Policy</Link>
+          Privacy questions: <Link to="/privacy" className="text-ice-700 hover:underline">Privacy Policy</Link>
         </p>
       </LegalSection>
     </LegalPageLayout>

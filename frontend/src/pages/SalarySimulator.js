@@ -105,7 +105,7 @@ export default function SalarySimulator() {
               type="checkbox"
               checked={shariahOnly}
               onChange={(e) => setShariahOnly(e.target.checked)}
-              className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+              className="rounded border-slate-300 text-ice-600 focus:ring-ice-500"
             />
             <span>Prefer PSX Shariah disclosure list only (for AI picks)</span>
             <HelpTip text="When on, AI stock ideas are limited to symbols on the PSX Shariah-compliant list (PSX/N-1419). Does not change the math above." />
@@ -117,15 +117,15 @@ export default function SalarySimulator() {
       </div>
 
       {result && !result.error && (
-        <div className="card p-4 sm:p-6 lg:p-8 max-w-3xl border-teal-500/30">
+        <div className="card p-4 sm:p-6 lg:p-8 max-w-3xl border-ice-500/30">
           <h3 className="card-header text-lg mb-4">Results</h3>
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-teal-50 border border-teal-200">
+            <div className="p-4 rounded-xl bg-ice-50 border border-ice-200">
               <p className="text-sm text-slate-500 inline-flex items-center gap-1">
                 Required Portfolio Value
                 <HelpTip text="Portfolio size ≈ (monthly income × 12) ÷ yield%. Example: Rs 100k/month at 6% yield needs about Rs 20 million invested." />
               </p>
-              <p className="text-2xl font-bold text-teal-700">Rs {formatRs(result.requiredPortfolioValue)}</p>
+              <p className="text-2xl font-bold text-ice-700">Rs {formatRs(result.requiredPortfolioValue)}</p>
             </div>
             <div className="flex justify-between text-slate-600">
               <span className="inline-flex items-center gap-1">
@@ -150,7 +150,7 @@ export default function SalarySimulator() {
       )}
 
       {(aiLoading || aiAdvice) && (
-        <div className="card p-4 sm:p-6 lg:p-8 max-w-3xl border-2 border-cyan-200/80">
+        <div className="card p-4 sm:p-6 lg:p-8 max-w-3xl border-2 border-ice-200/80">
           <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div>
               <h3 className="card-header text-lg flex items-center gap-2">
@@ -166,7 +166,7 @@ export default function SalarySimulator() {
               <button
                 type="button"
                 onClick={refreshAi}
-                className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-teal-200 text-teal-700 hover:bg-teal-50"
+                className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-ice-200 text-ice-700 hover:bg-ice-50"
               >
                 Refresh AI
               </button>
@@ -175,7 +175,7 @@ export default function SalarySimulator() {
 
           {aiLoading && (
             <div className="flex items-center gap-3 py-8 text-slate-500">
-              <div className="w-8 h-8 border-2 border-teal-300 border-t-teal-600 rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-ice-300 border-t-ink rounded-full animate-spin" />
               <span>Analyzing today&apos;s news and top dividend names…</span>
             </div>
           )}
@@ -230,7 +230,7 @@ export default function SalarySimulator() {
                       {aiAdvice.holdings.map((h) => (
                         <tr key={h.symbol} className="border-t border-slate-100">
                           <td className="px-4 py-3 font-semibold text-slate-800">{h.symbol}</td>
-                          <td className="px-4 py-3 text-right tabular-nums text-teal-700 font-medium">
+                          <td className="px-4 py-3 text-right tabular-nums text-ice-700 font-medium">
                             {h.weightPercent}%
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-slate-600">

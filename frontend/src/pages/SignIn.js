@@ -89,7 +89,7 @@ export default function SignIn() {
             autoComplete="email"
             required
             disabled={!authConfigured || busy}
-            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-200"
+            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-ice-400 focus:outline-none focus:ring-2 focus:ring-ice-200"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -104,7 +104,7 @@ export default function SignIn() {
             autoComplete="current-password"
             required
             disabled={!authConfigured || busy}
-            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-200"
+            className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm focus:border-ice-400 focus:outline-none focus:ring-2 focus:ring-ice-200"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -114,7 +114,7 @@ export default function SignIn() {
         <button
           type="submit"
           disabled={!authConfigured || busy}
-          className="w-full rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-3 text-sm font-bold text-white shadow-md hover:from-teal-700 hover:to-cyan-700 disabled:opacity-60"
+          className="w-full rounded-xl bg-gradient-to-r from-ink to-ink-soft px-4 py-3 text-sm font-bold text-white shadow-md hover:from-ink-soft hover:to-ink-muted disabled:opacity-60"
         >
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
@@ -132,7 +132,7 @@ export default function SignIn() {
         New here?{' '}
         <Link
           to={`/sign-up?next=${encodeURIComponent(nextPath)}`}
-          className="font-semibold text-teal-700 hover:underline"
+          className="font-semibold text-ice-700 hover:underline"
         >
           Create a free account
         </Link>

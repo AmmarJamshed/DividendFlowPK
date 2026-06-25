@@ -1,7 +1,7 @@
 import { GENDER_OPTIONS } from '../../utils/profileFields';
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-200';
+  'w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-ice-400 focus:outline-none focus:ring-2 focus:ring-ice-200';
 
 const labelClass = 'block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5';
 

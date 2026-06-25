@@ -225,10 +225,10 @@ export default function AmmarCursorGuide() {
           alt=""
           width={56}
           height={56}
-          className="ammar-avatar rounded-full border-2 border-teal-500 object-cover shadow-lg shadow-teal-400/30 ring-2 ring-white bg-slate-100"
+          className="ammar-avatar rounded-full border-2 border-ice-500 object-cover shadow-lg shadow-ice-400/30 ring-2 ring-white bg-slate-100"
           aria-hidden="true"
         />
-        <span className="text-[10px] font-bold text-teal-700 bg-white/95 px-2 py-0.5 rounded-lg border border-teal-200/80 shadow-sm whitespace-nowrap -mt-1">
+        <span className="text-[10px] font-bold text-ice-700 bg-white/95 px-2 py-0.5 rounded-lg border border-ice-200/80 shadow-sm whitespace-nowrap -mt-1">
           Ammar
         </span>
       </div>
@@ -237,8 +237,8 @@ export default function AmmarCursorGuide() {
         className="fixed z-[9999] pointer-events-none w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl bg-white/97 backdrop-blur-md border border-slate-200/90 shadow-xl shadow-slate-400/20 overflow-hidden"
         style={{ left, top }}
       >
-        <div className="border-l-4 border-teal-500 bg-gradient-to-br from-teal-50/80 to-white px-4 py-3.5">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-teal-800">Ammar</p>
+        <div className="border-l-4 border-ice-500 bg-gradient-to-br from-ice-50/80 to-white px-4 py-3.5">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-ink">Ammar</p>
           <p className="text-xs text-slate-500 mb-2.5">Your guide on DividendFlow PK</p>
           <GuideMessageBody
             loading={loading}

@@ -64,7 +64,7 @@ function CompleteProfileForm() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-3 text-sm font-bold text-white shadow-md hover:from-teal-700 hover:to-cyan-700 disabled:opacity-60"
+          className="w-full rounded-xl bg-gradient-to-r from-ink to-ink-soft px-4 py-3 text-sm font-bold text-white shadow-md hover:from-ink-soft hover:to-ink-muted disabled:opacity-60"
         >
           {busy ? 'Saving…' : 'Save and continue'}
         </button>

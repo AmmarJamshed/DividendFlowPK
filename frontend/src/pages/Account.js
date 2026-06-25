@@ -28,7 +28,7 @@ function AccountContent() {
       )}
 
       {!profileComplete && (
-        <div className="mb-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900">
+        <div className="mb-4 rounded-xl border border-ice-200 bg-ice-50 px-4 py-3 text-sm text-ink">
           Your profile is incomplete.{' '}
           <Link to="/complete-profile?next=%2Faccount" className="font-semibold underline">
             Complete it now
@@ -63,7 +63,7 @@ function AccountContent() {
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           to="/complete-profile?next=%2Faccount"
-          className="inline-flex items-center justify-center rounded-xl border border-teal-300 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-800 hover:bg-teal-100"
+          className="inline-flex items-center justify-center rounded-xl border border-ice-300 bg-ice-50 px-4 py-2.5 text-sm font-semibold text-ink hover:bg-ice-100"
         >
           Edit profile
         </Link>

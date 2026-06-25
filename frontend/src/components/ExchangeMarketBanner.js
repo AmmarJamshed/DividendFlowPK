@@ -2,7 +2,7 @@ import { useExchange } from '../context/ExchangeContext';
 import ExchangeSelector from './ExchangeSelector';
 
 const EXCHANGE_ACCENTS = {
-  PSX: 'from-emerald-500 to-teal-600',
+  PSX: 'from-emerald-500 to-ice-600',
   NYSE: 'from-blue-600 to-indigo-600',
   NASDAQ: 'from-violet-600 to-purple-600',
   HKEX: 'from-rose-500 to-orange-500',
@@ -14,7 +14,7 @@ const EXCHANGE_ACCENTS = {
 
 export default function ExchangeMarketBanner() {
   const { exchange, exchangeConfig } = useExchange();
-  const gradient = EXCHANGE_ACCENTS[exchange] || 'from-teal-500 to-cyan-600';
+  const gradient = EXCHANGE_ACCENTS[exchange] || 'from-ink to-ink-soft';
 
   return (
     <div
@@ -35,7 +35,7 @@ export default function ExchangeMarketBanner() {
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-slate-100 text-sm font-bold text-slate-700 border border-slate-200">
               {exchange}
             </span>
-            <span className="text-sm font-semibold text-teal-700">{exchangeConfig.currency}</span>
+            <span className="text-sm font-semibold text-ice-700">{exchangeConfig.currency}</span>
           </div>
           <p className="mt-2 text-sm text-slate-600 max-w-xl">
             Overview, market data, dividends, and Market Buddy all reflect{' '}

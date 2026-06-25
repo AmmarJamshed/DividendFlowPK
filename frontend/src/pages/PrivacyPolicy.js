@@ -16,7 +16,7 @@ export default function PrivacyPolicy() {
       <LegalSection title="1. Who we are">
         <p>
           DividendFlow PK (&quot;we&quot;, &quot;us&quot;) operates{' '}
-          <a href="https://dividendflow.pk" className="text-teal-700 hover:underline">dividendflow.pk</a>
+          <a href="https://dividendflow.pk" className="text-ice-700 hover:underline">dividendflow.pk</a>
           , a research and education platform for dividend and market data (primarily Pakistan Stock Exchange and
           selected global exchanges). We are not a broker, bank, or licensed investment adviser.
         </p>
@@ -29,7 +29,7 @@ export default function PrivacyPolicy() {
           referral source. Google may set cookies or similar technologies. See{' '}
           <a
             href="https://policies.google.com/privacy"
-            className="text-teal-700 hover:underline"
+            className="text-ice-700 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -67,7 +67,7 @@ export default function PrivacyPolicy() {
             partners may use cookies to serve and measure ads. We will update this policy before enabling ads. See{' '}
             <a
               href="https://policies.google.com/technologies/ads"
-              className="text-teal-700 hover:underline"
+              className="text-ice-700 hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -80,7 +80,7 @@ export default function PrivacyPolicy() {
           You can control cookies through our site banner, your browser settings, or{' '}
           <a
             href="https://tools.google.com/dlpage/gaoptout"
-            className="text-teal-700 hover:underline"
+            className="text-ice-700 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -117,7 +117,7 @@ export default function PrivacyPolicy() {
           Analytics data is retained according to Google Analytics settings. Server logs are kept for a limited period
           for security. Market data in our database is retained to power historical charts and calendars. You may request
           deletion of correspondence sent to us at{' '}
-          <a href="mailto:contact@dividendflow.pk" className="text-teal-700 hover:underline">
+          <a href="mailto:contact@dividendflow.pk" className="text-ice-700 hover:underline">
             contact@dividendflow.pk
           </a>
           .
@@ -128,7 +128,7 @@ export default function PrivacyPolicy() {
         <p>
           Depending on your location, you may have rights to access, correct, or delete personal data we hold about you,
           or to object to certain processing. Contact us at{' '}
-          <a href="mailto:contact@dividendflow.pk" className="text-teal-700 hover:underline">
+          <a href="mailto:contact@dividendflow.pk" className="text-ice-700 hover:underline">
             contact@dividendflow.pk
           </a>
           . We will respond within a reasonable time.
@@ -153,10 +153,10 @@ export default function PrivacyPolicy() {
       <LegalSection title="10. Contact">
         <p>
           Privacy questions:{' '}
-          <a href="mailto:contact@dividendflow.pk" className="text-teal-700 hover:underline">
+          <a href="mailto:contact@dividendflow.pk" className="text-ice-700 hover:underline">
             contact@dividendflow.pk
           </a>
-          {' '}· <Link to="/contact" className="text-teal-700 hover:underline">Contact page</Link>
+          {' '}· <Link to="/contact" className="text-ice-700 hover:underline">Contact page</Link>
         </p>
       </LegalSection>
     </LegalPageLayout>

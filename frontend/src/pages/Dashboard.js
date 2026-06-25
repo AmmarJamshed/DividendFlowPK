@@ -253,7 +253,7 @@ export default function Dashboard() {
       label: 'Dividend-paying companies',
       data: heatmapData.map(d => d.count),
       backgroundColor: 'rgba(13, 148, 136, 0.75)',
-      borderColor: '#0d9488',
+      borderColor: '#0a0e14',
       borderWidth: 0,
       borderRadius: 8,
     }]
@@ -263,7 +263,7 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-teal-200 border-t-teal-500 rounded-full animate-spin" />
+          <div className="w-10 h-10 border-2 border-ice-200 border-t-ice-500 rounded-full animate-spin" />
           <p className="text-slate-500 text-sm">Loading {exchangeConfig.name} data…</p>
         </div>
       </div>
@@ -311,7 +311,7 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="level-pill">{missionLevel}</span>
-            <span className="badge-pill bg-teal-50 text-teal-800 border-teal-200">
+            <span className="badge-pill bg-ice-50 text-ink border-ice-200">
               {missionProgress.done}/{missionProgress.total} complete
             </span>
           </div>
@@ -342,7 +342,7 @@ export default function Dashboard() {
                 ? `How many different ${exchangeConfig.code} symbols have dividend data${dashboardStats.dividendPreview ? ' (preview from market leaders until quarterly sync)' : ''}.`
                 : `How many ${exchangeConfig.code} symbols have a saved close in our database.`
             }
-            accent="teal"
+            accent="brand"
           />
           <MetricCard
             label="Peak payout month"
@@ -410,7 +410,7 @@ export default function Dashboard() {
                   {exchangeConfig.code} dividend profiles sync quarterly. Track {dashboardStats.symbolsTracked || 'market'}{' '}
                   symbols on the closing prices page meanwhile.
                 </p>
-                <Link to="/dividend-calendar" className="text-xs text-teal-700 font-semibold mt-3 hover:underline">
+                <Link to="/dividend-calendar" className="text-xs text-ice-700 font-semibold mt-3 hover:underline">
                   Open dividend calendar →
                 </Link>
               </div>
@@ -435,7 +435,7 @@ export default function Dashboard() {
               <>
                 {' '}
                 Amounts follow PSX company notices — confirm on{' '}
-                <a href="https://dps.psx.com.pk/payouts" className="text-teal-700 underline" target="_blank" rel="noopener noreferrer">
+                <a href="https://dps.psx.com.pk/payouts" className="text-ice-700 underline" target="_blank" rel="noopener noreferrer">
                   dps.psx.com.pk
                 </a>
                 .
@@ -463,7 +463,7 @@ export default function Dashboard() {
                 <li key={i} className="py-3 border-b border-slate-200 last:border-0">
                   <div className="flex justify-between items-start gap-3">
                     <div className="min-w-0">
-                      <Link to={stockPath(exchange, symbol)} className="font-semibold text-teal-700 hover:underline">
+                      <Link to={stockPath(exchange, symbol)} className="font-semibold text-ice-700 hover:underline">
                         {symbol}
                       </Link>
                       {dps ? (
@@ -480,7 +480,7 @@ export default function Dashboard() {
                         </p>
                       ) : null}
                     </div>
-                    <span className="shrink-0 px-2 py-0.5 bg-teal-50 text-teal-800 font-semibold tabular-nums text-sm rounded-md">
+                    <span className="shrink-0 px-2 py-0.5 bg-ice-50 text-ink font-semibold tabular-nums text-sm rounded-md">
                       {(d.Dividend_yield || d.dividend_yield || 0)}%
                     </span>
                   </div>
@@ -611,7 +611,7 @@ export default function Dashboard() {
                       href={alertDetailOpen.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-teal-700 font-semibold hover:underline break-all"
+                      className="text-ice-700 font-semibold hover:underline break-all"
                     >
                       {alertDetailOpen.source}
                     </a>
@@ -626,7 +626,7 @@ export default function Dashboard() {
                 </div>
               </section>
               <section className="rounded-xl bg-slate-50 border border-slate-100 p-4">
-                <h5 className="text-[11px] font-bold uppercase tracking-wide text-teal-800 mb-2">What the AI analyzed</h5>
+                <h5 className="text-[11px] font-bold uppercase tracking-wide text-ink mb-2">What the AI analyzed</h5>
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{alertDetailOpen.message}</p>
                 {alertDetailOpen.kind === 'macro_link' && (
                   <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-200">
