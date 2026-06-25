@@ -13,7 +13,7 @@ export default function About() {
       <LegalSection title="Our mission">
         <p>
           DividendFlow PK helps investors and learners understand <strong>dividend income patterns</strong>, session
-          price moves, and reporting cycles on the Pakistan Stock Exchange (PSX) and selected global markets. We focus on
+          price moves, and reporting cycles on the Pakistan Stock Exchange (PSX). We focus on
           calendars, data tables, and educational calculators — not buy/sell calls.
         </p>
       </LegalSection>
@@ -46,8 +46,7 @@ export default function About() {
       <LegalSection title="Data sources">
         <p>
           PSX closing prices and dividend schedules are collected from automated workflows aligned with exchange
-          sessions. Global exchange data (NYSE, NASDAQ, HKEX, LSE, and others) is supplemented from cloud databases and
-          licensed aggregators where available. News headlines may come from public RSS feeds and financial news APIs.
+          sessions. News headlines may come from public RSS feeds and financial news APIs.
           All figures should be confirmed with official exchange and company disclosures.
         </p>
       </LegalSection>

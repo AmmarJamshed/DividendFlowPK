@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, Navigate } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -23,33 +23,40 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip,
 export default function StockPage() {
   const { exchange, symbol } = useParams();
   const { setExchange } = useExchange();
+  const exCode = String(exchange || 'PSX').toUpperCase();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [watchlisted, setWatchlisted] = useState(false);
-  const exCfg = getExchange(exchange);
+  const exCfg = getExchange('PSX');
 
   useEffect(() => {
-    if (exchange) setExchange(exchange);
-  }, [exchange, setExchange]);
+    setExchange('PSX');
+  }, [setExchange]);
 
   useEffect(() => {
+    if (exCode !== 'PSX') return;
     setLoading(true);
     api
-      .getStock(exchange, symbol)
+      .getStock('PSX', symbol)
       .then((res) => setData(res.data))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
-  }, [exchange, symbol]);
+  }, [exCode, symbol]);
 
   useEffect(() => {
+    if (exCode !== 'PSX') return;
     api
       .getWatchlist(getWatchlistSessionId())
       .then((res) => {
         const items = res.data.items || [];
-        setWatchlisted(items.some((i) => i.exchange_code === exchange?.toUpperCase() && i.symbol === symbol?.toUpperCase()));
+        setWatchlisted(items.some((i) => i.exchange_code === 'PSX' && i.symbol === symbol?.toUpperCase()));
       })
       .catch(() => {});
-  }, [exchange, symbol]);
+  }, [exCode, symbol]);
+
+  if (exCode !== 'PSX') {
+    return <Navigate to={`/stock/PSX/${String(symbol || '').toUpperCase()}`} replace />;
+  }
 
   async function toggleWatchlist() {
     const sid = getWatchlistSessionId();

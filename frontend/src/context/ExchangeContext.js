@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import { createContext, useContext, useMemo, useCallback, useEffect } from 'react';
 import { DEFAULT_EXCHANGE, getExchange } from '../config/exchanges';
 
 const STORAGE_KEY = 'dividendflow_exchange';
@@ -6,31 +6,25 @@ const STORAGE_KEY = 'dividendflow_exchange';
 const ExchangeContext = createContext(null);
 
 export function ExchangeProvider({ children }) {
-  const [exchange, setExchangeState] = useState(() => {
+  useEffect(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) || DEFAULT_EXCHANGE;
-    } catch {
-      return DEFAULT_EXCHANGE;
-    }
-  });
-
-  const setExchange = useCallback((code) => {
-    const c = String(code || DEFAULT_EXCHANGE).toUpperCase();
-    setExchangeState(c);
-    try {
-      localStorage.setItem(STORAGE_KEY, c);
+      localStorage.setItem(STORAGE_KEY, DEFAULT_EXCHANGE);
     } catch {
       /* ignore */
     }
   }, []);
 
+  const setExchange = useCallback(() => {
+    /* PSX-only mode — exchange switching disabled */
+  }, []);
+
   const value = useMemo(
     () => ({
-      exchange,
-      exchangeConfig: getExchange(exchange),
+      exchange: DEFAULT_EXCHANGE,
+      exchangeConfig: getExchange(DEFAULT_EXCHANGE),
       setExchange,
     }),
-    [exchange, setExchange]
+    [setExchange]
   );
 
   return <ExchangeContext.Provider value={value}>{children}</ExchangeContext.Provider>;

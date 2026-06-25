@@ -30,6 +30,17 @@ function normalizeExchangeCode(code) {
   return found ? found.code : DEFAULT_EXCHANGE;
 }
 
+function assertExchangeSupported(code) {
+  const normalized = String(code || '').toUpperCase();
+  const found = loadConfig().find((e) => e.code === normalized);
+  if (!found) {
+    const err = new Error(`Exchange not supported: ${code}`);
+    err.status = 404;
+    throw err;
+  }
+  return found.code;
+}
+
 async function getExchangeId(code) {
   const normalized = normalizeExchangeCode(code);
   if (exchangeIdCache.has(normalized)) return exchangeIdCache.get(normalized);
@@ -79,6 +90,7 @@ module.exports = {
   listExchanges,
   getExchangeConfig,
   normalizeExchangeCode,
+  assertExchangeSupported,
   normalizeListingSymbol,
   resolveCompanyName,
   getExchangeId,

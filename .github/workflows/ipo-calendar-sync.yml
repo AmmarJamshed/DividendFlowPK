@@ -1,42 +1,13 @@
+# DISABLED — PSX-only product focus. PSX IPO data is curated in data/ipos/psx_ipos.json.
+
 name: IPO Calendar Sync
 
 on:
-  schedule:
-    # Weekly — Monday 06:00 UTC (11:00 PKT)
-    - cron: "0 6 * * 1"
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   sync:
+    if: false
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: scripts/package-lock.json
-
-      - name: Install script dependencies
-        working-directory: scripts
-        run: npm install
-
-      - name: Sync IPO calendars and prune expired
-        run: node scripts/sync-ipos.mjs
-
-      - name: Commit updated IPO data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ipos/
-          if git diff --staged --quiet; then
-            echo "No IPO data changes to commit."
-          else
-            git commit -m "chore: sync IPO calendar and remove expired listings"
-            git push
-          fi
+      - run: echo "Disabled — PSX-only mode"

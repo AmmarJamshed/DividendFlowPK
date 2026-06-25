@@ -10,12 +10,12 @@ router.get('/supported', (_req, res) => {
 
 router.get('/:exchange', (req, res) => {
   try {
-    const code = exchangeService.normalizeExchangeCode(req.params.exchange);
+    const code = exchangeService.assertExchangeSupported(req.params.exchange);
     const includeClosed = String(req.query.includeClosed || '').toLowerCase() === 'true';
     const payload = ipoService.getIposForExchange(code, { includeClosed });
     res.json(payload);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 

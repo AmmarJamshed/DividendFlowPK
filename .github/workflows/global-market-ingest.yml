@@ -1,35 +1,13 @@
-# Legacy manual ingest for TADAWUL / TSE / SSE (curated lists).
-# NYSE, NASDAQ, HKEX, LSE → use global-ingest-*.yml (full universe + market-close crons).
+# DISABLED — PSX-only product focus. Re-enable when global markets return.
 
 name: Global Market Ingest (Asia-GCC manual)
 
 on:
   workflow_dispatch:
-    inputs:
-      exchanges:
-        description: "TADAWUL,TSE,SSE or any single exchange"
-        default: "TADAWUL,TSE,SSE"
-  schedule:
-    - cron: "30 12 * * 0-4"
 
 jobs:
   ingest:
+    if: false
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r ingestion/requirements.txt
-      - env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            EXCHANGES="TADAWUL,TSE,SSE"
-          else
-            EXCHANGES="${{ github.event.inputs.exchanges }}"
-          fi
-          IFS=',' read -ra ARR <<< "$EXCHANGES"
-          python ingestion/jobs/daily_close.py "${ARR[@]}"
+      - run: echo "Disabled — PSX-only mode"

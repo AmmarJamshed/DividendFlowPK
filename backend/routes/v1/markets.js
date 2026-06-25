@@ -45,7 +45,7 @@ router.post('/:exchange/ingest/trigger', async (req, res) => {
 
 router.get('/:exchange/closing-prices', async (req, res) => {
   try {
-    const code = exchangeService.normalizeExchangeCode(req.params.exchange);
+    const code = exchangeService.assertExchangeSupported(req.params.exchange);
     const payload = await globalDataStore.getClosingPrices(code);
     const rows = (payload.rows || []).filter((r) => r.close != null && r.close > 0);
     const gainers = rows
@@ -65,13 +65,13 @@ router.get('/:exchange/closing-prices', async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
 router.get('/:exchange/dividends', async (req, res) => {
   try {
-    const code = exchangeService.normalizeExchangeCode(req.params.exchange);
+    const code = exchangeService.assertExchangeSupported(req.params.exchange);
     const filters = {
       month: req.query.month,
       sector: req.query.sector,
@@ -83,17 +83,17 @@ router.get('/:exchange/dividends', async (req, res) => {
     const preview = Array.isArray(result) ? false : Boolean(result.preview);
     res.json({ exchange: code, rows, summary, preview });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 
 router.get('/:exchange/daily-news', async (req, res) => {
   try {
-    const code = exchangeService.normalizeExchangeCode(req.params.exchange);
+    const code = exchangeService.assertExchangeSupported(req.params.exchange);
     const payload = await exchangeNews.getDailyNewsForExchange(code);
     res.json(payload);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 

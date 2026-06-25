@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get('/:exchange/:symbol', async (req, res) => {
   try {
-    const code = exchangeService.normalizeExchangeCode(req.params.exchange);
+    const code = exchangeService.assertExchangeSupported(req.params.exchange);
     const symbol = String(req.params.symbol || '').toUpperCase();
     const detail = await globalDataStore.getStockDetail(code, symbol);
     if (!detail) {
@@ -14,7 +14,7 @@ router.get('/:exchange/:symbol', async (req, res) => {
     }
     res.json(detail);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(err.status || 500).json({ error: err.message });
   }
 });
 

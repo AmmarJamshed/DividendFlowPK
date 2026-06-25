@@ -7,9 +7,7 @@ import AmmarCursorGuide from './AmmarCursorGuide';
 import { useAIAssistance } from '../context/AIAssistanceContext';
 import { useMarketBuddy } from '../context/MarketBuddyContext';
 import { useExchange } from '../context/ExchangeContext';
-import ExchangeSelector from './ExchangeSelector';
 import GlobalSearch from './GlobalSearch';
-import ExchangeMarketBanner from './ExchangeMarketBanner';
 import SiteFooter from './SiteFooter';
 import CookieConsent from './CookieConsent';
 
@@ -255,7 +253,6 @@ export default function Layout({ children }) {
             </div>
             <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto flex-wrap justify-end">
               <GlobalSearch />
-              <ExchangeSelector compact />
               <button
                 type="button"
                 onClick={toggleBuddy}
@@ -319,10 +316,6 @@ export default function Layout({ children }) {
 
           <div data-app-scroll-root className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
             <div className="max-w-6xl mx-auto">
-              {!location.pathname.startsWith('/stock/') &&
-                !['/privacy', '/terms', '/about', '/contact'].includes(location.pathname) && (
-                <ExchangeMarketBanner />
-              )}
               {children}
               <SiteFooter />
             </div>

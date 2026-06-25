@@ -156,7 +156,7 @@ function sortIpos(rows) {
 }
 
 function getIposForExchange(exchangeCode, options = {}) {
-  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+  const code = exchangeService.assertExchangeSupported(exchangeCode);
   const asOf = options.asOf || todayIso();
   const includeClosed = Boolean(options.includeClosed);
   const rows = loadExchangeIpos(code)

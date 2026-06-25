@@ -57,7 +57,7 @@ export default function GlobalSearch() {
         onFocus={() => setOpen(true)}
         placeholder="Search ticker…"
         className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400/60"
-        aria-label="Search stocks globally"
+        aria-label="Search PSX stocks"
       />
       {open && q.trim() && (
         <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm">
@@ -76,7 +76,6 @@ export default function GlobalSearch() {
                   <strong>{r.symbol}</strong>
                   <span className="text-slate-500 ml-1 truncate">{r.name}</span>
                 </span>
-                <span className="text-[10px] text-teal-600 font-semibold shrink-0">{r.exchange}</span>
               </button>
             </li>
           ))}

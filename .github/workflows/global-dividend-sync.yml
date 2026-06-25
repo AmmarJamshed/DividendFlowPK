@@ -1,127 +1,13 @@
-# Quarterly global dividend sync (yfinance) → dividend_events + dividend_profiles
-# Calendar quarters: Jan 1, Apr 1, Jul 1, Oct 1 @ 08:00 UTC (13:00 PKT)
-# Dividend frequency is detected per company (quarterly / semi-annual / annual / monthly)
+# DISABLED — PSX-only product focus. Re-enable when global markets return.
 
 name: Global Dividend Sync
 
 on:
   workflow_dispatch:
-    inputs:
-      exchanges:
-        description: "NYSE,NASDAQ,HKEX,LSE or PSX"
-        default: "NYSE,NASDAQ,HKEX,LSE"
-      shard_count:
-        description: Shards per exchange
-        default: "8"
-  schedule:
-    - cron: "0 8 1 1,4,7,10 *"
 
 jobs:
-  nyse:
+  disabled:
+    if: false
     runs-on: ubuntu-latest
-    timeout-minutes: 360
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r ingestion/requirements.txt
-      - name: Sync NYSE dividends
-        if: contains(github.event.inputs.exchanges || 'NYSE,NASDAQ,HKEX,LSE', 'NYSE') || github.event_name == 'schedule'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SHARD: ${{ matrix.shard }}
-          SHARD_COUNT: ${{ github.event.inputs.shard_count || '8' }}
-          EXCHANGES: NYSE
-        run: python ingestion/jobs/dividend_sync.py
-
-  nasdaq:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r ingestion/requirements.txt
-      - name: Sync NASDAQ dividends
-        if: contains(github.event.inputs.exchanges || 'NYSE,NASDAQ,HKEX,LSE', 'NASDAQ') || github.event_name == 'schedule'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SHARD: ${{ matrix.shard }}
-          SHARD_COUNT: "10"
-          EXCHANGES: NASDAQ
-        run: python ingestion/jobs/dividend_sync.py
-
-  hkex:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3, 4, 5]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r ingestion/requirements.txt
-      - name: Sync HKEX dividends
-        if: contains(github.event.inputs.exchanges || 'NYSE,NASDAQ,HKEX,LSE', 'HKEX') || github.event_name == 'schedule'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SHARD: ${{ matrix.shard }}
-          SHARD_COUNT: "6"
-          EXCHANGES: HKEX
-        run: python ingestion/jobs/dividend_sync.py
-
-  lse:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3, 4, 5]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r ingestion/requirements.txt
-      - name: Sync LSE dividends
-        if: contains(github.event.inputs.exchanges || 'NYSE,NASDAQ,HKEX,LSE', 'LSE') || github.event_name == 'schedule'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SHARD: ${{ matrix.shard }}
-          SHARD_COUNT: "6"
-          EXCHANGES: LSE
-        run: python ingestion/jobs/dividend_sync.py
-
-  asia_gcc:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r ingestion/requirements.txt
-      - name: Sync TADAWUL / TSE / SSE dividends (seed universe)
-        if: contains(github.event.inputs.exchanges || 'NYSE,NASDAQ,HKEX,LSE,TADAWUL,TSE,SSE', 'TADAWUL') || github.event_name == 'schedule'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          EXCHANGES: TADAWUL,TSE,SSE
-        run: python ingestion/jobs/dividend_sync.py
+      - run: echo "Disabled — PSX-only mode"

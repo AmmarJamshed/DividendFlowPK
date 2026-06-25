@@ -389,26 +389,25 @@ async function searchSecurities(query, limit = 20) {
   const q = String(query || '').trim();
   if (!q || q.length < 1) return [];
 
+  const local = await searchLocalPsx(q, limit);
+  if (local.length) return local;
+
   if (!isSupabaseConfigured()) {
-    if (q.length >= 1) {
-      const local = await searchLocalPsx(q, limit);
-      if (local.length) return local;
-      const psx = await getClosingPrices('PSX');
-      return (psx.rows || [])
-        .filter((r) => r.symbol.toUpperCase().includes(q.toUpperCase()) || r.company.toUpperCase().includes(q.toUpperCase()))
-        .slice(0, limit)
-        .map((r) => ({ symbol: r.symbol, name: r.company, exchange: 'PSX', sector: r.sector || '' }));
-    }
-    return [];
+    const psx = await getClosingPrices('PSX');
+    return (psx.rows || [])
+      .filter((r) => r.symbol.toUpperCase().includes(q.toUpperCase()) || r.company.toUpperCase().includes(q.toUpperCase()))
+      .slice(0, limit)
+      .map((r) => ({ symbol: r.symbol, name: r.company, exchange: 'PSX', sector: r.sector || '' }));
   }
 
-  const supabase = getSupabase();
-  const { data: exchanges } = await supabase.from('exchanges').select('id, code');
-  const exchangeMap = new Map((exchanges || []).map((e) => [e.id, e.code]));
+  const exchangeId = await exchangeService.getExchangeId('PSX');
+  if (!exchangeId) return searchLocalPsx(q, limit);
 
+  const supabase = getSupabase();
   const { data, error } = await supabase
     .from('securities')
     .select('symbol, name, sector, exchange_id')
+    .eq('exchange_id', exchangeId)
     .or(`symbol.ilike.%${q}%,name.ilike.%${q}%`)
     .eq('active', true)
     .limit(limit);
@@ -418,7 +417,7 @@ async function searchSecurities(query, limit = 20) {
     symbol: r.symbol,
     name: r.name || r.symbol,
     sector: r.sector || '',
-    exchange: exchangeMap.get(r.exchange_id) || 'PSX',
+    exchange: 'PSX',
   }));
 
   if (remote.length) return remote;
