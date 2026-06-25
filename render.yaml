@@ -49,8 +49,17 @@ services:
         value: text/plain; charset=utf-8
       - path: /ads.txt
         name: Cache-Control
-        value: public, max-age=0, must-revalidate
+        value: public, max-age=300, must-revalidate
     routes:
+      - type: rewrite
+        source: /ads.txt
+        destination: /ads.txt
+      - type: rewrite
+        source: /robots.txt
+        destination: /robots.txt
+      - type: rewrite
+        source: /sitemap.xml
+        destination: /sitemap.xml
       - type: redirect
         source: /ads.txt/
         destination: /ads.txt

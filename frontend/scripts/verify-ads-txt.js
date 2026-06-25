@@ -9,20 +9,27 @@ if (!fs.existsSync(adsPath)) {
   process.exit(1);
 }
 
-const content = fs.readFileSync(adsPath, 'utf8');
-if (content.charCodeAt(0) === 0xfeff) {
+const raw = fs.readFileSync(adsPath);
+if (raw[0] === 0xef && raw[1] === 0xbb && raw[2] === 0xbf) {
   console.error('build/ads.txt must be UTF-8 without BOM.');
   process.exit(1);
 }
 
+const content = raw.toString('utf8');
 const lines = content
   .split(/\r?\n/)
   .map((line) => line.trim())
-  .filter((line) => line && !line.startsWith('#'));
+  .filter(Boolean);
 
-if (!lines.includes(publisherLine)) {
-  console.error('build/ads.txt missing publisher line:', publisherLine);
-  console.error('Found lines:', JSON.stringify(lines));
+if (lines.length !== 1 || lines[0] !== publisherLine) {
+  console.error('build/ads.txt must contain exactly one line:');
+  console.error(publisherLine);
+  console.error('Found:', JSON.stringify(lines));
+  process.exit(1);
+}
+
+if (!content.endsWith('\n')) {
+  console.error('build/ads.txt must end with a newline.');
   process.exit(1);
 }
 
