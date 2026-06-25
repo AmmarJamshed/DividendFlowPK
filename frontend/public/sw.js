@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dividendflow-pwa-v2';
+const CACHE_NAME = 'dividendflow-pwa-v3';
 const SHELL = ['/manifest.json', '/dividendflow-logo.png'];
 
 self.addEventListener('install', (event) => {
@@ -29,8 +29,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Hashed JS/CSS bundles must always come from the network so deploys show up immediately.
-  if (url.pathname.startsWith('/static/')) return;
+  if (url.pathname.startsWith('/static/') || url.pathname === '/sw.js') return;
 
   if (isNavigationRequest(event.request)) {
     event.respondWith(
