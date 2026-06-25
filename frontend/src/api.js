@@ -33,6 +33,8 @@ export const api = {
   getStock: (exchange, symbol) => axios.get(`${API_BASE}/v1/stocks/${exchange}/${symbol}`),
   getMarketDividends: (exchange, params) =>
     axios.get(`${API_BASE}/v1/markets/${exchange}/dividends`, { params }),
+  getIpos: (exchange = 'PSX', params) =>
+    axios.get(`${API_BASE}/v1/ipos/${exchange}`, { params }),
   getWatchlist: (sessionId) =>
     axios.get(`${API_BASE}/v1/watchlist`, { headers: watchlistHeaders(sessionId) }),
   addWatchlistItem: (sessionId, exchange, symbol) =>

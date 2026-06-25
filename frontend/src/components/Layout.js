@@ -19,6 +19,7 @@ const navItems = [
   { path: '/', label: 'Overview', icon: 'home' },
   { path: '/dividend-calendar', label: 'Dividend calendar', icon: 'calendar' },
   { path: '/market-closing-prices', label: 'Market data', icon: 'chart' },
+  { path: '/ipo-calendar', label: 'IPO calendar', icon: 'ipo' },
   { path: '/forecast-engine', label: 'Forecast', icon: 'trend' },
   { path: '/salary-simulator', label: 'Income planner', icon: 'wallet' },
   { path: '/reporting-cycles', label: 'Reporting cycles', icon: 'document' },
@@ -47,6 +48,14 @@ function NavIcon({ name, active = false }) {
         <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
           <path d="M4 19.5h16" />
           <path d="M6 16v-4M12 16V8M18 16v-6" />
+        </svg>
+      );
+    case 'ipo':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M12 3v18" />
+          <path d="M7 8h10M7 12h10M7 16h6" />
+          <rect x="4" y="3" width="16" height="18" rx="2" />
         </svg>
       );
     case 'trend':

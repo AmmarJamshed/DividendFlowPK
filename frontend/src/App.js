@@ -7,6 +7,7 @@ import ForecastEngine from './pages/ForecastEngine';
 import SalarySimulator from './pages/SalarySimulator';
 import ReportingCycles from './pages/ReportingCycles';
 import MarketBrokers from './pages/MarketBrokers';
+import IpoCalendar from './pages/IpoCalendar';
 import MarketClosingPrices from './pages/MarketClosingPrices';
 import StockPage from './pages/StockPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -51,6 +52,7 @@ function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/dividend-calendar" element={<DividendCalendar />} />
                 <Route path="/market-closing-prices" element={<MarketClosingPrices />} />
+                <Route path="/ipo-calendar" element={<IpoCalendar />} />
                 <Route path="/stock/:exchange/:symbol" element={<StockPage />} />
                 <Route path="/weak-month-optimizer" element={<Navigate to="/dividend-calendar" replace />} />
                 <Route path="/ai-risk-dashboard" element={<Navigate to="/" replace />} />

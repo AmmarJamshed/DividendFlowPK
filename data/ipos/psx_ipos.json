@@ -1,0 +1,25 @@
+[
+  {
+    "id": "select-technologies-2026",
+    "exchange": "PSX",
+    "country": "PK",
+    "companyName": "Select Technologies Limited",
+    "symbol": "SELECT",
+    "sector": "Technology",
+    "offerType": "IPO",
+    "parentCompany": "Air Link Communication Limited",
+    "issueSizeShares": 88888889,
+    "floorPricePkr": 28,
+    "priceCapPkr": 39.2,
+    "registrationStart": "2026-06-17",
+    "registrationEnd": "2026-06-23",
+    "bookBuildingStart": "2026-06-22",
+    "bookBuildingEnd": "2026-06-23",
+    "subscriptionStart": "2026-07-02",
+    "subscriptionEnd": "2026-07-03",
+    "prospectusUrl": "https://www.psx.com.pk/psx/themes/psx/uploads/Select-Technologies-Limited-Prospectus-Final-with-dates.pdf",
+    "companyUrl": "https://selecttechnologies.pk/",
+    "source": "PSX prospectus (16 Jun 2026)",
+    "notes": "Retail investors apply via PSX e-IPO or CDC e-IPO during the public subscription window. Register before the subscription dates if you are not already on e-IPO."
+  }
+]

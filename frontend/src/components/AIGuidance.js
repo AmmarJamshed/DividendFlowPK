@@ -33,6 +33,11 @@ const ROUTE_TIPS = {
     'Sort columns to find top gainers and losers.',
     'Use the search bar to find a stock quickly.',
   ],
+  '/ipo-calendar': [
+    'IPO calendar lists upcoming PSX public offerings and subscription dates.',
+    'Register free on PSX e-IPO before the public subscription window opens.',
+    'Retail investors can also apply via CDC e-IPO during subscription dates.',
+  ],
   '/market-brokers': [
     'Market brokers will list stock brokers by country — coming soon.',
     'Use this directory to compare where to open a trading account.',
