@@ -50,6 +50,15 @@ services:
       - path: /ads.txt
         name: Cache-Control
         value: public, max-age=300, must-revalidate
+      - path: /sw.js
+        name: Content-Type
+        value: application/javascript; charset=utf-8
+      - path: /sw.js
+        name: Service-Worker-Allowed
+        value: /
+      - path: /manifest.json
+        name: Content-Type
+        value: application/manifest+json
     routes:
       - type: rewrite
         source: /ads.txt
@@ -60,6 +69,12 @@ services:
       - type: rewrite
         source: /sitemap.xml
         destination: /sitemap.xml
+      - type: rewrite
+        source: /sw.js
+        destination: /sw.js
+      - type: rewrite
+        source: /manifest.json
+        destination: /manifest.json
       - type: redirect
         source: /ads.txt/
         destination: /ads.txt
@@ -74,3 +89,7 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         value: https://dividendflow-backend.onrender.com/api
+      - key: REACT_APP_SUPABASE_URL
+        value: https://dbkytlsejpxmclpznudk.supabase.co
+      - key: REACT_APP_SUPABASE_ANON_KEY
+        sync: false

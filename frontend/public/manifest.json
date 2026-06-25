@@ -1,16 +1,26 @@
 {
   "short_name": "DividendFlow",
   "name": "DividendFlow PK — PSX Dividend Intelligence",
+  "description": "PSX dividend calendar, market data, and research tools for Pakistan Stock Exchange investors.",
   "icons": [
     {
       "src": "dividendflow-logo.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "dividendflow-logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "theme_color": "#0d9488",
   "background_color": "#f8fafc",
-  "description": "PSX dividend calendar, market data, and research tools."
+  "categories": ["finance", "business"]
 }

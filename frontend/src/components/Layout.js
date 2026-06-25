@@ -1,5 +1,5 @@
 import { useState, useEffect, useTransition, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import RobotCursor from './RobotCursor';
 import AIGuidance from './AIGuidance';
@@ -7,9 +7,12 @@ import AmmarCursorGuide from './AmmarCursorGuide';
 import { useAIAssistance } from '../context/AIAssistanceContext';
 import { useMarketBuddy } from '../context/MarketBuddyContext';
 import { useExchange } from '../context/ExchangeContext';
+import { useAuth } from '../context/AuthContext';
+import { authRedirectPath } from '../utils/authPaths';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
 import CookieConsent from './CookieConsent';
+import PwaInstallBanner from './PwaInstallBanner';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
@@ -125,9 +128,11 @@ function SidebarDisclaimer() {
 
 export default function Layout({ children }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
   const { exchange, exchangeConfig } = useExchange();
   const { open: buddyOpen, toggle: toggleBuddy, setOpen: setBuddyOpen } = useMarketBuddy();
+  const { signedIn, profileComplete, canAccessTools, profile, signOut, authConfigured } = useAuth();
   const [isAiTogglePending, startAiToggleTransition] = useTransition();
   const [aiToggleMinSpin, setAiToggleMinSpin] = useState(false);
   const aiSpinTimerRef = useRef(null);
@@ -215,10 +220,17 @@ export default function Layout({ children }) {
           <nav className="flex-1 py-3 overflow-y-auto">
             {navItems.map(({ path, label, icon }) => {
               const active = location.pathname === path;
+              const gated = path !== '/' && authConfigured && !canAccessTools;
               return (
                 <Link
                   key={path}
-                  to={path}
+                  to={gated ? authRedirectPath(path) : path}
+                  onClick={(e) => {
+                    if (gated) {
+                      e.preventDefault();
+                      navigate(authRedirectPath(path));
+                    }
+                  }}
                   className={`group flex items-center gap-3 px-4 py-3 mx-2 rounded-xl text-sm font-semibold transition-all ${
                     active
                       ? 'nav-link-active shadow-md'
@@ -226,7 +238,13 @@ export default function Layout({ children }) {
                   }`}
                 >
                   <NavIcon name={icon} active={active} />
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  {gated && (
+                    <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <rect x="5" y="11" width="14" height="10" rx="2" />
+                      <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+                    </svg>
+                  )}
                 </Link>
               );
             })}
@@ -252,6 +270,42 @@ export default function Layout({ children }) {
               </h2>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto flex-wrap justify-end">
+              {authConfigured && (
+                signedIn ? (
+                  <div className="flex items-center gap-2">
+                    <span className="hidden sm:inline text-xs font-semibold text-slate-600 max-w-[120px] truncate">
+                      {profile?.first_name || 'Account'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => signOut()}
+                      className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/sign-in?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
+                      className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-teal-300 hover:text-teal-700 transition-colors"
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      to={`/sign-up?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
+                      className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-teal-400 bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-sm hover:from-teal-600 hover:to-cyan-600 transition-colors"
+                    >
+                      Sign up
+                    </Link>
+                  </div>
+                )
+              )}
+              {!signedIn && authConfigured && !profileComplete && location.pathname !== '/' && (
+                <span className="hidden lg:inline text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                  Tools require a free account
+                </span>
+              )}
               <GlobalSearch />
               <button
                 type="button"
@@ -326,6 +380,7 @@ export default function Layout({ children }) {
       <RobotCursor />
       <AmmarCursorGuide />
       <AIGuidance />
+      <PwaInstallBanner />
       <CookieConsent />
     </div>
   );
