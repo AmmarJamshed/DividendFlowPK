@@ -32,13 +32,17 @@ async function supplementCuratedFromSeeds(code, displayRows) {
 }
 
 async function finalizeClosingRows(code, displayRows) {
-  const { enrichClosingRowsFromYahoo } = require('./exchangeNews');
-  let rows = displayRows.map((row) => ({
+  const rows = dedupeRowsBySymbol(displayRows).map((row) => ({
     ...row,
     company: exchangeService.resolveCompanyName(row.symbol, code, row.company),
   }));
-  if (!FULL_UNIVERSE.has(code) && rows.length > 0 && rows.length <= CURATED_ENRICH_MAX) {
-    rows = await enrichClosingRowsFromYahoo(code, rows);
+
+  const yahooEnrich = process.env.ENRICH_CLOSING_YAHOO === '1';
+  if (yahooEnrich && !FULL_UNIVERSE.has(code) && rows.length > 0 && rows.length <= CURATED_ENRICH_MAX) {
+    const { enrichClosingRowsFromYahoo, rowNeedsYahooEnrichment } = require('./exchangeNews');
+    if (rows.some((r) => rowNeedsYahooEnrichment(r, code))) {
+      return enrichClosingRowsFromYahoo(code, rows);
+    }
   }
   return rows;
 }
@@ -139,10 +143,9 @@ async function getGlobalClosingPricesFromSupabase(code) {
 
   const withPrices = rows.filter((row) => row.close != null && row.close > 0).length;
   const date = maxDate;
-  let displayRows = dedupeRowsBySymbol(rows.filter((row) => row.close != null && row.close > 0));
+  let displayRows = rows.filter((row) => row.close != null && row.close > 0);
 
   if (displayRows.length > 0) {
-    displayRows = await supplementCuratedFromSeeds(code, displayRows);
     displayRows = await finalizeClosingRows(code, displayRows);
   }
 

@@ -235,8 +235,8 @@ async function fetchSeedClosingRows(exchangeCode) {
 
 function rowNeedsYahooEnrichment(row, exchangeCode) {
   const sym = exchangeService.normalizeListingSymbol(row.symbol, exchangeCode);
-  const company = String(row.company || '').trim();
-  const nameMissing = !company || company === sym || /^\d+$/.test(company);
+  const resolved = exchangeService.resolveCompanyName(row.symbol, exchangeCode, row.company);
+  const nameMissing = !resolved || resolved === sym || /^\d+$/.test(resolved);
   const weekMissing = row.weekChgPct == null;
   const volMissing = !row.volume;
   return nameMissing || weekMissing || volMissing;
@@ -512,4 +512,5 @@ module.exports = {
   fetchSeedClosingRows,
   fetchSeedDividendRows,
   enrichClosingRowsFromYahoo,
+  rowNeedsYahooEnrichment,
 };
