@@ -19,10 +19,10 @@ export function isProfileComplete(profile) {
   );
 }
 
-export function namesFromGoogleMetadata(user) {
+export function namesFromUserMetadata(user) {
   const meta = user?.user_metadata || {};
-  let firstName = meta.first_name || meta.given_name || '';
-  let lastName = meta.last_name || meta.family_name || '';
+  let firstName = meta.first_name || '';
+  let lastName = meta.last_name || '';
   const full = meta.full_name || meta.name || '';
   if (!firstName && full) {
     const parts = full.trim().split(/\s+/);

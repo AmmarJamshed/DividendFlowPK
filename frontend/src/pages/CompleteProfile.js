@@ -5,7 +5,7 @@ import ProfileFieldsForm from '../components/auth/ProfileFieldsForm';
 import { RequireAuthRoute } from '../components/ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { namesFromGoogleMetadata } from '../utils/profileFields';
+import { namesFromUserMetadata } from '../utils/profileFields';
 
 function CompleteProfileForm() {
   usePageTitle('Complete profile — DividendFlow PK');
@@ -24,13 +24,13 @@ function CompleteProfileForm() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const google = namesFromGoogleMetadata(user);
+    const fromMeta = namesFromUserMetadata(user);
     setValues({
-      firstName: profile?.first_name || google.firstName || '',
-      lastName: profile?.last_name || google.lastName || '',
-      dateOfBirth: profile?.date_of_birth || google.dateOfBirth || '',
-      phoneNumber: profile?.phone_number || google.phone || '',
-      gender: profile?.gender || google.gender || '',
+      firstName: profile?.first_name || fromMeta.firstName || '',
+      lastName: profile?.last_name || fromMeta.lastName || '',
+      dateOfBirth: profile?.date_of_birth || fromMeta.dateOfBirth || '',
+      phoneNumber: profile?.phone_number || fromMeta.phone || '',
+      gender: profile?.gender || fromMeta.gender || '',
     });
   }, [user, profile]);
 
@@ -56,7 +56,7 @@ function CompleteProfileForm() {
     <AuthCard
       eyebrow="One more step"
       title="Complete your profile"
-      description="Google may share your name, but we still need your date of birth, phone number, and gender before opening PSX tools."
+      description="Add your date of birth, phone number, and gender to unlock PSX tools."
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <ProfileFieldsForm values={values} onChange={setValues} disabled={busy} />

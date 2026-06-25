@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import AuthCard from '../components/auth/AuthCard';
-import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import ProfileFieldsForm from '../components/auth/ProfileFieldsForm';
 import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -62,7 +61,7 @@ export default function SignUp() {
     <AuthCard
       eyebrow="Join"
       title="Create your DividendFlow PK account"
-      description="We collect your name, date of birth, phone number, and gender so we can tailor PSX tools and keep the platform secure."
+      description="Register with email and password. We collect your name, date of birth, phone number, and gender to unlock PSX tools."
     >
       {!authConfigured && (
         <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -70,14 +69,6 @@ export default function SignUp() {
           <strong>SUPABASE_ANON_KEY</strong> are set on <strong>dividendflow-backend</strong> on Render.
         </p>
       )}
-
-      <GoogleSignInButton nextPath={nextPath} label="Sign up with Google" disabled={!authConfigured || busy} />
-
-      <div className="my-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">or email</span>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <ProfileFieldsForm

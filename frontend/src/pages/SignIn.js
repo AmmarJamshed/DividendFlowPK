@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import AuthCard from '../components/auth/AuthCard';
-import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 
@@ -43,23 +42,15 @@ export default function SignIn() {
     <AuthCard
       eyebrow="Account"
       title="Sign in to DividendFlow PK"
-      description="Overview stays free for everyone. Sign in to open the dividend calendar, market data, forecasts, and other PSX tools."
+      description="Overview stays free for everyone. Sign in with your email and password to open PSX tools."
     >
       {!authConfigured && (
         <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           Sign-in could not connect to Supabase. On Render, set <strong>SUPABASE_URL</strong> and{' '}
-          <strong>SUPABASE_ANON_KEY</strong> on <strong>dividendflow-backend</strong> (you may already have these),
-          or set <strong>REACT_APP_SUPABASE_*</strong> on <strong>dividendflow-frontend</strong> and redeploy.
+          <strong>SUPABASE_ANON_KEY</strong> on <strong>dividendflow-backend</strong>, or{' '}
+          <strong>REACT_APP_SUPABASE_*</strong> on <strong>dividendflow-frontend</strong>, then redeploy.
         </p>
       )}
-
-      <GoogleSignInButton nextPath={nextPath} disabled={!authConfigured || busy} />
-
-      <div className="my-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-slate-200" />
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">or email</span>
-        <div className="h-px flex-1 bg-slate-200" />
-      </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>

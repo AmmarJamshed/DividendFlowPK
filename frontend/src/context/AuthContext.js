@@ -1,13 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { getSupabase, initSupabaseAuth } from '../lib/supabase';
-import { isProfileComplete, namesFromGoogleMetadata } from '../utils/profileFields';
+import { isProfileComplete, namesFromUserMetadata } from '../utils/profileFields';
 
 const AuthContext = createContext(null);
-
-function authCallbackUrl() {
-  const base = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
-  return `${window.location.origin}${base}/auth/callback`;
-}
 
 async function fetchProfileRow(client, userId) {
   const { data, error } = await client
@@ -25,17 +20,16 @@ async function ensureProfileFromUser(client, user) {
   let profile = await fetchProfileRow(client, user.id);
   if (profile) return profile;
 
-  const google = namesFromGoogleMetadata(user);
-  const meta = user.user_metadata || {};
+  const fromMeta = namesFromUserMetadata(user);
   const payload = {
     id: user.id,
     email: user.email,
-    first_name: google.firstName || '',
-    last_name: google.lastName || '',
-    phone_number: google.phone || null,
-    date_of_birth: google.dateOfBirth || null,
-    gender: ['male', 'female', 'other', 'prefer_not_to_say'].includes(google.gender)
-      ? google.gender
+    first_name: fromMeta.firstName || '',
+    last_name: fromMeta.lastName || '',
+    phone_number: fromMeta.phone || null,
+    date_of_birth: fromMeta.dateOfBirth || null,
+    gender: ['male', 'female', 'other', 'prefer_not_to_say'].includes(fromMeta.gender)
+      ? fromMeta.gender
       : null,
     auth_provider: user.app_metadata?.provider || 'email',
   };
@@ -47,7 +41,8 @@ async function ensureProfileFromUser(client, user) {
     .single();
 
   if (error) {
-    if (meta.first_name || google.firstName) {
+    const meta = user.user_metadata || {};
+    if (meta.first_name || fromMeta.firstName) {
       throw error;
     }
     return null;
@@ -125,23 +120,6 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const signInWithGoogle = useCallback(async (nextPath = '/') => {
-    const client = getSupabase();
-    if (!client) throw new Error('Sign-in is not configured yet.');
-    const redirectTo = `${authCallbackUrl()}?next=${encodeURIComponent(nextPath)}`;
-    const { error } = await client.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
-    if (error) throw error;
-  }, []);
-
   const signInWithEmail = useCallback(async (email, password) => {
     const client = getSupabase();
     if (!client) throw new Error('Sign-in is not configured yet.');
@@ -216,7 +194,6 @@ export function AuthProvider({ children }) {
       profileComplete,
       canAccessTools,
       refreshProfile,
-      signInWithGoogle,
       signInWithEmail,
       signUpWithEmail,
       saveProfile,
@@ -228,7 +205,6 @@ export function AuthProvider({ children }) {
     loading,
     authConfigured,
     refreshProfile,
-    signInWithGoogle,
     signInWithEmail,
     signUpWithEmail,
     saveProfile,
