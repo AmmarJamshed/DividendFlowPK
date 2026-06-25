@@ -51,6 +51,19 @@ async function getClosingPrices(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
 
   if (code === 'PSX') {
+    if (isSupabaseConfigured()) {
+      try {
+        const payload = await getGlobalClosingPricesFromSupabase(code);
+        if ((payload.rows || []).length > 0) {
+          const { enrichPsxClosingRows } = require('./psxSymbolNames');
+          const rows = await enrichPsxClosingRows(payload.rows);
+          return { ...payload, rows };
+        }
+      } catch (err) {
+        console.warn('[globalDataStore] PSX Supabase closing prices failed:', err.message);
+      }
+    }
+
     const { rows } = await dataStore.readMarketData('prices/psx_full_dataset.csv', async (fp) => {
       const csv = require('csv-parser');
       const fs = require('fs');
@@ -64,7 +77,10 @@ async function getClosingPrices(exchangeCode) {
           .on('error', reject);
       });
     });
-    return formatPsxRows(rows, code);
+    const formatted = formatPsxRows(rows, code);
+    const { enrichPsxClosingRows } = require('./psxSymbolNames');
+    formatted.rows = await enrichPsxClosingRows(formatted.rows);
+    return formatted;
   }
 
   if (!isSupabaseConfigured()) {
@@ -287,7 +303,7 @@ function formatPsxRows(rows, code) {
     const symbol = (r.symbol || r.Symbol || '').trim();
     return {
       symbol,
-      company: symbol,
+      company: (r.company || r.Company || symbol).trim(),
       close: parseNum(r.close || r.Close),
       change: parseNum(r.change || r.Change),
       changePct: parseNum(r.change_pct || r.ChangePct || r['change_pct']),

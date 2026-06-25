@@ -1704,56 +1704,32 @@ app.post('/api/market-chat', async (req, res) => {
   }
 });
 
-// GET /api/market-closing-prices - Full PSX dataset from psx_full_dataset.csv
+// GET /api/market-closing-prices - PSX closing board (Supabase + CSV fallback)
 app.get('/api/market-closing-prices', async (req, res) => {
   try {
-    const fp = path.join(DATA_PATH, 'prices', 'psx_full_dataset.csv');
-    if (!fs.existsSync(fp) && !dataStore.isSupabaseConfigured()) {
-      return res.json({ rows: [], date: null, summary: null });
-    }
-    const rows = await readMarketCSV('prices/psx_full_dataset.csv');
-    const date = rows[0]?.date || rows[0]?.Date || null;
-    const parseNum = (s) => {
-      if (!s) return 0;
-      const v = String(s).replace(/,/g, '').replace('%', '').trim();
-      return parseFloat(v) || 0;
-    };
-
-    const parsed = rows.map(r => {
-      const symbol = (r.symbol || r.Symbol || '').trim();
-      return {
-        symbol,
-        company: symbol,
-        close: parseNum(r.close || r.Close),
-        change: parseNum(r.change || r.Change),
-        changePct: parseNum(r.change_pct || r.ChangePct || r['change_pct']),
-        volume: parseInt((r.volume || r.Volume || '0').toString().replace(/,/g, ''), 10) || 0,
-        open: parseNum(r.open || r.Open),
-        high: parseNum(r.high || r.High),
-        low: parseNum(r.low || r.Low),
-      };
-    }).filter(x => x.symbol && x.close > 0);
-
-    const weekAgoMap = await buildWeekAgoPriceMap(date);
-    const withWeek = parsed.map((x) => {
-      const up = x.symbol.toUpperCase();
-      const w0 = weekAgoMap.get(up);
-      let weekChgPct = null;
-      if (w0 != null && w0 > 0 && x.close > 0) {
-        weekChgPct = Math.round(((x.close - w0) / w0) * 10000) / 100;
-      }
-      return { ...x, weekChgPct };
+    const globalDataStore = require('./services/globalDataStore');
+    const payload = await globalDataStore.getClosingPrices('PSX');
+    const rows = (payload.rows || []).filter((x) => x.symbol && x.close > 0);
+    const gainers = rows
+      .filter((r) => typeof r.changePct === 'number' && r.changePct > 0)
+      .sort((a, b) => b.changePct - a.changePct);
+    const losers = rows
+      .filter((r) => typeof r.changePct === 'number' && r.changePct < 0)
+      .sort((a, b) => a.changePct - b.changePct);
+    const topGainer = gainers[0] || null;
+    const topLoser = losers[0] || null;
+    res.json({
+      rows,
+      date: payload.date,
+      source: payload.source,
+      meta: payload.meta,
+      summary: {
+        totalCompanies: rows.length,
+        topGainer: topGainer ? { symbol: topGainer.symbol, changePct: topGainer.changePct } : null,
+        topLoser: topLoser ? { symbol: topLoser.symbol, changePct: topLoser.changePct } : null,
+        date: payload.date,
+      },
     });
-
-    const topGainer = withWeek.filter(p => p.changePct > 0).sort((a, b) => b.changePct - a.changePct)[0];
-    const topLoser = withWeek.filter(p => p.changePct < 0).sort((a, b) => a.changePct - b.changePct)[0];
-    const summary = {
-      totalCompanies: withWeek.length,
-      topGainer: topGainer ? { symbol: topGainer.symbol, changePct: topGainer.changePct } : null,
-      topLoser: topLoser ? { symbol: topLoser.symbol, changePct: topLoser.changePct } : null,
-      date,
-    };
-    res.json({ rows: withWeek, date, summary });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

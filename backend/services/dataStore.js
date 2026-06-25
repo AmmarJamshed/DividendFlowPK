@@ -121,13 +121,17 @@ async function fetchQuarterCycles(supabase) {
 }
 
 async function fetchPsxFullDataset(supabase) {
+  const exchangeId = await getPsxExchangeId(supabase);
+  if (!exchangeId) return [];
+
   const { data, error } = await supabase
     .from('daily_prices')
     .select(
-      'trade_date, open, high, low, close, ldcp, change_amount, change_pct, volume, securities!inner(symbol)'
+      'trade_date, open, high, low, close, ldcp, change_amount, change_pct, volume, securities!inner(symbol, name, exchange_id)'
     )
+    .eq('securities.exchange_id', exchangeId)
     .order('trade_date', { ascending: false })
-    .limit(5000);
+    .limit(15000);
   if (error) throw error;
 
   const latestBySymbol = new Map();
@@ -139,6 +143,7 @@ async function fetchPsxFullDataset(supabase) {
   return [...latestBySymbol.values()].map((r) => ({
     date: r.trade_date,
     symbol: r.securities.symbol,
+    company: r.securities.name || r.securities.symbol,
     ldcp: r.ldcp,
     open: r.open,
     high: r.high,

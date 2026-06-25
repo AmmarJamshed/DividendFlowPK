@@ -297,7 +297,7 @@ export default function MarketClosingPrices() {
                 pageRows.map((r, i) => {
                   const shariah = isShariahCompliant(r.symbol);
                   const displayName = formatStockLabel(r);
-                  const showSymbol = r.symbol && displayName !== r.symbol;
+                  const hasCompanyName = displayName && displayName !== r.symbol;
                   return (
                     <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-teal-50/50">
                       <td className="px-4 py-3 font-medium text-slate-700">
@@ -309,8 +309,10 @@ export default function MarketClosingPrices() {
                             >
                               {displayName}
                             </Link>
-                            {showSymbol && (
-                              <span className="text-[11px] font-mono text-slate-500 mt-0.5 block">{r.symbol}</span>
+                            {r.symbol && (
+                              <span className={`text-[11px] font-mono mt-0.5 block ${hasCompanyName ? 'text-slate-500' : 'text-slate-600 font-semibold'}`}>
+                                {r.symbol}
+                              </span>
                             )}
                           </span>
                           {exchange === 'PSX' && shariah && (
