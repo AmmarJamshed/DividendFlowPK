@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { getSupabase, initSupabaseAuth } from '../lib/supabase';
+import { authCallbackUrl } from '../utils/authRedirect';
 import { isProfileComplete, namesFromUserMetadata } from '../utils/profileFields';
 
 const AuthContext = createContext(null);
@@ -140,6 +141,7 @@ export function AuthProvider({ children }) {
       email,
       password,
       options: {
+        emailRedirectTo: authCallbackUrl('/dividend-calendar'),
         data: {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
@@ -155,6 +157,19 @@ export function AuthProvider({ children }) {
     }
     return data;
   }, [refreshProfile]);
+
+  const resendConfirmationEmail = useCallback(async (email, nextPath = '/dividend-calendar') => {
+    const client = getSupabase();
+    if (!client) throw new Error('Sign-in is not configured yet.');
+    const { error } = await client.auth.resend({
+      type: 'signup',
+      email: email.trim(),
+      options: {
+        emailRedirectTo: authCallbackUrl(nextPath),
+      },
+    });
+    if (error) throw error;
+  }, []);
 
   const saveProfile = useCallback(async (fields) => {
     const client = getSupabase();
@@ -202,6 +217,7 @@ export function AuthProvider({ children }) {
       refreshProfile,
       signInWithEmail,
       signUpWithEmail,
+      resendConfirmationEmail,
       saveProfile,
       signOut,
     };
@@ -213,6 +229,7 @@ export function AuthProvider({ children }) {
     refreshProfile,
     signInWithEmail,
     signUpWithEmail,
+    resendConfirmationEmail,
     saveProfile,
     signOut,
   ]);

@@ -8,15 +8,23 @@ export default function SignIn() {
   usePageTitle('Sign in — DividendFlow PK');
   const [searchParams] = useSearchParams();
   const nextPath = searchParams.get('next') || '/dividend-calendar';
-  const { signedIn, profileComplete, signInWithEmail, authConfigured } = useAuth();
+  const authErrorParam = searchParams.get('authError');
+  const { signedIn, profileComplete, signInWithEmail, resendConfirmationEmail, authConfigured } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(authErrorParam || '');
+  const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
 
   useEffect(() => {
+    setError(authErrorParam || '');
+  }, [authErrorParam]);
+
+  useEffect(() => {
+    if (authErrorParam) return;
     setError('');
-  }, [email, password]);
+  }, [email, password, authErrorParam]);
 
   if (signedIn && profileComplete) {
     return <Navigate to={nextPath} replace />;
@@ -35,6 +43,24 @@ export default function SignIn() {
       setError(err.message || 'Could not sign in. Check your email and password.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const onResendConfirmation = async () => {
+    if (!email.trim()) {
+      setError('Enter your email address first, then resend the confirmation link.');
+      return;
+    }
+    setResendBusy(true);
+    setError('');
+    setInfo('');
+    try {
+      await resendConfirmationEmail(email.trim(), nextPath);
+      setInfo('Confirmation email sent. Open the link on this device at dividendflow.pk (not localhost).');
+    } catch (err) {
+      setError(err.message || 'Could not resend confirmation email.');
+    } finally {
+      setResendBusy(false);
     }
   };
 
@@ -84,12 +110,21 @@ export default function SignIn() {
           />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
+        {info && <p className="text-sm text-emerald-700">{info}</p>}
         <button
           type="submit"
           disabled={!authConfigured || busy}
           className="w-full rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-3 text-sm font-bold text-white shadow-md hover:from-teal-700 hover:to-cyan-700 disabled:opacity-60"
         >
           {busy ? 'Signing in…' : 'Sign in'}
+        </button>
+        <button
+          type="button"
+          onClick={onResendConfirmation}
+          disabled={!authConfigured || resendBusy}
+          className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+        >
+          {resendBusy ? 'Sending…' : 'Resend confirmation email'}
         </button>
       </form>
 

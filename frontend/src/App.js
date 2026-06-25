@@ -24,6 +24,7 @@ import { AIAssistanceProvider } from './context/AIAssistanceContext';
 import { MarketBuddyProvider } from './context/MarketBuddyContext';
 import { ExchangeProvider } from './context/ExchangeContext';
 import { AuthProvider } from './context/AuthContext';
+import AuthHashHandler from './components/auth/AuthHashHandler';
 
 /** GitHub project Pages live under /RepoName/; match react-router to that prefix. */
 function routerBasename() {
@@ -51,6 +52,7 @@ function App() {
   return (
     <BrowserRouter basename={routerBasename()}>
       <AuthProvider>
+        <AuthHashHandler />
         <Analytics />
         <AIAssistanceProvider>
           <ExchangeProvider>

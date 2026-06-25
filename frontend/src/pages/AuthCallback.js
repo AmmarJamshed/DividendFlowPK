@@ -4,6 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { initSupabaseAuth } from '../lib/supabase';
 import { isProfileComplete } from '../utils/profileFields';
+import {
+  clearAuthHash,
+  formatAuthError,
+  parseAuthHashParams,
+} from '../utils/authUrlParams';
 
 export default function AuthCallback() {
   usePageTitle('Signing you in — DividendFlow PK');
@@ -22,7 +27,29 @@ export default function AuthCallback() {
         return;
       }
 
+      const hashError = parseAuthHashParams();
+      if (hashError) {
+        clearAuthHash();
+        const message = formatAuthError(hashError);
+        setDestination(
+          `/sign-in?next=${encodeURIComponent(nextPath)}&authError=${encodeURIComponent(message)}`
+        );
+        return;
+      }
+
+      const code = searchParams.get('code');
+      if (code) {
+        const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
+        if (exchangeError && active) {
+          setDestination(
+            `/sign-in?next=${encodeURIComponent(nextPath)}&authError=${encodeURIComponent(exchangeError.message)}`
+          );
+          return;
+        }
+      }
+
       const { data: { session }, error } = await client.auth.getSession();
+      clearAuthHash();
       if (error || !session?.user) {
         setDestination(`/sign-in?next=${encodeURIComponent(nextPath)}`);
         return;
@@ -44,7 +71,7 @@ export default function AuthCallback() {
     return () => {
       active = false;
     };
-  }, [nextPath, refreshProfile]);
+  }, [nextPath, refreshProfile, searchParams]);
 
   if (destination) {
     return <Navigate to={destination} replace />;
