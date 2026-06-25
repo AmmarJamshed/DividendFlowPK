@@ -224,7 +224,7 @@ export default function Dashboard() {
       hint: isPsx ? 'Salary vs dividend yield' : `${exchangeConfig.currency} dividend targets`,
       xp: 15,
     },
-    { to: '/#market-chat', icon: 'chat', label: 'Market Buddy', hint: `Research Q&A for ${exchangeConfig.code}`, xp: 20 },
+    { to: '/#market-chat', icon: 'chat', label: 'Market Buddy', hint: 'PSX research Q&A', xp: 20 },
   ];
 
   const missionProgress = useMemo(() => {

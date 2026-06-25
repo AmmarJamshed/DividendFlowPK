@@ -30,6 +30,9 @@ async function fetchDbSentiment(exchangeCode) {
   const symMap = new Map((secs || []).map((s) => [s.id, s.symbol]));
   if (!secIds.length) return result;
 
+  const symbolList = [...symSet].slice(0, 800);
+  if (!symbolList.length) return result;
+
   const [newsRes, aiRes, priceRes] = await Promise.all([
     supabase
       .from('news_articles')
@@ -40,16 +43,18 @@ async function fetchDbSentiment(exchangeCode) {
     supabase
       .from('news_ai_commentary')
       .select('company_symbol, commentary, commentary_date')
+      .in('company_symbol', symbolList)
       .order('commentary_date', { ascending: false })
       .limit(50),
     supabase
       .from('news_price_commentary')
       .select('company_symbol, direction, change_pct, commentary, commentary_date')
+      .in('company_symbol', symbolList)
       .order('commentary_date', { ascending: false })
       .limit(40),
   ]);
 
-  const inUniverse = (sym) => !sym || symSet.has(sym) || code === 'PSX';
+  const inUniverse = (sym) => Boolean(sym && symSet.has(sym));
 
   for (const row of newsRes.data || []) {
     const sym = row.company_symbol || symMap.get(row.security_id) || '';
@@ -121,7 +126,9 @@ async function fetchTopDividendCandidates(exchangeCode, limit = 15) {
     .order('dividend_yield', { ascending: false })
     .limit(limit);
 
-  return (profiles || []).map((p) => ({
+  return (profiles || [])
+    .filter((p) => p.dividend_yield != null && p.dividend_yield > 0 && p.dividend_yield <= 100)
+    .map((p) => ({
     symbol: p.securities.symbol,
     name: p.securities.name,
     sector: p.securities.sector,
@@ -132,8 +139,9 @@ async function fetchTopDividendCandidates(exchangeCode, limit = 15) {
 }
 
 async function fetchTopMoversFromDb(exchangeCode, limit = 12) {
-  const market = await require('./globalDataStore').getClosingPrices(exchangeCode);
-  const rows = market.rows || [];
+  const code = exchangeService.assertExchangeSupported(exchangeCode);
+  const market = await require('./globalDataStore').getClosingPrices(code);
+  const rows = (market.rows || []).filter((r) => r.symbol && r.close != null);
   const gainers = [...rows].sort((a, b) => (b.changePct || 0) - (a.changePct || 0)).slice(0, limit);
   const losers = [...rows].sort((a, b) => (a.changePct || 0) - (b.changePct || 0)).slice(0, limit);
   return { gainers, losers, currency: market.currency };

@@ -1603,8 +1603,8 @@ async function groqMarketChat(systemPrompt, userBlock) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userBlock },
         ],
-        max_tokens: 900,
-        temperature: 0.35,
+        max_tokens: 380,
+        temperature: 0.25,
       },
       {
         headers: {
@@ -1649,7 +1649,7 @@ app.post('/api/market-chat', async (req, res) => {
     chatRateByIp.set(ip, now);
 
     const message = String(req.body?.message || '').trim().slice(0, 2000);
-    const exchange = req.body?.exchange || exchangeService.DEFAULT_EXCHANGE;
+    const exchange = 'PSX';
     const symbol = req.body?.symbol || null;
     const holdings = Array.isArray(req.body?.holdings) ? req.body.holdings.slice(0, 25) : [];
     const chatHistory = Array.isArray(req.body?.history)

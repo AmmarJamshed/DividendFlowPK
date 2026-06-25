@@ -1,7 +1,6 @@
 const globalDataStore = require('./globalDataStore');
 const exchangeService = require('./exchangeService');
 const marketBuddyRag = require('./marketBuddyRag');
-const { INVESTMENT_DISCLAIMER } = require('../constants/disclaimer');
 
 const CHAT_STOP = new Set([
   'IS', 'IT', 'A', 'AN', 'THE', 'AND', 'OR', 'FOR', 'TO', 'IN', 'ON', 'AT', 'BY', 'AS', 'IF',
@@ -104,17 +103,17 @@ function classifyIntent(message) {
 }
 
 function formatSentimentBlock(sentiment) {
-  if (!sentiment) return '(no sentiment scrape in database)';
+  if (!sentiment) return '(no PSX sentiment in database)';
   const lines = [
-    `Aggregate scrape tone: bullish=${sentiment.aggregate.bullish} bearish=${sentiment.aggregate.bearish} neutral=${sentiment.aggregate.neutral}`,
+    `Tone: bullish=${sentiment.aggregate.bullish} bearish=${sentiment.aggregate.bearish} neutral=${sentiment.aggregate.neutral}`,
   ];
-  for (const c of (sentiment.commentary || []).slice(0, 8)) {
+  for (const c of (sentiment.commentary || []).slice(0, 4)) {
     lines.push(`[${c.tone}] ${c.symbol}: ${c.text}`);
   }
-  for (const p of (sentiment.priceSignals || []).slice(0, 6)) {
-    lines.push(`Price signal [${p.tone}] ${p.symbol} ${p.direction || ''} ${p.changePct ?? ''}% — ${p.snippet}`);
+  for (const p of (sentiment.priceSignals || []).slice(0, 3)) {
+    lines.push(`Price [${p.tone}] ${p.symbol} ${p.changePct ?? ''}% — ${p.snippet}`);
   }
-  for (const h of (sentiment.headlines || []).slice(0, 8)) {
+  for (const h of (sentiment.headlines || []).slice(0, 4)) {
     lines.push(`News [${h.tone}] ${h.symbol}: ${h.headline}`);
   }
   return lines.join('\n');
@@ -149,19 +148,19 @@ function formatToolsBlock(retrieval) {
   const { tools } = retrieval;
 
   if (tools.movers) {
-    lines.push('Top gainers (database):');
-    for (const r of tools.movers.gainers?.slice(0, 8) || []) {
+    lines.push('Top PSX gainers (database):');
+    for (const r of tools.movers.gainers?.slice(0, 5) || []) {
       lines.push(`  + ${r.symbol} ${r.changePct}% close=${r.close}`);
     }
-    lines.push('Top decliners (database):');
-    for (const r of tools.movers.losers?.slice(0, 6) || []) {
+    lines.push('Top PSX decliners (database):');
+    for (const r of tools.movers.losers?.slice(0, 4) || []) {
       lines.push(`  - ${r.symbol} ${r.changePct}% close=${r.close}`);
     }
   }
 
   if (tools.prices?.topMovers) {
-    lines.push('Recent movers:');
-    for (const r of tools.prices.topMovers.slice(0, 10)) {
+    lines.push('Recent PSX movers:');
+    for (const r of tools.prices.topMovers.slice(0, 6)) {
       lines.push(`  ${r.symbol} close=${r.close} chg=${r.changePct}%`);
     }
   } else if (tools.prices?.close != null) {
@@ -198,7 +197,7 @@ function formatToolsBlock(retrieval) {
   }
 
   if (tools.sentiment) {
-    lines.push('Scraped sentiment (news + AI commentary + price signals):');
+    lines.push('PSX scraped sentiment (news + AI commentary):');
     lines.push(formatSentimentBlock(tools.sentiment));
   }
 
@@ -217,38 +216,28 @@ function formatToolsBlock(retrieval) {
   return lines.join('\n');
 }
 
-function buildEnhancedSystemPrompt(exchangeCode, intent, legacyDigest) {
-  const cfg = exchangeService.getExchangeConfig(exchangeCode);
+function buildEnhancedSystemPrompt(intent, legacyDigest) {
   const portfolioGuide =
     intent === 'portfolio_research' || intent === 'ideas_research'
       ? `
-PORTFOLIO / IDEAS MODE (research only — NOT trade instructions):
-- Suggest 3-5 symbols to **research further**, ranked by database dividend yield, price momentum, and scraped sentiment.
-- For each idea: bullet with symbol, 1-line data rationale, sentiment read, and 1 risk.
-- If holdings were provided, comment on sector concentration and whether diversification may help (probabilistic language).
-- You MAY show an **illustrative** sample allocation (percent weights) only if the user asked about portfolio sizing — label it "hypothetical research mix, not advice".
-- NEVER say "buy now", "sell", "guaranteed", or "you should purchase". Use "may warrant research", "historically showed", "database suggests".
-`
+IDEAS MODE: Name up to 5 PSX symbols to research (not buy). One short bullet each: yield/momentum/sentiment + one risk.`
       : '';
 
-  return `You are "Market Buddy" on DividendFlow — a database-connected dividend and market research assistant.
+  return `You are Market Buddy on DividendFlow — PSX (Pakistan Stock Exchange) research only.
 
-Active exchange: ${cfg.name} (${cfg.code}), currency ${cfg.currency}.
-You learn ONLY from DividendFlow's PostgreSQL database and archived scrape files provided below — treat them as your knowledge base.
+SCOPE: Pakistan Stock Exchange (PSX) symbols and PKR only. Ignore any non-PSX data. Never mention NYSE, NASDAQ, Tadawul, or other exchanges.
 
-Rules:
-1) Use ONLY facts from DATA blocks. Never invent tickers, prices, yields, or headlines.
-2) Probabilistic language only ("may", "could", "historically") — no guaranteed returns.
-3) Not a licensed adviser — no personalized tax/legal guidance.
-4) Missing data → say "unavailable in our database" only when the Focus symbol block is empty.
-5) When Focus symbol data IS present, answer about that company using price, dividend, and news fields — do not claim data is missing.
-6) End with "Confidence: NN/100" (0-100 based on data completeness).
-7) Include 1-3 risk bullets when discussing stocks or portfolios.
+STYLE (strict):
+- Keep answers under 100 words unless the user asks for detail.
+- Lead with the direct answer in 1–2 sentences, then at most 4 short bullets.
+- Do not repeat the same sector line on every bullet.
+- No long disclaimers in the body — one short line at the end: "Research only, not advice."
+- Use only facts from the DATA blocks below. If missing, say "Not in our PSX database."
+- Probabilistic language only ("may", "could") — never "buy now" or "guaranteed".
+- End with "Confidence: NN/100" on its own line.
 ${portfolioGuide}
-Data freshness (archived scrapes + Supabase — not live market):
-${legacyDigest || 'See retrieval block.'}
-
-Close with: "Remember: ${INVESTMENT_DISCLAIMER.slice(0, 100)}..."`;
+PSX data freshness:
+${legacyDigest || 'See retrieval block.'}`;
 }
 
 function buildUserBlock(retrieval, message, legacyDataBlock, chatHistory) {
@@ -298,8 +287,8 @@ function estimateConfidence(retrieval) {
   return Math.min(100, score);
 }
 
-async function retrieveEnhanced(exchangeCode, symbol, question, holdings) {
-  const code = exchangeService.normalizeExchangeCode(exchangeCode);
+async function retrieveEnhanced(symbol, question, holdings) {
+  const code = 'PSX';
   const intent = classifyIntent(question);
   const tools = {};
 
@@ -350,14 +339,13 @@ function parseHoldingsFromMessage(message) {
 
 async function prepareMarketChatContext({
   message,
-  exchange,
   symbol,
   holdings,
   chatHistory,
   legacyDigest,
   legacyDataBlock,
 }) {
-  const exchangeCode = exchangeService.normalizeExchangeCode(exchange);
+  const exchangeCode = 'PSX';
   let detectedSymbol = symbol ? String(symbol).toUpperCase() : null;
 
   if (!detectedSymbol && message) {
@@ -367,9 +355,9 @@ async function prepareMarketChatContext({
   const parsedHoldings = parseHoldingsFromMessage(message);
   const mergedHoldings = [...(holdings || []), ...parsedHoldings].slice(0, 25);
 
-  const retrieval = await retrieveEnhanced(exchangeCode, detectedSymbol, message, mergedHoldings);
+  const retrieval = await retrieveEnhanced(detectedSymbol, message, mergedHoldings);
   const intent = retrieval.intent;
-  const systemPrompt = buildEnhancedSystemPrompt(exchangeCode, intent, legacyDigest);
+  const systemPrompt = buildEnhancedSystemPrompt(intent, legacyDigest);
   const userBlock = buildUserBlock(retrieval, message, legacyDataBlock, chatHistory);
   const confidenceHint = estimateConfidence(retrieval);
 

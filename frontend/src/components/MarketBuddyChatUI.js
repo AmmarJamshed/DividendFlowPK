@@ -94,13 +94,11 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
               {isDrawer ? 'Market Buddy' : 'Research assistant · +20 XP'}
             </p>
             <h2 className={`font-bold tracking-tight leading-tight text-white ${isDrawer ? 'text-lg' : 'text-xl sm:text-2xl'}`}>
-              {isDrawer ? `Ask about ${exchange} data` : `${exchangeConfig.name} research chat`}
+              {isDrawer ? 'Ask about PSX' : 'PSX research chat'}
             </h2>
             {!isDrawer && (
               <p className="mt-2 text-sm text-teal-50/95 leading-relaxed max-w-2xl">
-                Query archived {exchange} prices, dividends, and database insights for {exchangeConfig.currency} markets.
-                Outputs are research-only — not buy/sell advice.
-                generated summaries — not live quotes or investment recommendations.
+                Archived PSX prices, dividends, and news from our database. Short answers — research only, not buy/sell advice.
               </p>
             )}
           </div>
@@ -120,8 +118,7 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
       {!isDrawer && (
         <div className="px-5 sm:px-6 py-3 bg-neutral-50 border-b border-neutral-200">
           <p className="text-xs text-neutral-600 leading-relaxed">
-            <span className="font-semibold text-neutral-800">Disclaimer:</span> Answers use Supabase + scrape archives
-            only. Research ideas — not buy/sell advice.
+            <span className="font-semibold text-neutral-800">Disclaimer:</span> PSX database + scrape files only — research, not advice.
           </p>
         </div>
       )}
@@ -236,7 +233,7 @@ export default function MarketBuddyChatUI({ variant = 'page', onClose }) {
 
         {!isDrawer && (
           <p className="text-[11px] text-slate-500 text-center leading-relaxed">
-            Same data as news &amp; movers panels — sparse files → shorter answers
+            PSX data only — answers stay brief.
           </p>
         )}
       </div>

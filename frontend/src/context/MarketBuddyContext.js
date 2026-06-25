@@ -25,24 +25,16 @@ export function useMarketBuddy() {
 export function MarketBuddyProvider({ children }) {
   const { exchange, exchangeConfig } = useExchange();
 
-  function buildWelcome(code, cfg) {
-    return `Hi — I'm Market Buddy for **${cfg.name} (${code})**. I use DividendFlow's database and scrape archives for ${code} — dividends, prices, sentiment, and research ideas in ${cfg.currency}. I suggest symbols to research, not buy/sell orders.`;
+  function buildWelcome() {
+    return `Hi — I'm **Market Buddy** for **PSX only**. I use DividendFlow's PSX scrapes and database (prices, dividends, news). Short answers — research ideas, not buy/sell advice.`;
   }
 
-  function buildSuggestions(code) {
-    if (code === 'PSX') {
-      return [
-        { label: 'Research ideas', prompt: 'Based on PSX database yields and scraped sentiment, which 5 symbols may warrant research?' },
-        { label: 'Dividend picks', prompt: 'Which high-yield PSX dividend names look strongest by yield and frequency?' },
-        { label: 'Sentiment scan', prompt: 'Summarize bullish vs bearish tone from scraped PSX news and AI commentary.' },
-        { label: 'Portfolio check', prompt: 'I hold OGDC, HBL, and ENGRO — analyze concentration and suggest diversification ideas from the database.' },
-      ];
-    }
+  function buildSuggestions() {
     return [
-      { label: 'Research ideas', prompt: `Based on ${code} database yields and price data, which 5 symbols may warrant research on ${code}?` },
-      { label: 'Dividend picks', prompt: `Which high-yield dividend names on ${code} look strongest in our database?` },
-      { label: 'Top movers', prompt: `Which ${code} stocks led gains and declines in the latest database close?` },
-      { label: 'Compare sectors', prompt: `Summarize sector concentration among high-yield ${code} names in the database.` },
+      { label: 'Top movers', prompt: 'Which PSX stocks led gains and losses in the latest close? Keep it brief.' },
+      { label: 'Dividend picks', prompt: 'Top 5 PSX dividend yields from our database — symbol and yield only.' },
+      { label: 'Sentiment', prompt: 'One-paragraph PSX market mood from scraped news tone.' },
+      { label: 'Portfolio', prompt: 'I hold OGDC, HBL, ENGRO — quick diversification check from PSX data.' },
     ];
   }
 
@@ -54,12 +46,12 @@ export function MarketBuddyProvider({ children }) {
   const inputRef = useRef(null);
   const scrollLockRef = useRef(null);
 
-  const suggestions = useMemo(() => buildSuggestions(exchange), [exchange]);
+  const suggestions = useMemo(() => buildSuggestions(), []);
 
   useEffect(() => {
-    setMessages([{ role: 'assistant', text: buildWelcome(exchange, exchangeConfig) }]);
+    setMessages([{ role: 'assistant', text: buildWelcome() }]);
     setInput('');
-  }, [exchange, exchangeConfig]);
+  }, []);
 
   const toggle = useCallback(() => setOpen((v) => !v), []);
   const close = useCallback(() => setOpen(false), []);
@@ -97,7 +89,7 @@ export function MarketBuddyProvider({ children }) {
           .filter((m) => m.role === 'user' || m.role === 'assistant')
           .slice(-6)
           .map((m) => ({ role: m.role, text: m.text }));
-        const { data } = await api.postMarketChat({ message: q, exchange, history });
+        const { data } = await api.postMarketChat({ message: q, exchange: 'PSX', history });
         const reply = data.reply || 'No answer came back.';
         capturePageScroll();
         setMessages((m) => [
@@ -126,7 +118,7 @@ export function MarketBuddyProvider({ children }) {
         });
       }
     },
-    [input, loading, exchange, messages]
+    [input, loading, messages]
   );
 
   const value = {
