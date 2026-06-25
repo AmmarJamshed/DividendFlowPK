@@ -1,0 +1,28 @@
+[
+  {
+    "id": "nasdaq-1387523-118168",
+    "exchange": "NASDAQ",
+    "country": "US",
+    "companyName": "DSC Holdings Ltd.",
+    "symbol": "DSC",
+    "sector": "",
+    "offerType": "IPO",
+    "parentCompany": null,
+    "issueSizeShares": null,
+    "floorPrice": 16,
+    "priceCap": 18,
+    "currency": "USD",
+    "registrationStart": null,
+    "registrationEnd": null,
+    "bookBuildingStart": null,
+    "bookBuildingEnd": null,
+    "subscriptionStart": "2026-06-25",
+    "subscriptionEnd": "2026-06-25",
+    "prospectusUrl": null,
+    "companyUrl": null,
+    "registerUrl": "https://www.nasdaq.com/market-activity/ipos",
+    "source": "api.nasdaq.com",
+    "notes": "Expected pricing date from Nasdaq IPO calendar. Apply via your US brokerage when the retail offer opens.",
+    "updatedAt": "2026-06-25"
+  }
+]

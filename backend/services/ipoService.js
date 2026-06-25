@@ -3,16 +3,16 @@ const path = require('path');
 const exchangeService = require('./exchangeService');
 
 const DATA_PATH = path.join(__dirname, '..', '..', 'data', 'ipos');
+const LINKS_PATH = path.join(__dirname, '..', 'config', 'ipoRegistrationLinks.json');
 
-const REGISTRATION_LINKS = {
-  PSX: {
-    psxEipo: 'https://eipo.psx.com.pk/EIPO/',
-    psxEipoRegister: 'https://eipo.psx.com.pk/EIPO/User/Register',
-    cdcEipo: 'https://www.cdceipo.com/',
-    publicPride: 'https://www.psx.com.pk/psx/pride',
-    psxListings: 'https://www.psx.com.pk/psx/listings/',
-  },
-};
+let registrationLinksCache = null;
+
+function loadRegistrationLinks() {
+  if (!registrationLinksCache) {
+    registrationLinksCache = JSON.parse(fs.readFileSync(LINKS_PATH, 'utf8'));
+  }
+  return registrationLinksCache;
+}
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -26,6 +26,21 @@ function parseDate(value) {
 function isBetween(dateStr, start, end) {
   if (!dateStr || !start || !end) return false;
   return dateStr >= start && dateStr <= end;
+}
+
+function lastRelevantDate(ipo) {
+  const dates = [
+    ipo.subscriptionEnd,
+    ipo.subscriptionStart,
+    ipo.bookBuildingEnd,
+    ipo.registrationEnd,
+  ].filter(Boolean);
+  return dates.sort().pop() || null;
+}
+
+function isStillRelevant(ipo, asOf) {
+  const last = lastRelevantDate(ipo);
+  return Boolean(last && last >= asOf);
 }
 
 function derivePhase(ipo, asOf) {
@@ -64,21 +79,28 @@ const PHASE_LABELS = {
   closed: 'Closed',
 };
 
+function defaultCurrency(exchangeCode) {
+  return exchangeService.getExchangeConfig(exchangeCode)?.currency || null;
+}
+
 function normalizeIpo(raw, asOf) {
   const exchange = exchangeService.normalizeExchangeCode(raw.exchange || 'PSX');
-  const phase = derivePhase(raw, asOf);
-  return {
+  const cfg = exchangeService.getExchangeConfig(exchange);
+  const floor = raw.floorPrice ?? raw.floorPricePkr ?? null;
+  const cap = raw.priceCap ?? raw.priceCapPkr ?? floor;
+  const ipo = {
     id: raw.id,
     exchange,
-    country: raw.country || 'PK',
+    country: raw.country || cfg.country || null,
     companyName: raw.companyName,
     symbol: raw.symbol || null,
     sector: raw.sector || '',
     offerType: raw.offerType || 'IPO',
     parentCompany: raw.parentCompany || null,
     issueSizeShares: raw.issueSizeShares ?? null,
-    floorPricePkr: raw.floorPricePkr ?? null,
-    priceCapPkr: raw.priceCapPkr ?? null,
+    floorPrice: floor,
+    priceCap: cap,
+    currency: raw.currency || defaultCurrency(exchange),
     registrationStart: parseDate(raw.registrationStart),
     registrationEnd: parseDate(raw.registrationEnd),
     bookBuildingStart: parseDate(raw.bookBuildingStart),
@@ -87,24 +109,24 @@ function normalizeIpo(raw, asOf) {
     subscriptionEnd: parseDate(raw.subscriptionEnd),
     prospectusUrl: raw.prospectusUrl || null,
     companyUrl: raw.companyUrl || null,
+    registerUrl: raw.registerUrl || null,
     source: raw.source || null,
     notes: raw.notes || null,
+    updatedAt: raw.updatedAt || null,
+  };
+  const phase = derivePhase(ipo, asOf);
+  const links = loadRegistrationLinks()[exchange] || null;
+  return {
+    ...ipo,
     phase,
     phaseLabel: PHASE_LABELS[phase] || 'Upcoming',
-    registrationLinks: REGISTRATION_LINKS[exchange] || null,
-    updatedAt: raw.updatedAt || null,
+    registrationLinks: links,
   };
 }
 
 function loadExchangeIpos(exchangeCode) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
-  const fileMap = {
-    PSX: 'psx_ipos.json',
-  };
-  const fileName = fileMap[code];
-  if (!fileName) return [];
-
-  const filePath = path.join(DATA_PATH, fileName);
+  const filePath = path.join(DATA_PATH, `${code.toLowerCase()}_ipos.json`);
   if (!fs.existsSync(filePath)) return [];
 
   try {
@@ -137,14 +159,17 @@ function getIposForExchange(exchangeCode, options = {}) {
   const code = exchangeService.normalizeExchangeCode(exchangeCode);
   const asOf = options.asOf || todayIso();
   const includeClosed = Boolean(options.includeClosed);
-  const rows = loadExchangeIpos(code).map((row) => normalizeIpo(row, asOf));
-  const filtered = includeClosed ? rows : rows.filter((row) => row.phase !== 'closed');
-  const sorted = sortIpos(filtered);
+  const rows = loadExchangeIpos(code)
+    .map((row) => normalizeIpo(row, asOf))
+    .filter((row) => includeClosed || isStillRelevant(row, asOf))
+    .filter((row) => includeClosed || row.phase !== 'closed');
+  const sorted = sortIpos(rows);
+  const links = loadRegistrationLinks()[code] || null;
 
   return {
     exchange: code,
     asOf,
-    registrationLinks: REGISTRATION_LINKS[code] || null,
+    registrationLinks: links,
     rows: sorted,
     summary: {
       total: sorted.length,
@@ -157,15 +182,15 @@ function getIposForExchange(exchangeCode, options = {}) {
 }
 
 function listSupportedIpoExchanges() {
-  const fileMap = { PSX: 'psx_ipos.json' };
-  return Object.keys(REGISTRATION_LINKS).map((code) => {
-    const cfg = exchangeService.getExchangeConfig(code);
-    const fileName = fileMap[code];
+  const links = loadRegistrationLinks();
+  return exchangeService.listExchanges().map((cfg) => {
+    const filePath = path.join(DATA_PATH, `${cfg.code.toLowerCase()}_ipos.json`);
     return {
-      code,
+      code: cfg.code,
       name: cfg.name,
       country: cfg.country,
-      hasData: Boolean(fileName && fs.existsSync(path.join(DATA_PATH, fileName))),
+      hasData: fs.existsSync(filePath),
+      hasLinks: Boolean(links[cfg.code]),
     };
   });
 }
@@ -173,5 +198,4 @@ function listSupportedIpoExchanges() {
 module.exports = {
   getIposForExchange,
   listSupportedIpoExchanges,
-  REGISTRATION_LINKS,
 };

@@ -6,8 +6,6 @@ import MetricCard from '../components/ui/MetricCard';
 import Disclaimer from '../components/Disclaimer';
 import { usePageTitle } from '../hooks/usePageTitle';
 
-const PSX_ONLY = new Set(['PSX']);
-
 const PHASE_STYLES = {
   subscription_open: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   book_building: 'bg-violet-100 text-violet-800 border-violet-200',
@@ -23,9 +21,10 @@ function formatDate(iso) {
   return d.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function formatPrice(n) {
-  if (n == null || Number.isNaN(n)) return '—';
-  return `PKR ${Number(n).toLocaleString('en-PK', { maximumFractionDigits: 2 })}`;
+function formatPrice(amount, currency) {
+  if (amount == null || Number.isNaN(amount)) return '—';
+  const code = currency || '';
+  return `${code} ${Number(amount).toLocaleString('en-US', { maximumFractionDigits: 2 })}`.trim();
 }
 
 function DateRow({ label, start, end }) {
@@ -42,19 +41,17 @@ function DateRow({ label, start, end }) {
   );
 }
 
-function RegistrationLinks({ links }) {
-  if (!links) return null;
-  const items = [
-    { href: links.psxEipoRegister, label: 'Register on PSX e-IPO', primary: true },
-    { href: links.psxEipo, label: 'PSX e-IPO portal' },
-    { href: links.cdcEipo, label: 'CDC e-IPO' },
-    { href: links.publicPride, label: 'PSX Public PRIDE' },
-  ];
+function RegistrationLinks({ registrationLinks, ipoRegisterUrl }) {
+  if (!registrationLinks?.links?.length && !ipoRegisterUrl) return null;
+  const items = registrationLinks?.links?.length
+    ? registrationLinks.links
+    : [{ label: 'Apply / register', href: ipoRegisterUrl, primary: true }];
+
   return (
     <div className="flex flex-wrap gap-2 mt-4">
       {items.map(({ href, label, primary }) => (
         <a
-          key={href}
+          key={`${href}-${label}`}
           href={href}
           target="_blank"
           rel="noopener noreferrer"
@@ -72,8 +69,27 @@ function RegistrationLinks({ links }) {
   );
 }
 
+function phaseHelpText(ipo, exchange) {
+  if (ipo.phase === 'subscription_open') {
+    return exchange === 'PSX'
+      ? 'Public subscription is open — apply through PSX e-IPO or CDC e-IPO using your CNIC and bank account.'
+      : 'Offering window is open or pricing is imminent — apply through your broker or the official exchange portal below.';
+  }
+  if (ipo.phase === 'registration_open') {
+    return exchange === 'PSX'
+      ? 'Register on PSX e-IPO now so you are ready when the public subscription window opens.'
+      : 'Complete investor registration with your broker or the exchange portal before the subscription dates.';
+  }
+  return 'Register ahead of the subscription dates so you can apply as soon as the offer opens.';
+}
+
 function IpoCard({ ipo }) {
   const phaseClass = PHASE_STYLES[ipo.phase] || PHASE_STYLES.upcoming;
+  const showRegister =
+    ipo.phase === 'registration_open' ||
+    ipo.phase === 'subscription_open' ||
+    ipo.phase === 'upcoming';
+
   return (
     <article className="card overflow-hidden">
       <div className="p-5 sm:p-6 border-b border-slate-100">
@@ -100,26 +116,26 @@ function IpoCard({ ipo }) {
           <h4 className="text-sm font-semibold text-slate-800 mb-2">Key dates</h4>
           <DateRow label="Investor registration" start={ipo.registrationStart} end={ipo.registrationEnd} />
           <DateRow label="Book building" start={ipo.bookBuildingStart} end={ipo.bookBuildingEnd} />
-          <DateRow label="Public subscription" start={ipo.subscriptionStart} end={ipo.subscriptionEnd} />
+          <DateRow label="Public subscription / pricing" start={ipo.subscriptionStart} end={ipo.subscriptionEnd} />
         </div>
         <div>
           <h4 className="text-sm font-semibold text-slate-800 mb-2">Offer details</h4>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-slate-500">Floor price</dt>
-              <dd className="font-medium text-slate-800">{formatPrice(ipo.floorPricePkr)}</dd>
+              <dd className="font-medium text-slate-800">{formatPrice(ipo.floorPrice, ipo.currency)}</dd>
             </div>
-            {ipo.priceCapPkr != null && (
+            {ipo.priceCap != null && ipo.priceCap !== ipo.floorPrice && (
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-500">Price cap (book building)</dt>
-                <dd className="font-medium text-slate-800">{formatPrice(ipo.priceCapPkr)}</dd>
+                <dt className="text-slate-500">Price cap</dt>
+                <dd className="font-medium text-slate-800">{formatPrice(ipo.priceCap, ipo.currency)}</dd>
               </div>
             )}
             {ipo.issueSizeShares != null && (
               <div className="flex justify-between gap-4">
                 <dt className="text-slate-500">Issue size</dt>
                 <dd className="font-medium text-slate-800 tabular-nums">
-                  {Number(ipo.issueSizeShares).toLocaleString('en-PK')} shares
+                  {Number(ipo.issueSizeShares).toLocaleString('en-US')} shares
                 </dd>
               </div>
             )}
@@ -149,16 +165,10 @@ function IpoCard({ ipo }) {
         </div>
       </div>
 
-      {(ipo.phase === 'registration_open' || ipo.phase === 'subscription_open' || ipo.phase === 'upcoming') && (
+      {showRegister && (
         <div className="px-5 sm:px-6 py-4 bg-teal-50/60 border-t border-teal-100">
-          <p className="text-sm text-slate-700 leading-relaxed">
-            {ipo.phase === 'subscription_open'
-              ? 'Public subscription is open — apply through PSX e-IPO or CDC e-IPO using your CNIC and bank account.'
-              : ipo.phase === 'registration_open'
-                ? 'Register now on PSX e-IPO so you are ready when the public subscription window opens.'
-                : 'Register on PSX e-IPO ahead of the subscription dates to receive alerts and apply electronically.'}
-          </p>
-          <RegistrationLinks links={ipo.registrationLinks} />
+          <p className="text-sm text-slate-700 leading-relaxed">{phaseHelpText(ipo, ipo.exchange)}</p>
+          <RegistrationLinks registrationLinks={ipo.registrationLinks} ipoRegisterUrl={ipo.registerUrl} />
         </div>
       )}
 
@@ -174,24 +184,18 @@ function IpoCard({ ipo }) {
 
 export default function IpoCalendar() {
   const { exchange, exchangeConfig } = useExchange();
-  const isPsx = PSX_ONLY.has(exchange);
   const [data, setData] = useState({ rows: [], summary: null, registrationLinks: null });
   const [loading, setLoading] = useState(true);
 
   usePageTitle('IPO calendar — DividendFlow PK');
 
   useEffect(() => {
-    if (!isPsx) {
-      setData({ rows: [], summary: null, registrationLinks: null });
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     api.getIpos(exchange)
       .then((res) => setData(res.data || { rows: [], summary: null }))
       .catch(() => setData({ rows: [], summary: null }))
       .finally(() => setLoading(false));
-  }, [exchange, isPsx]);
+  }, [exchange]);
 
   if (loading) {
     return (
@@ -201,75 +205,55 @@ export default function IpoCalendar() {
     );
   }
 
+  const links = data.registrationLinks;
+
   return (
     <div className="space-y-6">
       <PageHero
         variant="light"
         eyebrow={`${exchangeConfig.code} · Primary market`}
         title="Upcoming IPOs"
-        description={
-          isPsx
-            ? 'Track Pakistan Stock Exchange initial public offerings, key subscription dates, and official links to register on PSX e-IPO or CDC e-IPO before you apply.'
-            : `IPO coverage for ${exchangeConfig.name} is planned. Switch to Pakistan (PSX) to see live PSX offerings.`
-        }
+        description={`Track ${exchangeConfig.name} initial public offerings with subscription dates and official registration portals. Expired listings are removed automatically each week.`}
       />
 
-      {isPsx && (
-        <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            <MetricCard label="Listings tracked" value={data.summary?.total ?? data.rows.length} />
-            <MetricCard label="Open now" value={data.summary?.openNow ?? 0} hint="Registration, book building, or subscription" />
-            <MetricCard label="Upcoming" value={data.summary?.upcoming ?? 0} hint="Future subscription windows" />
-          </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <MetricCard label="Listings tracked" value={data.summary?.total ?? data.rows.length} />
+        <MetricCard label="Open now" value={data.summary?.openNow ?? 0} hint="Registration, book building, or subscription" />
+        <MetricCard label="Upcoming" value={data.summary?.upcoming ?? 0} hint="Future subscription windows" />
+      </div>
 
-          {data.registrationLinks && (
-            <div className="card p-5 sm:p-6 border-teal-200/80 bg-gradient-to-br from-teal-50/80 to-white">
-              <h3 className="text-sm font-bold text-slate-900">How to register for PSX IPOs</h3>
-              <p className="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">
-                PSX e-IPO registration is free and available year-round. You need a valid CNIC, email, and mobile
-                number. Retail investors typically apply during the public subscription dates via{' '}
-                <strong>PSX e-IPO (PES)</strong> or <strong>CDC Centralized e-IPO (CES)</strong>.
-              </p>
-              <RegistrationLinks links={data.registrationLinks} />
-            </div>
+      {links && (
+        <div className="card p-5 sm:p-6 border-teal-200/80 bg-gradient-to-br from-teal-50/80 to-white">
+          <h3 className="text-sm font-bold text-slate-900">How to register for {exchangeConfig.code} IPOs</h3>
+          {links.note && (
+            <p className="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">{links.note}</p>
           )}
-
-          {data.rows.length === 0 ? (
-            <div className="card p-8 text-center text-slate-600">
-              <p className="font-medium text-slate-800">No upcoming IPOs in our tracker right now.</p>
-              <p className="mt-2 text-sm">
-                Check PSX Public PRIDE or register on e-IPO to get alerts when new offerings are announced.
-              </p>
-              {data.registrationLinks && <RegistrationLinks links={data.registrationLinks} />}
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {data.rows.map((ipo) => (
-                <IpoCard key={ipo.id} ipo={ipo} />
-              ))}
-            </div>
-          )}
-
-          <p className="text-xs text-slate-500 leading-relaxed">
-            IPO dates and prices are taken from official PSX prospectuses and may change. DividendFlow does not
-            facilitate subscriptions — always confirm details on{' '}
-            <a href="https://www.psx.com.pk/" className="text-teal-700 hover:underline" target="_blank" rel="noopener noreferrer">
-              psx.com.pk
-            </a>{' '}
-            and the published prospectus before investing.
-          </p>
-        </>
-      )}
-
-      {!isPsx && (
-        <div className="card p-8 sm:p-10 text-center border-dashed border-2 border-teal-200/80">
-          <h2 className="text-xl font-bold text-slate-900">Global IPO calendar coming soon</h2>
-          <p className="mt-3 text-sm text-slate-600 max-w-xl mx-auto">
-            We are starting with Pakistan (PSX) listings. Use the market selector in the header and choose{' '}
-            <strong>Pakistan (PSX)</strong> to view upcoming IPOs and registration links.
-          </p>
+          <RegistrationLinks registrationLinks={links} />
         </div>
       )}
+
+      {data.rows.length === 0 ? (
+        <div className="card p-8 text-center text-slate-600">
+          <p className="font-medium text-slate-800">No upcoming IPOs for {exchangeConfig.name} right now.</p>
+          <p className="mt-2 text-sm">
+            We only show offerings with dates on or after today. Check again after the weekly sync or visit the
+            official exchange portal below.
+          </p>
+          {links && <RegistrationLinks registrationLinks={links} />}
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {data.rows.map((ipo) => (
+            <IpoCard key={ipo.id} ipo={ipo} />
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs text-slate-500 leading-relaxed">
+        IPO dates are sourced from official prospectuses and exchange calendars, then refreshed weekly. DividendFlow
+        does not facilitate subscriptions — always confirm details on the official exchange site before investing.
+        {data.asOf ? ` As of ${data.asOf}.` : ''}
+      </p>
 
       <Disclaimer />
     </div>

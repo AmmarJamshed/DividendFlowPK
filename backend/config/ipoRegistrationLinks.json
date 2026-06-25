@@ -1,0 +1,68 @@
+{
+  "PSX": {
+    "portal": "https://eipo.psx.com.pk/EIPO/",
+    "note": "PSX e-IPO registration is free year-round. If a deep link times out (504), open the main portal and choose Register from the top menu, or use CDC e-IPO.",
+    "links": [
+      { "label": "PSX e-IPO portal", "href": "https://eipo.psx.com.pk/EIPO/", "primary": true },
+      { "label": "CDC e-IPO", "href": "https://www.cdceipo.com/", "primary": true },
+      { "label": "PSX Public PRIDE", "href": "https://www.psx.com.pk/psx/pride" },
+      { "label": "PSX listings", "href": "https://www.psx.com.pk/psx/listings/" }
+    ]
+  },
+  "NYSE": {
+    "portal": "https://www.nyse.com/ipo-center",
+    "note": "US retail IPO access is usually through your broker during the offering window. Confirm dates on the official prospectus.",
+    "links": [
+      { "label": "NYSE IPO center", "href": "https://www.nyse.com/ipo-center", "primary": true },
+      { "label": "Nasdaq IPO calendar", "href": "https://www.nasdaq.com/market-activity/ipos", "primary": true },
+      { "label": "SEC EDGAR filings", "href": "https://www.sec.gov/edgar/search/" }
+    ]
+  },
+  "NASDAQ": {
+    "portal": "https://www.nasdaq.com/market-activity/ipos",
+    "note": "Apply through your US brokerage when the retail tranche opens. Dates below are expected pricing days from exchange filings.",
+    "links": [
+      { "label": "Nasdaq IPO calendar", "href": "https://www.nasdaq.com/market-activity/ipos", "primary": true },
+      { "label": "NYSE IPO center", "href": "https://www.nyse.com/ipo-center" },
+      { "label": "SEC EDGAR filings", "href": "https://www.sec.gov/edgar/search/" }
+    ]
+  },
+  "LSE": {
+    "portal": "https://www.londonstockexchange.com/raise-finance/equity/ipo",
+    "note": "UK IPOs are typically allocated via brokers, platforms (e.g. PrimaryBid), or the company's registrar during the offer period.",
+    "links": [
+      { "label": "LSE IPO hub", "href": "https://www.londonstockexchange.com/raise-finance/equity/ipo", "primary": true },
+      { "label": "FCA register", "href": "https://register.fca.org.uk/" }
+    ]
+  },
+  "HKEX": {
+    "portal": "https://www.hkex.com.hk/Listing/Listed-Securities/New-Listings?sc_lang=en",
+    "note": "Hong Kong IPO subscriptions are placed through your broker or eIPO channels during the public offer period.",
+    "links": [
+      { "label": "HKEX new listings", "href": "https://www.hkex.com.hk/Listing/Listed-Securities/New-Listings?sc_lang=en", "primary": true },
+      { "label": "HKEX eIPO", "href": "https://www.hkex.com.hk/Services/Trading/Securities/Overview/Trading-Mechanism/EIPO?sc_lang=en", "primary": true }
+    ]
+  },
+  "TSE": {
+    "portal": "https://www.jpx.co.jp/english/equities/listings/",
+    "note": "Tokyo IPO applications are submitted through participating securities companies during the subscription period.",
+    "links": [
+      { "label": "JPX listings", "href": "https://www.jpx.co.jp/english/equities/listings/", "primary": true }
+    ]
+  },
+  "SSE": {
+    "portal": "http://www.sse.com.cn/listing/renewal/ipo/",
+    "note": "Shanghai IPO subscriptions use the exchange's online system via your China brokerage account.",
+    "links": [
+      { "label": "SSE IPO information", "href": "http://www.sse.com.cn/listing/renewal/ipo/", "primary": true },
+      { "label": "CSRC disclosures", "href": "http://www.csrc.gov.cn/" }
+    ]
+  },
+  "TADAWUL": {
+    "portal": "https://www.saudiexchange.sa/wps/portal/saudiexchange/listing/listing-process",
+    "note": "Tadawul IPO subscriptions are placed through authorised financial institutions during the offering window.",
+    "links": [
+      { "label": "Saudi Exchange listing", "href": "https://www.saudiexchange.sa/wps/portal/saudiexchange/listing/listing-process", "primary": true }
+    ]
+  }
+}
