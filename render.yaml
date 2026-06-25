@@ -52,9 +52,15 @@ services:
       - path: /ads.txt
         name: Cache-Control
         value: public, max-age=300, must-revalidate
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, must-revalidate
       - path: /sw.js
         name: Content-Type
         value: application/javascript; charset=utf-8
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache, must-revalidate
       - path: /sw.js
         name: Service-Worker-Allowed
         value: /
