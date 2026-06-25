@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { isSupabaseAuthConfigured, supabase } from '../lib/supabase';
+import { getSupabase, initSupabaseAuth } from '../lib/supabase';
 import { isProfileComplete, namesFromGoogleMetadata } from '../utils/profileFields';
 
 const AuthContext = createContext(null);
@@ -9,9 +9,8 @@ function authCallbackUrl() {
   return `${window.location.origin}${base}/auth/callback`;
 }
 
-async function fetchProfileRow(userId) {
-  if (!supabase) return null;
-  const { data, error } = await supabase
+async function fetchProfileRow(client, userId) {
+  const { data, error } = await client
     .from('user_profiles')
     .select('*')
     .eq('id', userId)
@@ -20,10 +19,10 @@ async function fetchProfileRow(userId) {
   return data;
 }
 
-async function ensureProfileFromUser(user) {
-  if (!supabase || !user) return null;
+async function ensureProfileFromUser(client, user) {
+  if (!user) return null;
 
-  let profile = await fetchProfileRow(user.id);
+  let profile = await fetchProfileRow(client, user.id);
   if (profile) return profile;
 
   const google = namesFromGoogleMetadata(user);
@@ -41,7 +40,7 @@ async function ensureProfileFromUser(user) {
     auth_provider: user.app_metadata?.provider || 'email',
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('user_profiles')
     .upsert(payload, { onConflict: 'id' })
     .select('*')
@@ -59,66 +58,78 @@ async function ensureProfileFromUser(user) {
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(isSupabaseAuthConfigured);
+  const [loading, setLoading] = useState(true);
+  const [authConfigured, setAuthConfigured] = useState(false);
 
   const refreshProfile = useCallback(async (user = session?.user) => {
-    if (!user || !supabase) {
+    const client = getSupabase();
+    if (!user || !client) {
       setProfile(null);
       return null;
     }
-    const row = await ensureProfileFromUser(user);
+    const row = await ensureProfileFromUser(client, user);
     setProfile(row);
     return row;
   }, [session?.user]);
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return undefined;
-    }
-
     let mounted = true;
+    let unsubscribe = () => {};
 
-    supabase.auth.getSession().then(async ({ data: { session: initial } }) => {
+    initSupabaseAuth().then((client) => {
       if (!mounted) return;
-      setSession(initial);
-      if (initial?.user) {
-        try {
-          await ensureProfileFromUser(initial.user).then((row) => {
-            if (mounted) setProfile(row);
-          });
-        } catch {
-          if (mounted) setProfile(null);
-        }
-      }
-      if (mounted) setLoading(false);
-    });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      setSession(nextSession);
-      if (nextSession?.user) {
-        try {
-          const row = await ensureProfileFromUser(nextSession.user);
-          setProfile(row);
-        } catch {
+      if (!client) {
+        setAuthConfigured(false);
+        setLoading(false);
+        return;
+      }
+
+      setAuthConfigured(true);
+
+      client.auth.getSession().then(async ({ data: { session: initial } }) => {
+        if (!mounted) return;
+        setSession(initial);
+        if (initial?.user) {
+          try {
+            const row = await ensureProfileFromUser(client, initial.user);
+            if (mounted) setProfile(row);
+          } catch {
+            if (mounted) setProfile(null);
+          }
+        }
+        if (mounted) setLoading(false);
+      });
+
+      const { data: listener } = client.auth.onAuthStateChange(async (_event, nextSession) => {
+        setSession(nextSession);
+        if (nextSession?.user) {
+          try {
+            const row = await ensureProfileFromUser(client, nextSession.user);
+            setProfile(row);
+          } catch {
+            setProfile(null);
+          }
+        } else {
           setProfile(null);
         }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+        setLoading(false);
+      });
+
+      unsubscribe = () => listener.subscription.unsubscribe();
     });
 
     return () => {
       mounted = false;
-      listener.subscription.unsubscribe();
+      unsubscribe();
     };
   }, []);
 
   const signInWithGoogle = useCallback(async (nextPath = '/') => {
-    if (!supabase) throw new Error('Sign-in is not configured yet.');
+    const client = getSupabase();
+    if (!client) throw new Error('Sign-in is not configured yet.');
     const redirectTo = `${authCallbackUrl()}?next=${encodeURIComponent(nextPath)}`;
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
@@ -132,16 +143,18 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signInWithEmail = useCallback(async (email, password) => {
-    if (!supabase) throw new Error('Sign-in is not configured yet.');
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const client = getSupabase();
+    if (!client) throw new Error('Sign-in is not configured yet.');
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (error) throw error;
     if (data.user) await refreshProfile(data.user);
     return data;
   }, [refreshProfile]);
 
   const signUpWithEmail = useCallback(async ({ email, password, firstName, lastName, phoneNumber, dateOfBirth, gender }) => {
-    if (!supabase) throw new Error('Sign-up is not configured yet.');
-    const { data, error } = await supabase.auth.signUp({
+    const client = getSupabase();
+    if (!client) throw new Error('Sign-up is not configured yet.');
+    const { data, error } = await client.auth.signUp({
       email,
       password,
       options: {
@@ -160,7 +173,8 @@ export function AuthProvider({ children }) {
   }, [refreshProfile]);
 
   const saveProfile = useCallback(async (fields) => {
-    if (!supabase || !session?.user) throw new Error('You must be signed in.');
+    const client = getSupabase();
+    if (!client || !session?.user) throw new Error('You must be signed in.');
     const payload = {
       id: session.user.id,
       email: session.user.email,
@@ -170,7 +184,7 @@ export function AuthProvider({ children }) {
       date_of_birth: fields.dateOfBirth,
       gender: fields.gender,
     };
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from('user_profiles')
       .upsert(payload, { onConflict: 'id' })
       .select('*')
@@ -181,22 +195,23 @@ export function AuthProvider({ children }) {
   }, [session?.user]);
 
   const signOut = useCallback(async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    const client = getSupabase();
+    if (!client) return;
+    await client.auth.signOut();
     setProfile(null);
   }, []);
 
   const value = useMemo(() => {
     const profileComplete = isProfileComplete(profile);
     const signedIn = Boolean(session?.user);
-    const canAccessTools = !isSupabaseAuthConfigured || (signedIn && profileComplete);
+    const canAccessTools = !authConfigured || (signedIn && profileComplete);
 
     return {
       session,
       user: session?.user ?? null,
       profile,
       loading,
-      authConfigured: isSupabaseAuthConfigured,
+      authConfigured,
       signedIn,
       profileComplete,
       canAccessTools,
@@ -211,6 +226,7 @@ export function AuthProvider({ children }) {
     session,
     profile,
     loading,
+    authConfigured,
     refreshProfile,
     signInWithGoogle,
     signInWithEmail,

@@ -47,7 +47,9 @@ export default function SignIn() {
     >
       {!authConfigured && (
         <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Sign-in is not configured in this environment yet. Add Supabase keys to enable accounts.
+          Sign-in could not connect to Supabase. On Render, set <strong>SUPABASE_URL</strong> and{' '}
+          <strong>SUPABASE_ANON_KEY</strong> on <strong>dividendflow-backend</strong> (you may already have these),
+          or set <strong>REACT_APP_SUPABASE_*</strong> on <strong>dividendflow-frontend</strong> and redeploy.
         </p>
       )}
 

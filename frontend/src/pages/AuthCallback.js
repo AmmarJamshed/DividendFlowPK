@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { isSupabaseAuthConfigured, supabase } from '../lib/supabase';
+import { initSupabaseAuth } from '../lib/supabase';
 import { isProfileComplete } from '../utils/profileFields';
 
 export default function AuthCallback() {
@@ -13,19 +13,21 @@ export default function AuthCallback() {
   const [destination, setDestination] = useState(null);
 
   useEffect(() => {
-    if (!isSupabaseAuthConfigured || !supabase) {
-      setDestination(`/sign-in?next=${encodeURIComponent(nextPath)}`);
-      return;
-    }
-
     let active = true;
 
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+    initSupabaseAuth().then(async (client) => {
       if (!active) return;
+      if (!client) {
+        setDestination(`/sign-in?next=${encodeURIComponent(nextPath)}`);
+        return;
+      }
+
+      const { data: { session }, error } = await client.auth.getSession();
       if (error || !session?.user) {
         setDestination(`/sign-in?next=${encodeURIComponent(nextPath)}`);
         return;
       }
+
       try {
         const profile = await refreshProfile(session.user);
         if (!active) return;

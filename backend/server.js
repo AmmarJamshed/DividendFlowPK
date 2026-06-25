@@ -1870,6 +1870,13 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+app.get('/api/public-config', (_req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL || '',
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || '',
+  });
+});
+
 app.get('/api/health', async (req, res) => {
   const supabase = await dataStore.checkSupabaseHealth();
   res.json({
