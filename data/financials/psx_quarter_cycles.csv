@@ -10,11 +10,11 @@ AICL,INSURANCE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
 AKBL,COMMERCIAL BANKS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 ALIFE,INSURANCE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",May,May
 ALNRS,SUGAR & ALLIED INDUSTRIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",February,February
-APL,OIL & GAS MARKETING COMPANIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+APL,OIL & GAS MARKETING COMPANIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",November,November
 ARPL,CHEMICAL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",January,January
 ATIL,INSURANCE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",May,May
 ATLH,AUTOMOBILE ASSEMBLER,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",July,July
-ATRL,REFINERY,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+ATRL,REFINERY,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",November,November
 AVN,TECHNOLOGY & COMMUNICATION,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 BAFL,COMMERCIAL BANKS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 BAFS,SUGAR & ALLIED INDUSTRIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",February,February
@@ -35,8 +35,8 @@ CSIL,INSURANCE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 DCR,REAL ESTATE INVESTMENT TRUST,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",May,May
 DIIL,MISCELLANEOUS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 DLL,INV. BANKS / INV. COS. / SECURITIES COS.,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
-DOL,CHEMICAL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
-DYNO,CHEMICAL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+DOL,CHEMICAL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",November,November
+DYNO,CHEMICAL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",November,November
 EFERT,FERTILIZER,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 EFUG,INSURANCE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 EFUL,INSURANCE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
@@ -81,7 +81,7 @@ LCI,CHEMICAL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,March
 LOADS,AUTOMOBILE PARTS & ACCESSORIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",February,February
 LOTCHEM,CHEMICAL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,March
 LSECL,INV. BANKS / INV. COS. / SECURITIES COS.,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",February,February
-LSEVL,INV. BANKS / INV. COS. / SECURITIES COS.,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",December,December
+LSEVL,INV. BANKS / INV. COS. / SECURITIES COS.,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",January,January
 MARI,OIL & GAS EXPLORATION COMPANIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,March
 MCB,COMMERCIAL BANKS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 MCBIM,INV. BANKS / INV. COS. / SECURITIES COS.,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,March
@@ -92,7 +92,7 @@ MTL,AUTOMOBILE ASSEMBLER,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",May,May
 MUREB,FOOD & PERSONAL CARE PRODUCTS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
 NATF,FOOD & PERSONAL CARE PRODUCTS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 NBP,COMMERCIAL BANKS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
-NCL,TEXTILE COMPOSITE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+NCL,TEXTILE COMPOSITE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",November,November
 NCPL,POWER GENERATION & DISTRIBUTION,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 NESTLE,FOOD & PERSONAL CARE PRODUCTS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",May,May
 NICL,CHEMICAL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
@@ -105,7 +105,7 @@ PAKRI,INSURANCE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",May,May
 PAKT,TOBACCO,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 PKGS,PAPER,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",May,May
 PNSC,TRANSPORT,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
-POL,OIL & GAS EXPLORATION COMPANIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+POL,OIL & GAS EXPLORATION COMPANIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",November,November
 PPL,OIL & GAS EXPLORATION COMPANIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 PQGTL,INSURANCE,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",May,May
 PTL,AUTOMOBILE PARTS & ACCESSORIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
@@ -130,7 +130,7 @@ STYLERS,APPAREL,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 SYS,TECHNOLOGY & COMMUNICATION,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 TCORP,SUGAR & ALLIED INDUSTRIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 TCORPCPS,SUGAR & ALLIED INDUSTRIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",July,July
-TGL,GLASS & CERAMICS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",April,April
+TGL,GLASS & CERAMICS,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",June,June
 THALL,AUTOMOBILE PARTS & ACCESSORIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,March
 TICL,SUGAR & ALLIED INDUSTRIES,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",February,February
 TSBL,INV. BANKS / INV. COS. / SECURITIES COS.,June,"Sep,Dec,Mar,Jun","Nov,Feb,May,Aug",March,March
