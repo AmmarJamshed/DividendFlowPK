@@ -100,14 +100,23 @@ export function AuthProvider({ children }) {
     return data;
   }, [refreshProfile]);
 
-  const signUpWithEmail = useCallback(async ({ email, password, firstName, lastName, phoneNumber, dateOfBirth, gender }) => {
+  const signUpWithEmail = useCallback(async ({
+    email,
+    password,
+    firstName,
+    lastName,
+    phoneNumber,
+    dateOfBirth,
+    gender,
+    nextPath = '/dividend-calendar',
+  }) => {
     const client = getSupabase();
     if (!client) throw new Error('Sign-up is not configured yet.');
     const { data, error } = await client.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: authCallbackUrl('/dividend-calendar'),
+        emailRedirectTo: authCallbackUrl(nextPath),
         data: {
           first_name: firstName.trim(),
           last_name: lastName.trim(),

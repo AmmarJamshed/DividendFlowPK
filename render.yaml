@@ -100,6 +100,8 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         value: https://dividendflow-backend.onrender.com/api
+      - key: REACT_APP_SITE_URL
+        value: https://dividendflow.pk
       - key: REACT_APP_SUPABASE_URL
         value: https://dbkytlsejpxmclpznudk.supabase.co
       - key: REACT_APP_SUPABASE_ANON_KEY

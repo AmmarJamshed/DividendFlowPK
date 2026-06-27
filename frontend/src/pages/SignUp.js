@@ -46,9 +46,10 @@ export default function SignUp() {
         phoneNumber: values.phoneNumber,
         dateOfBirth: values.dateOfBirth,
         gender: values.gender,
+        nextPath,
       });
       if (result.user && !result.session) {
-        setInfo('Account created. Check your email for a confirmation link, then sign in.');
+        setInfo('Account created. Check your email and open the confirmation link at dividendflow.pk (not localhost).');
       } else if (result.session) {
         setInfo('Account created. You can now use DividendFlow PK tools.');
       }
