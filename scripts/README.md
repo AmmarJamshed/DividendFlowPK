@@ -48,6 +48,29 @@ If `data/dividends/psx_payouts.csv` has at least this many rows (default **120**
 - **Resend**: Sign up at resend.com, create API key, add domain. Free: 100 emails/day.
 - **Gmail SMTP**: Enable 2FA, create App Password. Set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASS`.
 
+## Branded signup confirmation emails (Supabase Auth)
+
+Account emails are sent **from `DividendFlow PK <noreply@dividendflow.pk>`** with the logo via the `send-auth-email` Edge Function + Resend.
+
+### One-time Supabase setup
+
+1. **Resend** — verify domain `dividendflow.pk` at [resend.com/domains](https://resend.com/domains) and add DNS records.
+2. **Deploy function** (from repo root):
+   ```bash
+   supabase functions deploy send-auth-email --no-verify-jwt --project-ref dbkytlsejpxmclpznudk
+   ```
+3. **Secrets** (Supabase Dashboard → Edge Functions → Secrets, or CLI):
+   - `RESEND_API_KEY` — same key as Render backend
+   - `SEND_EMAIL_HOOK_SECRET` — from Authentication → Hooks → Send Email → generate secret
+   - `SUPABASE_PROJECT_REF` — `dbkytlsejpxmclpznudk` (optional; default in code)
+4. **Enable hook** — Authentication → Hooks → **Send Email** → HTTPS →  
+   `https://dbkytlsejpxmclpznudk.supabase.co/functions/v1/send-auth-email`
+5. **URL config** — Authentication → URL Configuration:
+   - Site URL: `https://dividendflow.pk`
+   - Redirect URLs: `https://dividendflow.pk/auth/callback`
+
+Templates live in `supabase/functions/send-auth-email/` (auth) and `backend/services/emailBrand.js` (newsletters/contact).
+
 ## Today vs Yesterday (Gainers / Decliners)
 
 - **run-news.js** (5pm PKT) scrapes prices and compares today vs yesterday from `daily_prices.csv`
