@@ -27,6 +27,8 @@ export const api = {
     exchange === 'PSX'
       ? axios.get(`${API_BASE}/market-closing-prices`)
       : axios.get(`${API_BASE}/v1/markets/${exchange}/closing-prices`),
+  getMarketIndex: (exchange = 'PSX', days = 180) =>
+    axios.get(`${API_BASE}/market-index/${exchange}`, { params: { days } }),
   getExchanges: () => axios.get(`${API_BASE}/v1/exchanges`),
   searchSecurities: (q, limit = 20) =>
     axios.get(`${API_BASE}/v1/search`, { params: { q, limit } }),

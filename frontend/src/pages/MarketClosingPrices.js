@@ -4,15 +4,31 @@ import { api } from '../api';
 import { useExchange } from '../context/ExchangeContext';
 import { stockPath } from '../config/exchanges';
 import { isShariahCompliant, SHARIAH_LIST_META } from '../utils/psxShariah';
-import PageHero from '../components/ui/PageHero';
-import MetricCard from '../components/ui/MetricCard';
 import Disclaimer from '../components/Disclaimer';
+import CompanyLogo from '../components/CompanyLogo';
+import MarketIndexChart from '../components/MarketIndexChart';
+import MarketMoversPanel from '../components/MarketMoversPanel';
 
 const PAGE_SIZE = 25;
 
 function formatNum(n) {
   if (n == null || isNaN(n)) return '—';
   return Number(n).toLocaleString('en-PK', { maximumFractionDigits: 2 });
+}
+
+function formatPct(n) {
+  if (n == null || isNaN(n)) return '—';
+  const v = Number(n);
+  return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
+}
+
+function formatCap(n) {
+  if (n == null || isNaN(n) || n <= 0) return '—';
+  const v = Number(n);
+  if (v >= 1e12) return `${(v / 1e12).toFixed(2)}T`;
+  if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
+  return formatNum(v);
 }
 
 function formatStockLabel(row) {
@@ -23,51 +39,12 @@ function formatStockLabel(row) {
   return sym || '—';
 }
 
-function AICommentary({ summary, exchangeName, rowsBySymbol }) {
-  if (!summary) return null;
-  const { totalCompanies, topGainer, topLoser, date } = summary;
-  const gainerRow = topGainer ? rowsBySymbol?.get(topGainer.symbol) : null;
-  const loserRow = topLoser ? rowsBySymbol?.get(topLoser.symbol) : null;
-  const gainerLabel = topGainer
-    ? `${formatStockLabel(gainerRow || topGainer)} +${topGainer.changePct?.toFixed(1)}%`
-    : null;
-  const loserLabel = topLoser
-    ? `${formatStockLabel(loserRow || topLoser)} ${topLoser.changePct?.toFixed(1)}%`
-    : null;
-  const sentiment = totalCompanies > 0
-    ? topGainer?.changePct > 0 && (!topLoser || Math.abs(topGainer.changePct) >= Math.abs(topLoser.changePct))
-      ? 'Moderately positive'
-      : topLoser?.changePct < 0 && (!topGainer || Math.abs(topLoser.changePct) >= Math.abs(topGainer.changePct))
-        ? 'Cautious'
-        : 'Mixed'
-    : 'No data';
-  const sectorNote = topGainer?.changePct > 2 ? ' with strong activity in select sectors.' : '.';
-
-  return (
-    <div className="bg-white border border-slate-200 df-card p-4 sm:p-6 mb-6">
-      <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 mb-2">
-        Session summary
-      </h3>
-      <p className="text-neutral-700 text-sm leading-relaxed">
-        {date ? `As of ${date}: ` : ''}
-        Latest {exchangeName} session closed {sentiment.toLowerCase()}{sectorNote}
-        {' '}Total companies traded: <strong className="text-slate-700">{formatNum(totalCompanies)}</strong>.
-        {topGainer && (
-          <> Top performer: <strong className="text-emerald-600">{gainerLabel}</strong>.</>
-        )}
-        {topLoser && (
-          <> Worst performer: <strong className="text-red-400">{loserLabel}</strong>.</>
-        )}
-        {' '}Overall market sentiment: <strong className="text-slate-700">{sentiment}</strong>.
-      </p>
-    </div>
-  );
-}
-
 export default function MarketClosingPrices() {
   const { exchange, exchangeConfig } = useExchange();
   const [data, setData] = useState({ rows: [], date: null, summary: null });
+  const [indexSeries, setIndexSeries] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [indexLoading, setIndexLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [shariahOnly, setShariahOnly] = useState(false);
   const [sort, setSort] = useState({ key: 'changePct', dir: 'desc' });
@@ -76,10 +53,25 @@ export default function MarketClosingPrices() {
   useEffect(() => {
     setLoading(true);
     setPage(0);
-    api.getMarketClosingPrices(exchange)
+    api
+      .getMarketClosingPrices(exchange)
       .then((res) => setData(res.data || { rows: [], date: null, summary: null, meta: null }))
       .catch(() => setData({ rows: [], date: null, summary: null }))
       .finally(() => setLoading(false));
+  }, [exchange]);
+
+  useEffect(() => {
+    if (exchange !== 'PSX') {
+      setIndexSeries(null);
+      setIndexLoading(false);
+      return;
+    }
+    setIndexLoading(true);
+    api
+      .getMarketIndex('PSX', 180)
+      .then((res) => setIndexSeries(res.data))
+      .catch(() => setIndexSeries(null))
+      .finally(() => setIndexLoading(false));
   }, [exchange]);
 
   const shariahInDataset = useMemo(() => {
@@ -90,42 +82,27 @@ export default function MarketClosingPrices() {
     return n;
   }, [data.rows]);
 
-  const rowsBySymbol = useMemo(() => {
-    const map = new Map();
-    for (const r of data.rows || []) {
-      if (r.symbol) map.set(r.symbol, r);
-    }
-    return map;
-  }, [data.rows]);
+  const gainers = useMemo(
+    () =>
+      [...(data.rows || [])]
+        .filter((r) => typeof r.changePct === 'number' && r.changePct > 0)
+        .sort((a, b) => b.changePct - a.changePct)
+        .slice(0, 4),
+    [data.rows]
+  );
 
-  const marketPulse = useMemo(() => {
-    const rows = data.rows || [];
-    let gainers = 0;
-    let losers = 0;
-    let flat = 0;
-    for (const r of rows) {
-      const pct = r.changePct;
-      if (pct == null || Number.isNaN(pct) || pct === 0) flat += 1;
-      else if (pct > 0) gainers += 1;
-      else losers += 1;
-    }
-    const topG = data.summary?.topGainer;
-    const topL = data.summary?.topLoser;
-    return {
-      total: rows.length,
-      gainers,
-      losers,
-      flat,
-      topGainerLabel: topG ? `${formatStockLabel(rowsBySymbol.get(topG.symbol) || topG)} +${topG.changePct?.toFixed(1)}%` : '—',
-      topLoserLabel: topL ? `${formatStockLabel(rowsBySymbol.get(topL.symbol) || topL)} ${topL.changePct?.toFixed(1)}%` : '—',
-    };
-  }, [data.rows, data.summary, rowsBySymbol]);
+  const losers = useMemo(
+    () =>
+      [...(data.rows || [])]
+        .filter((r) => typeof r.changePct === 'number' && r.changePct < 0)
+        .sort((a, b) => a.changePct - b.changePct)
+        .slice(0, 4),
+    [data.rows]
+  );
 
   const filtered = useMemo(() => {
     let list = data.rows || [];
-    if (shariahOnly) {
-      list = list.filter((r) => isShariahCompliant(r.symbol));
-    }
+    if (shariahOnly) list = list.filter((r) => isShariahCompliant(r.symbol));
     const q = (search || '').trim().toLowerCase();
     if (q) {
       list = list.filter(
@@ -137,14 +114,6 @@ export default function MarketClosingPrices() {
     list = [...list].sort((a, b) => {
       const va = a[k];
       const vb = b[k];
-      if (k === 'weekChgPct') {
-        const na = typeof va === 'number' && !Number.isNaN(va) ? va : null;
-        const nb = typeof vb === 'number' && !Number.isNaN(vb) ? vb : null;
-        if (na == null && nb == null) return 0;
-        if (na == null) return 1;
-        if (nb == null) return -1;
-        return d * (na - nb);
-      }
       if (typeof va === 'number' && typeof vb === 'number') return d * (va - vb);
       return d * String(va || '').localeCompare(String(vb || ''));
     });
@@ -155,205 +124,141 @@ export default function MarketClosingPrices() {
   const pageRows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const toggleSort = (key) => {
-    setSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' });
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' }));
     setPage(0);
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <div className="animate-spin w-10 h-10 border-2 border-ice-400 border-t-transparent rounded-full" />
+        <div className="animate-spin w-10 h-10 border-2 border-[#1E3A8A] border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
     <div className="df-page">
-      <PageHero
-        variant="light"
-        eyebrow="Market data"
-        title={`${exchangeConfig.name} closing prices`}
-        description={
-          exchange === 'PSX'
-            ? 'Search symbols, sort by session and weekly change, and filter the PSX Shariah disclosure list. Sourced from archived scrape files, updated weekdays after the close.'
-            : `Latest ${exchangeConfig.code} closes (${exchangeConfig.currency}) from DividendFlow cloud database. Full universes are loaded by scheduled GitHub Actions ingest; if the table is empty you may see a small Yahoo Finance preview instead.`
-        }
-      >
-        <Link to="/dividend-calendar" className="btn-primary">
-          Dividend calendar
-        </Link>
-        <Link to="/" className="btn-ghost-dark">
-          Overview
-        </Link>
-      </PageHero>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard
-          label="Symbols"
-          value={marketPulse.total}
-          hint={data.date ? `Session ${data.date}` : 'Latest file'}
-        />
-        <MetricCard
-          label="Advanced"
-          value={marketPulse.gainers}
-          hint={marketPulse.topGainerLabel !== '—' ? marketPulse.topGainerLabel : '—'}
-        />
-        <MetricCard
-          label="Declined"
-          value={marketPulse.losers}
-          hint={marketPulse.topLoserLabel !== '—' ? marketPulse.topLoserLabel : '—'}
-        />
-        <MetricCard
-          label="Shariah list"
-          value={exchange === 'PSX' ? shariahInDataset : '—'}
-          hint={exchange === 'PSX' ? `Of ${marketPulse.total} in dataset` : 'PSX only'}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 df-card p-4 sm:p-5">
+          <MarketIndexChart series={indexSeries} loading={indexLoading} />
+        </div>
+        <div className="space-y-4">
+          <MarketMoversPanel title="Top Gainers" rows={gainers} exchange={exchange} />
+          <MarketMoversPanel title="Top Losers" rows={losers} exchange={exchange} />
+        </div>
       </div>
 
-      <AICommentary summary={data.summary} exchangeName={exchangeConfig.name} rowsBySymbol={rowsBySymbol} />
-      <div className="rounded-2xl bg-white/90 border border-slate-200 shadow-lg shadow-slate-300/20 overflow-hidden backdrop-blur-sm">
-        <div className="p-4 border-b border-slate-200 flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-            <input
-              type="search"
-              placeholder="Search by stock or symbol..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-              className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-ice-400/50 focus:border-ice-300 w-full sm:w-64"
-            />
-            <span className="text-sm text-slate-500 self-center text-right sm:text-left">
-              {filtered.length} stocks
-              {data.meta?.totalSymbols != null && data.meta.totalSymbols !== filtered.length && (
-                <> • universe {data.meta.totalSymbols}</>
-              )}
-              {data.meta?.withPrices != null && (
-                <> • {data.meta.withPrices} with latest close</>
-              )}
-              {shariahOnly && ` (Shariah list)`}
-              {data.date && ` • Close ${data.date}`}
-              {data.source === 'yahoo_seeds' && ' • Preview (major names)'}
-            </span>
-          </div>
-          {exchange === 'PSX' && (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-1">Filter</span>
-            <button
-              type="button"
-              onClick={() => { setShariahOnly(false); setPage(0); }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
-                !shariahOnly
-                  ? 'bg-ink text-white border-ink'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-ice-300'
-              }`}
-            >
-              All PSX (in dataset)
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShariahOnly(true); setPage(0); }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
-                shariahOnly
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
-              }`}
-              title={`PSX Annexure A: ${SHARIAH_LIST_META.symbolCount} symbols (${SHARIAH_LIST_META.asOf})`}
-            >
-              Shariah compliant only
-            </button>
-            <span className="text-xs text-slate-500">
-              {shariahInDataset} of {(data.rows || []).length} rows match PSX list
-            </span>
-          </div>
-          )}
+      <div className="df-card overflow-hidden">
+        <div className="p-4 border-b border-slate-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <input
+            type="search"
+            placeholder="Search by stock or symbol…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            className="input-field max-w-md"
+          />
+          <span className="text-sm text-slate-500">
+            {filtered.length} stocks
+            {data.date && ` · Close ${data.date}`}
+          </span>
         </div>
+
+        {exchange === 'PSX' && (
+          <div className="px-4 py-2 border-b border-slate-100 flex flex-wrap items-center gap-2 bg-slate-50/60">
+            <button
+              type="button"
+              onClick={() => {
+                setShariahOnly(false);
+                setPage(0);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                !shariahOnly ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]' : 'bg-white text-slate-600 border-slate-200'
+              }`}
+            >
+              All PSX
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShariahOnly(true);
+                setPage(0);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+                shariahOnly ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200'
+              }`}
+            >
+              Shariah only
+            </button>
+            <span className="text-xs text-slate-500">{shariahInDataset} on PSX Shariah list</span>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 text-slate-600">
-                <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-ice-600 rounded-tl-2xl" onClick={() => toggleSort('symbol')}>Stock</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600" onClick={() => toggleSort('close')}>Close</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600" onClick={() => toggleSort('change')}>Change</th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600" onClick={() => toggleSort('changePct')}>Daily %</th>
-                <th
-                  className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600"
-                  onClick={() => toggleSort('weekChgPct')}
-                  title="Approx. change vs price ~7 calendar days ago (daily_prices.csv)."
-                >
-                  Week %
+              <tr className="bg-[#1E3A8A] text-white text-left text-[11px] font-semibold uppercase tracking-wide">
+                <th className="px-4 py-3 cursor-pointer" onClick={() => toggleSort('company')}>
+                  Company
                 </th>
-                <th className="text-right px-4 py-3 font-medium cursor-pointer hover:text-ice-600 rounded-tr-2xl" onClick={() => toggleSort('volume')}>Shares Traded</th>
+                <th className="px-4 py-3 cursor-pointer" onClick={() => toggleSort('symbol')}>
+                  Ticker
+                </th>
+                <th className="px-4 py-3 text-right cursor-pointer" onClick={() => toggleSort('close')}>
+                  Price
+                </th>
+                <th className="px-4 py-3 text-right cursor-pointer" onClick={() => toggleSort('changePct')}>
+                  Change
+                </th>
+                <th className="px-4 py-3 text-right cursor-pointer" onClick={() => toggleSort('marketCap')}>
+                  Mkt Cap
+                </th>
+                <th className="px-4 py-3 text-right cursor-pointer" onClick={() => toggleSort('peRatio')}>
+                  P/E
+                </th>
+                <th className="px-4 py-3 text-right cursor-pointer" onClick={() => toggleSort('dividendYield')}>
+                  Dividend Yield
+                </th>
               </tr>
             </thead>
             <tbody>
               {pageRows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                    {shariahOnly
-                      ? 'No Shariah-listed symbols in today’s closing dataset (or none match your search).'
-                      : 'No data available'}
+                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                    No data available for this filter.
                   </td>
                 </tr>
               ) : (
                 pageRows.map((r, i) => {
-                  const shariah = isShariahCompliant(r.symbol);
-                  const displayName = formatStockLabel(r);
-                  const hasCompanyName = displayName && displayName !== r.symbol;
+                  const positive = (r.changePct || 0) >= 0;
+                  const zebra = i % 2 === 1 ? 'bg-slate-50/70' : 'bg-white';
                   return (
-                    <tr key={`${r.symbol}-${i}`} className="border-t border-slate-100 hover:bg-ice-50/50">
-                      <td className="px-4 py-3 font-medium text-slate-700">
-                        <span className="inline-flex items-center gap-2 flex-wrap">
-                          <span className="min-w-0">
-                            <Link
-                              to={stockPath(exchange, r.symbol || r.company)}
-                              className="text-ice-700 hover:underline font-semibold block"
-                            >
-                              {displayName}
-                            </Link>
-                            {r.symbol && (
-                              <span className={`text-[11px] font-mono mt-0.5 block ${hasCompanyName ? 'text-slate-500' : 'text-slate-600 font-semibold'}`}>
-                                {r.symbol}
-                              </span>
-                            )}
-                          </span>
-                          {exchange === 'PSX' && shariah && (
-                            <span
-                              className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              title="On PSX Shariah disclosure list (nature of business)"
-                            >
-                              Shariah
-                            </span>
-                          )}
-                        </span>
+                    <tr key={`${r.symbol}-${i}`} className={`${zebra} df-table-row`}>
+                      <td className="px-4 py-3">
+                        <Link
+                          to={stockPath(exchange, r.symbol)}
+                          className="inline-flex items-center gap-2.5 font-medium text-slate-800 hover:text-[#1E3A8A]"
+                        >
+                          <CompanyLogo symbol={r.symbol} className="w-8 h-8" />
+                          <span className="min-w-0 truncate max-w-[200px]">{formatStockLabel(r)}</span>
+                        </Link>
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-600">{formatNum(r.close)}</td>
-                      <td className={`px-4 py-3 text-right font-medium ${(r.change || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {r.close != null ? (
-                          <>
-                            {(r.change || 0) >= 0 ? '+' : ''}{formatNum(r.change)}
-                          </>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className={`px-4 py-3 text-right font-medium ${(r.changePct || 0) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {r.changePct != null ? (
-                          <>
-                            {(r.changePct || 0) >= 0 ? '+' : ''}{formatNum(r.changePct)}%
-                          </>
-                        ) : (
-                          <span className="text-slate-400 text-xs">Pending ingest</span>
-                        )}
-                      </td>
+                      <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-600">{r.symbol}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-800">{formatNum(r.close)}</td>
                       <td
-                        className={`px-4 py-3 text-right text-xs font-medium tabular-nums ${(r.weekChgPct || 0) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}
+                        className={`px-4 py-3 text-right font-semibold tabular-nums ${
+                          positive ? 'text-emerald-600' : 'text-red-600'
+                        }`}
                       >
-                        {typeof r.weekChgPct === 'number' ? (
-                          <>{(r.weekChgPct >= 0 ? '+' : '')}{formatNum(r.weekChgPct)}%</>
-                        ) : (
-                          '—'
-                        )}
+                        {r.changePct != null ? formatPct(r.changePct) : '—'}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-500">{formatNum(r.volume)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-600">{formatCap(r.marketCap)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-600">{formatNum(r.peRatio)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-slate-600">
+                        {r.dividendYield != null ? `${formatNum(r.dividendYield)}%` : '—'}
+                      </td>
                     </tr>
                   );
                 })
@@ -361,58 +266,38 @@ export default function MarketClosingPrices() {
             </tbody>
           </table>
         </div>
+
         {totalPages > 1 && (
           <div className="px-4 py-3 border-t border-slate-200 flex items-center justify-between bg-slate-50/50">
             <button
-              onClick={() => setPage(p => Math.max(0, p - 1))}
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-3 py-2 rounded-xl bg-ice-50 text-ice-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-ice-100 border border-ice-200"
+              className="df-btn-outline px-3 py-2 text-xs disabled:opacity-50"
             >
               Previous
             </button>
-            <span className="text-slate-600 text-sm">Page {page + 1} of {totalPages}</span>
+            <span className="text-slate-600 text-sm">
+              Page {page + 1} of {totalPages}
+            </span>
             <button
-              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="px-3 py-2 rounded-xl bg-ice-50 text-ice-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-ice-100 border border-ice-200"
+              className="df-btn-outline px-3 py-2 text-xs disabled:opacity-50"
             >
               Next
             </button>
           </div>
         )}
-        <p className="px-4 py-3 text-xs text-slate-500 border-t border-slate-100 bg-slate-50/80 space-y-1">
-          {exchange === 'PSX' ? (
-            <>
-              <span className="block">
-                <strong className="text-slate-600">Week %</strong> uses{' '}
-                <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices.csv</code>, updated by the PSX market closing prices workflow after each session.
-              </span>
-              <span className="block">
-                <strong className="text-slate-600">Shariah filter</strong> uses the PSX list of companies required to file Shariah disclosures (
-                {SHARIAH_LIST_META.symbolCount} symbols, notice dated {SHARIAH_LIST_META.asOf}).{' '}
-                <a
-                  href={SHARIAH_LIST_META.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-ice-700 font-medium hover:underline"
-                >
-                  View PSX notice (PDF)
-                </a>
-                . This reflects PSX &quot;nature of business&quot; classification, not personal fatwa or full Islamic finance screening.
-              </span>
-            </>
-          ) : (
-            <span className="block">
-              <strong className="text-slate-600">{exchangeConfig.code}</strong> prices come from Supabase (
-              <code className="text-[11px] bg-slate-200/80 px-1 rounded">daily_prices</code>
-              ), populated by{' '}
-              <code className="text-[11px] bg-slate-200/80 px-1 rounded">global-market-ingest</code> (curated
-              leaders) after each market close. Company names are shown from the database or Yahoo Finance when
-              symbols are numeric. Daily % and Week % are recomputed from saved closes (~7 calendar days for week).
-              Shariah filter is PSX-only.
-            </span>
-          )}
-        </p>
+
+        {exchange === 'PSX' && (
+          <p className="px-4 py-3 text-xs text-slate-500 border-t border-slate-100 bg-slate-50/80">
+            Shariah filter uses the PSX disclosure list ({SHARIAH_LIST_META.symbolCount} symbols,{' '}
+            {SHARIAH_LIST_META.asOf}). Dividend yield from calendar files; P/E and market cap when available in cloud
+            metrics. Logos from public symbol artwork where available.
+          </p>
+        )}
       </div>
       <Disclaimer />
     </div>

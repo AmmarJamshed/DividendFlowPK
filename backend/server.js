@@ -1704,12 +1704,27 @@ app.post('/api/market-chat', async (req, res) => {
   }
 });
 
+// GET /api/market-index/:exchange - KSE-100 style proxy series
+app.get('/api/market-index/:exchange', async (req, res) => {
+  try {
+    const { getMarketIndexSeries } = require('./services/marketIndexService');
+    const code = exchangeService.normalizeExchangeCode(req.params.exchange || 'PSX');
+    const days = Math.min(365, Math.max(30, parseInt(req.query.days, 10) || 180));
+    const payload = await getMarketIndexSeries(code, days);
+    res.json(payload);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/market-closing-prices - PSX closing board (Supabase + CSV fallback)
 app.get('/api/market-closing-prices', async (req, res) => {
   try {
     const globalDataStore = require('./services/globalDataStore');
+    const { enrichPsxClosingFundamentals } = require('./services/psxFundamentals');
     const payload = await globalDataStore.getClosingPrices('PSX');
-    const rows = (payload.rows || []).filter((x) => x.symbol && x.close > 0);
+    let rows = (payload.rows || []).filter((x) => x.symbol && x.close > 0);
+    rows = await enrichPsxClosingFundamentals(rows);
     const gainers = rows
       .filter((r) => typeof r.changePct === 'number' && r.changePct > 0)
       .sort((a, b) => b.changePct - a.changePct);
