@@ -126,6 +126,67 @@ export default function Layout({ children }) {
 
   const aiToggleLoading = isAiTogglePending || aiToggleMinSpin;
 
+  const marketBuddyButton = (
+    <button
+      type="button"
+      onClick={toggleBuddy}
+      aria-pressed={buddyOpen}
+      aria-expanded={buddyOpen}
+      aria-label={buddyOpen ? 'Close Market Buddy chat' : 'Open Market Buddy chat'}
+      className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 sm:px-3 py-2 rounded-xl border transition-colors shrink-0 ${
+        buddyOpen
+          ? 'text-[#1E3A8A] border-white bg-white shadow-sm'
+          : 'text-white border-white/30 bg-white/10 hover:bg-white/20'
+      }`}
+    >
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M4 5h16v11H8l-4 4z" strokeLinejoin="round" />
+      </svg>
+      <span className="hidden sm:inline">Market Buddy</span>
+    </button>
+  );
+
+  const asiToggleButton = (
+    <button
+      type="button"
+      onClick={() => {
+        if (aiToggleLoading) return;
+        if (aiSpinTimerRef.current) window.clearTimeout(aiSpinTimerRef.current);
+        setAiToggleMinSpin(true);
+        aiSpinTimerRef.current = window.setTimeout(() => {
+          setAiToggleMinSpin(false);
+          aiSpinTimerRef.current = null;
+        }, 320);
+        startAiToggleTransition(() => {
+          setAiAssistance((v) => !v);
+        });
+      }}
+      aria-pressed={aiAssistanceOn}
+      aria-label={aiAssistanceOn ? 'Turn off ASI assistant' : 'Turn on ASI assistant'}
+      aria-busy={aiToggleLoading}
+      disabled={aiToggleLoading}
+      className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 sm:px-3 py-2 rounded-xl border transition-colors shrink-0 ${
+        aiAssistanceOn
+          ? 'text-[#1E3A8A] border-white bg-white shadow-sm'
+          : 'text-white border-white/30 bg-white/10 hover:bg-white/20'
+      } ${aiToggleLoading ? 'opacity-70 cursor-wait' : ''}`}
+    >
+      {aiToggleLoading ? (
+        <>
+          <AiToggleSpinner className="w-3 h-3 animate-spin" />
+          <span className="hidden sm:inline">Applying</span>
+        </>
+      ) : aiAssistanceOn ? (
+        'ASI on'
+      ) : (
+        <>
+          <span className="sm:hidden">ASI</span>
+          <span className="hidden sm:inline">ASI assistant</span>
+        </>
+      )}
+    </button>
+  );
+
   useEffect(() => {
     api
       .getDataStatus()
@@ -187,8 +248,13 @@ export default function Layout({ children }) {
             </span>
           </Link>
 
-          <div className="flex-1 max-w-2xl mx-auto df-header-search">
+          <div className="flex-1 max-w-2xl mx-auto df-header-search min-w-0">
             <GlobalSearch />
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {marketBuddyButton}
+            {asiToggleButton}
           </div>
         </div>
 
@@ -225,7 +291,7 @@ export default function Layout({ children }) {
         )}
 
         <aside
-          className={`fixed lg:sticky top-[7.75rem] lg:top-0 z-40 h-[calc(100vh-7.75rem)] lg:h-[calc(100vh-7.75rem)] w-[240px] shrink-0 bg-[#EEF2F7] border-r border-slate-200 transition-transform ${
+          className={`fixed lg:sticky top-[7.75rem] z-40 h-[calc(100vh-7.75rem)] w-[240px] shrink-0 bg-[#EEF2F7] border-r border-slate-200 transition-transform ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
         >
@@ -259,66 +325,11 @@ export default function Layout({ children }) {
             <h1 className="text-base lg:text-lg font-semibold text-slate-900 tracking-tight truncate">
               {pageTitle}
             </h1>
-            <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
-              <button
-                type="button"
-                onClick={toggleBuddy}
-                aria-pressed={buddyOpen}
-                aria-expanded={buddyOpen}
-                aria-label={buddyOpen ? 'Close Market Buddy chat' : 'Open Market Buddy chat'}
-                className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
-                  buddyOpen
-                    ? 'text-white border-[#1E3A8A] bg-[#1E3A8A] shadow-sm'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300 hover:text-[#1E3A8A]'
-                }`}
-              >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path d="M4 5h16v11H8l-4 4z" strokeLinejoin="round" />
-                </svg>
-                <span className="hidden sm:inline">Market Buddy</span>
-                <span className="sm:hidden">Buddy</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (aiToggleLoading) return;
-                  if (aiSpinTimerRef.current) window.clearTimeout(aiSpinTimerRef.current);
-                  setAiToggleMinSpin(true);
-                  aiSpinTimerRef.current = window.setTimeout(() => {
-                    setAiToggleMinSpin(false);
-                    aiSpinTimerRef.current = null;
-                  }, 320);
-                  startAiToggleTransition(() => {
-                    setAiAssistance((v) => !v);
-                  });
-                }}
-                aria-pressed={aiAssistanceOn}
-                aria-label={aiAssistanceOn ? 'Turn off Asi assistant' : 'Turn on Asi assistant'}
-                aria-busy={aiToggleLoading}
-                disabled={aiToggleLoading}
-                className={`text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
-                  aiAssistanceOn
-                    ? 'text-white border-[#1E3A8A] bg-[#1E3A8A] shadow-sm'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300 hover:text-[#1E3A8A]'
-                } ${aiToggleLoading ? 'opacity-70 cursor-wait' : ''}`}
-              >
-                {aiToggleLoading ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <AiToggleSpinner className="w-3 h-3 animate-spin" />
-                    Applying
-                  </span>
-                ) : aiAssistanceOn ? (
-                  'Asi on'
-                ) : (
-                  'Asi assistant'
-                )}
-              </button>
-              {dataUpdated && (
-                <span className="hidden md:inline text-[11px] font-medium text-slate-500 tabular-nums">
-                  Updated {dataUpdated}
-                </span>
-              )}
-            </div>
+            {dataUpdated && (
+              <span className="text-[11px] font-medium text-slate-500 tabular-nums ml-auto">
+                Updated {dataUpdated}
+              </span>
+            )}
           </div>
 
           <div data-app-scroll-root className="flex-1 overflow-auto p-4 lg:p-6">
