@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/DividendFlowPK/static/css/main.a78b54d1.css",
+    "main.js": "/DividendFlowPK/static/js/main.9a5d72f6.js",
+    "static/js/453.20359781.chunk.js": "/DividendFlowPK/static/js/453.20359781.chunk.js",
+    "index.html": "/DividendFlowPK/index.html",
+    "main.a78b54d1.css.map": "/DividendFlowPK/static/css/main.a78b54d1.css.map",
+    "main.9a5d72f6.js.map": "/DividendFlowPK/static/js/main.9a5d72f6.js.map",
+    "453.20359781.chunk.js.map": "/DividendFlowPK/static/js/453.20359781.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a78b54d1.css",
+    "static/js/main.9a5d72f6.js"
+  ]
+}
