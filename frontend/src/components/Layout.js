@@ -25,9 +25,13 @@ const navItems = [
   { path: '/market-brokers', label: 'Market brokers', icon: 'broker' },
 ];
 
-function NavIcon({ name, className = 'w-4 h-4', active = false }) {
+function NavIcon({ name, className = 'w-4 h-4', active = false, onDark = false }) {
   const cls = className;
-  const inactiveCls = active ? cls : `${cls} text-slate-400`;
+  const inactiveCls = active
+    ? cls
+    : onDark
+      ? `${cls} text-blue-300`
+      : `${cls} text-slate-400`;
   switch (name) {
     case 'home':
       return (
@@ -107,7 +111,7 @@ function AiToggleSpinner({ className }) {
 function SidebarDisclaimer() {
   const { exchangeConfig } = useExchange();
   return (
-    <p className="mt-auto pt-4 text-[10px] text-slate-500 leading-relaxed border-t border-slate-200/80">
+    <p className="mt-auto pt-4 text-[10px] text-blue-200/70 leading-relaxed border-t border-blue-700/50">
       For learning and research only — not buy/sell advice. Confirm figures with {exchangeConfig.code} and your broker.
     </p>
   );
@@ -291,13 +295,13 @@ export default function Layout({ children }) {
         )}
 
         <aside
-          className={`fixed lg:sticky top-[7.75rem] z-40 h-[calc(100vh-7.75rem)] w-[240px] shrink-0 bg-[#EEF2F7] border-r border-slate-200 transition-transform ${
+          className={`fixed lg:sticky top-[7.75rem] z-40 h-[calc(100vh-7.75rem)] w-[240px] shrink-0 bg-[#1E3A8A] border-r border-blue-900 transition-transform ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
         >
           <div className="h-full flex flex-col p-4 gap-1 overflow-y-auto">
             <div className="mb-2 px-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Navigate</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">Navigate</p>
             </div>
             {navItems.map((item) => {
               const active = isNavActive(item.path);
@@ -307,11 +311,11 @@ export default function Layout({ children }) {
                   to={item.path}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
                     active
-                      ? 'bg-[#1E3A8A] text-white shadow-md'
-                      : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                      ? 'bg-[#3B82F6] text-white shadow-md'
+                      : 'text-blue-100 hover:bg-white/10'
                   }`}
                 >
-                  <NavIcon name={item.icon} className="w-4 h-4" active={active} />
+                  <NavIcon name={item.icon} className="w-4 h-4" active={active} onDark />
                   {item.label}
                 </Link>
               );
@@ -321,19 +325,26 @@ export default function Layout({ children }) {
         </aside>
 
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          <div className="shrink-0 border-b border-slate-200/80 bg-white/90 backdrop-blur-md px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-base lg:text-lg font-semibold text-slate-900 tracking-tight truncate">
-              {pageTitle}
-            </h1>
-            {dataUpdated && (
-              <span className="text-[11px] font-medium text-slate-500 tabular-nums ml-auto">
-                Updated {dataUpdated}
-              </span>
-            )}
-          </div>
+          {location.pathname !== '/' && (
+            <div className="shrink-0 border-b border-slate-200/80 bg-white px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+              <h1 className="text-base lg:text-lg font-semibold text-slate-900 tracking-tight truncate">
+                {pageTitle}
+              </h1>
+              {dataUpdated && (
+                <span className="text-[11px] font-medium text-slate-500 tabular-nums ml-auto">
+                  Updated {dataUpdated}
+                </span>
+              )}
+            </div>
+          )}
 
           <div data-app-scroll-root className="flex-1 overflow-auto p-4 lg:p-6">
             <div className="max-w-[1200px] mx-auto">
+              {location.pathname === '/' && dataUpdated && (
+                <p className="text-[11px] font-medium text-slate-500 tabular-nums mb-4 text-right">
+                  Updated {dataUpdated}
+                </p>
+              )}
               {children}
               <SiteFooter />
             </div>

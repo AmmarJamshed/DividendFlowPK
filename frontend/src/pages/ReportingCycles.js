@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
+import PageHero from '../components/ui/PageHero';
 
 export default function ReportingCycles() {
   const [data, setData] = useState([]);
@@ -25,16 +26,17 @@ export default function ReportingCycles() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="card p-6 border-b-0 rounded-b-none">
-        <h3 className="card-header text-lg">PSX Reporting Cycle Explorer</h3>
-        <p className="card-subtitle">Fiscal year ends, quarter cycles, and estimated dividend payment timing</p>
-      </div>
-      <div className="card overflow-hidden rounded-t-none">
+    <div className="df-page">
+      <PageHero
+        eyebrow="PSX · Reporting"
+        title="Reporting cycle explorer"
+        description="Fiscal year ends, quarter cycles, and estimated dividend payment timing for listed companies."
+      />
+      <div className="df-card overflow-hidden">
         <div className="table-responsive">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50">
+              <tr className="df-table-head">
                 <th className="text-left p-4 font-semibold text-slate-600">Company</th>
                 <th className="text-left p-4 font-semibold text-slate-600">Sector</th>
                 <th className="text-left p-4 font-semibold text-slate-600">Fiscal Year End</th>
@@ -46,14 +48,14 @@ export default function ReportingCycles() {
             </thead>
             <tbody>
               {data.map((d, i) => (
-                <tr key={i} className="border-t border-slate-100 hover:bg-ice-50/50 transition-colors">
+                <tr key={i} className="df-table-row">
                   <td className="p-4 font-medium text-slate-700">{d.Company || d.company}</td>
                   <td className="p-4 text-slate-500">{d.Sector || d.sector}</td>
                   <td className="p-4">{d.Fiscal_Year_End || d.fiscal_year_end}</td>
                   <td className="p-4">{d.Quarter_End_Months || d.quarter_end_months}</td>
                   <td className="p-4">{d.Dividend_Announcement_Period || d.dividend_announcement_period}</td>
                   <td className="p-4">{d.Book_Closure_Month || d.book_closure_month}</td>
-                  <td className="p-4"><span className="px-2 py-1 rounded-lg bg-ice-100 text-ice-700 font-medium">{d.Estimated_Payment_Month || d.estimated_payment_month}</span></td>
+                  <td className="p-4"><span className="px-2 py-1 rounded-lg bg-blue-50 text-[#1E3A8A] font-medium">{d.Estimated_Payment_Month || d.estimated_payment_month}</span></td>
                 </tr>
               ))}
             </tbody>

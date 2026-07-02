@@ -1,32 +1,17 @@
 import HelpTip from './HelpTip';
 
-/**
- * KPI tile — ink / ice accents with hover lift.
- */
 export default function MetricCard({ label, value, hint, tip, trend, accent = 'brand' }) {
   const border =
     accent === 'violet'
-      ? 'border-l-violet-500 border-t-violet-400'
+      ? 'border-l-violet-500'
       : accent === 'emerald'
-        ? 'border-l-emerald-500 border-t-emerald-400'
-        : 'border-l-ink border-t-ice-400';
-
-  const glow =
-    accent === 'violet'
-      ? 'radial-gradient(circle at top right, #a5b4fc, transparent 70%)'
-      : accent === 'emerald'
-        ? 'radial-gradient(circle at top right, #6ee7b7, transparent 70%)'
-        : 'radial-gradient(circle at top right, #94d0f0, transparent 70%)';
+        ? 'border-l-emerald-500'
+        : accent === 'orange'
+          ? 'border-l-[#F97316]'
+          : 'border-l-[#1E3A8A]';
 
   return (
-    <div
-      className={`metric-card bg-white/95 border border-slate-200/80 border-l-4 border-t-2 ${border} rounded-2xl p-5 relative overflow-hidden shadow-sm`}
-    >
-      <div
-        className="absolute right-0 top-0 h-16 w-16 opacity-30 pointer-events-none"
-        style={{ background: glow }}
-        aria-hidden="true"
-      />
+    <div className={`df-card metric-card border-l-4 ${border} p-5 relative overflow-hidden`}>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 inline-flex items-center gap-1">
         {label}
         {tip ? <HelpTip text={tip} /> : null}

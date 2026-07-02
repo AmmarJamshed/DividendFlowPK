@@ -44,7 +44,7 @@ function AICommentary({ summary, exchangeName, rowsBySymbol }) {
   const sectorNote = topGainer?.changePct > 2 ? ' with strong activity in select sectors.' : '.';
 
   return (
-    <div className="bg-white border border-neutral-200 p-4 sm:p-6 mb-6">
+    <div className="bg-white border border-slate-200 df-card p-4 sm:p-6 mb-6">
       <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500 mb-2">
         Session summary
       </h3>
@@ -168,7 +168,7 @@ export default function MarketClosingPrices() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="df-page">
       <PageHero
         variant="light"
         eyebrow="Market data"

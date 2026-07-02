@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
+import PageHero from '../components/ui/PageHero';
 import HelpTip, { LabelWithTip, ThWithTip } from '../components/ui/HelpTip';
 
 function formatRs(n) {
@@ -60,16 +61,18 @@ export default function SalarySimulator() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="df-page">
+      <PageHero
+        eyebrow="PSX · Income planner"
+        title="Salary replacement simulator"
+        description="Estimate the portfolio value needed to replace your salary with dividend income, then get AI ideas on how many PSX names to hold and how to split the amount using today's saved news and dividend data."
+      />
+
       <div className="card p-4 sm:p-6 lg:p-8 max-w-xl">
-        <h3 className="card-header text-lg inline-flex items-center gap-2 flex-wrap">
-          Salary Replacement Simulator
+        <h3 className="card-header text-lg inline-flex items-center gap-2 flex-wrap mb-4">
+          Your inputs
           <HelpTip text="A learning tool: enter the monthly cash you want from dividends and an average yield to see how much capital that implies. Not financial advice." />
         </h3>
-        <p className="card-subtitle mb-6">
-          Estimate the portfolio value needed to replace your salary with dividend income, then get AI ideas on how
-          many PSX names to hold and how to split the amount using today&apos;s saved news and dividend data.
-        </p>
         <div className="space-y-5">
           <div>
             <LabelWithTip

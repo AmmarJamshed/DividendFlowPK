@@ -7,53 +7,48 @@ export default function PageHero({
   children,
   variant = 'light',
   className = '',
-  showLogo = true,
+  showLogo = false,
 }) {
   const isBrand = variant === 'brand' || variant === 'teal';
 
   return (
     <div
-      className={`fin-hero p-6 sm:p-8 lg:p-10 ${isBrand ? 'fin-hero--brand' : ''} ${className}`}
+      className={`df-hero-card relative overflow-hidden ${isBrand ? 'text-white border-[#1E3A8A]' : ''} ${className}`}
+      style={
+        isBrand
+          ? { backgroundImage: 'linear-gradient(135deg, #1E3A8A 0%, #1e40af 55%, #172554 100%)' }
+          : undefined
+      }
     >
       {showLogo && !isBrand && (
         <img
           src={LOGO}
           alt=""
-          className="absolute right-3 top-3 w-16 sm:w-20 opacity-[0.07] pointer-events-none select-none rounded-lg"
+          className="absolute right-3 top-3 w-16 sm:w-20 opacity-[0.06] pointer-events-none select-none rounded-lg"
           aria-hidden="true"
         />
       )}
       <div className="relative z-[1]">
         {eyebrow && (
-          <p
-            className={`inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest mb-3 px-2.5 py-1 rounded-full ${
-              isBrand ? 'bg-white/10 text-ice-100' : 'bg-ice-100/80 text-ice-700 border border-ice-200/60'
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${isBrand ? 'bg-ice-300 animate-pulse' : 'bg-ice-500'}`}
-              aria-hidden
-            />
-            {eyebrow}
-          </p>
+          <span className={`df-tag ${isBrand ? 'bg-white/15 text-white' : ''}`}>{eyebrow}</span>
         )}
-        <h1
-          className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight max-w-4xl ${
+        <h2
+          className={`text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight max-w-4xl mt-3 ${
             isBrand ? 'text-white' : 'text-slate-900'
           }`}
         >
           {title}
-        </h1>
+        </h2>
         {description && (
           <p
-            className={`mt-4 text-sm sm:text-base leading-relaxed max-w-3xl ${
-              isBrand ? 'text-ice-100/95' : 'text-slate-600'
+            className={`mt-3 text-sm sm:text-base leading-relaxed max-w-3xl ${
+              isBrand ? 'text-blue-100' : 'text-slate-600'
             }`}
           >
             {description}
           </p>
         )}
-        {children && <div className="mt-6 flex flex-wrap gap-3">{children}</div>}
+        {children && <div className="mt-5 flex flex-wrap gap-3">{children}</div>}
       </div>
     </div>
   );

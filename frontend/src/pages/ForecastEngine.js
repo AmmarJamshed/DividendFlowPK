@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { api } from '../api';
 import Disclaimer from '../components/Disclaimer';
+import PageHero from '../components/ui/PageHero';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const yesterday = () => {
@@ -170,17 +171,14 @@ export default function ForecastEngine() {
   }, []);
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <header className="border-b border-slate-200 pb-5">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">PSX · Quantitative view</p>
-        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight mt-1">Price range & return scenarios</h1>
-        <p className="mt-2 text-sm text-slate-600 max-w-2xl leading-relaxed">
-          Statistical band around the latest closing price, plus a simple dividend + appreciation worksheet.
-          Updated from saved market files after each session close (≈ 3:30 pm PKT).
-        </p>
-      </header>
+    <div className="df-page max-w-5xl">
+      <PageHero
+        eyebrow="PSX · Quantitative view"
+        title="Price range & return scenarios"
+        description="Statistical band around the latest closing price, plus a simple dividend + appreciation worksheet. Updated from saved market files after each session close (≈ 3:30 pm PKT)."
+      />
 
-      <section className="bg-white border border-slate-200 rounded-lg shadow-sm">
+      <section className="df-card overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex flex-wrap items-end gap-4">
           <label className="block min-w-[140px]">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Symbol</span>
@@ -279,7 +277,7 @@ export default function ForecastEngine() {
       </section>
 
       {!loading && capitalGain && (
-        <section className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <section className="df-card overflow-hidden">
           <div className="px-4 py-4 border-b border-slate-200">
             <h2 className="text-sm font-semibold text-slate-900">Blended return worksheet</h2>
             <p className="text-xs text-slate-500 mt-1">

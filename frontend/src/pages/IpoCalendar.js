@@ -208,7 +208,7 @@ export default function IpoCalendar() {
   const links = data.registrationLinks;
 
   return (
-    <div className="space-y-6">
+    <div className="df-page">
       <PageHero
         variant="light"
         eyebrow={`${exchangeConfig.code} · Primary market`}

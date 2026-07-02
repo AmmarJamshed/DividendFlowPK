@@ -48,9 +48,9 @@ export default function DashboardRedesign() {
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
           <div className="flex-1 min-w-0">
             <span className="df-tag">Daily Missions · Pakistan (PSX)</span>
-            <h1 className="text-2xl lg:text-[28px] font-extrabold text-slate-900 mt-3 leading-tight tracking-tight">
+            <h2 className="text-2xl lg:text-[28px] font-extrabold text-slate-900 mt-3 leading-tight tracking-tight">
               Your dividend &amp; market snaps
-            </h1>
+            </h2>
             <p className="text-sm text-slate-600 mt-3 leading-relaxed max-w-2xl">
               Track payout calendars, closing prices, and headline-linked moves from archived PSX data.
               Updated on weekdays after the session — for research only, not investment advice.

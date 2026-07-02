@@ -12,7 +12,7 @@ export default function MarketBrokers() {
   usePageTitle('Market brokers — DividendFlow PK');
 
   return (
-    <div className="space-y-6">
+    <div className="df-page">
       <PageHero
         variant="light"
         eyebrow="PSX · Directory"
