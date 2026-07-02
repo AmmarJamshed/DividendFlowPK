@@ -1,3 +1,5 @@
+export const SUPPORT_EMAIL = 'adminsupport@dividendflow.pk';
+
 export const BRAND = {
   name: 'DividendFlow PK',
   from: 'DividendFlow PK <noreply@dividendflow.pk>',
@@ -102,7 +104,7 @@ export function buildSignupConfirmationEmail(email: string, confirmUrl: string) 
         <p style="margin-top:16px;font-size:14px;color:${BRAND.muted}">This link expires soon. If you did not sign up, you can safely ignore this message.</p>`,
       ctaUrl: confirmUrl,
       ctaLabel: 'Confirm email address',
-      footerNote: 'DividendFlow PK sends account emails from noreply@dividendflow.pk. For help, reply to contact@dividendflow.pk.',
+      footerNote: `DividendFlow PK sends account emails from noreply@dividendflow.pk. For help, email ${SUPPORT_EMAIL}.`,
     }),
   };
 }
@@ -194,9 +196,17 @@ export function generateConfirmationURL(
   return `${baseUrl}?${params.toString()}`;
 }
 
+const PRODUCTION_CALLBACK = `${BRAND.siteUrl}/auth/callback`;
+
 export function normalizeRedirectTo(redirectTo: string) {
-  if (!redirectTo || redirectTo.includes('localhost') || redirectTo.includes('127.0.0.1')) {
-    return 'https://dividendflow.pk/auth/callback';
+  let next: string | null = null;
+  if (redirectTo) {
+    try {
+      next = new URL(redirectTo).searchParams.get('next');
+    } catch {
+      // ignore malformed redirect URLs from Supabase
+    }
   }
-  return redirectTo;
+  if (!next) return PRODUCTION_CALLBACK;
+  return `${PRODUCTION_CALLBACK}?next=${encodeURIComponent(next)}`;
 }

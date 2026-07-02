@@ -3,24 +3,19 @@ const PRODUCTION_ORIGIN = 'https://dividendflow.pk';
 /** Origin used for Supabase email confirmation / auth redirects. */
 export function resolveSiteOrigin() {
   const configured = String(process.env.REACT_APP_SITE_URL || '').replace(/\/$/, '');
-  if (configured) return configured;
-
-  if (typeof window === 'undefined') return PRODUCTION_ORIGIN;
-
-  const { hostname, origin, protocol } = window.location;
-  if (hostname === 'dividendflow.pk' || hostname.endsWith('.dividendflow.pk')) {
-    return PRODUCTION_ORIGIN;
-  }
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return origin;
+  if (configured && !/localhost|127\.0\.0\.1/.test(configured)) {
+    return configured;
   }
 
-  // Production builds on Render previews should still confirm via the live domain.
-  if (process.env.NODE_ENV === 'production' && protocol === 'https:') {
-    return PRODUCTION_ORIGIN;
+  // Local dev only — production builds always confirm on dividendflow.pk.
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+    const { hostname, origin } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return origin;
+    }
   }
 
-  return origin;
+  return PRODUCTION_ORIGIN;
 }
 
 /** Supabase email-confirm and OAuth return URL. */

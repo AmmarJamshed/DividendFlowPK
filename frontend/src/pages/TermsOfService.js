@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import LegalPageLayout, { LegalSection } from '../components/legal/LegalPageLayout';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { OFFICIAL_CONTACT_EMAIL, OFFICIAL_CONTACT_LABEL } from '../config/contact';
 
 const UPDATED = '14 June 2026';
 
@@ -106,8 +107,8 @@ export default function TermsOfService() {
 
       <LegalSection title="12. Contact">
         <p>
-          <a href="mailto:contact@dividendflow.pk" className="text-ice-700 hover:underline">
-            contact@dividendflow.pk
+          <a href={`mailto:${OFFICIAL_CONTACT_EMAIL}`} className="text-ice-700 hover:underline">
+            {OFFICIAL_CONTACT_LABEL}
           </a>
           {' '}· <Link to="/contact" className="text-ice-700 hover:underline">Contact page</Link>
         </p>

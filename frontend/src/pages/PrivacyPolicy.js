@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import LegalPageLayout, { LegalSection } from '../components/legal/LegalPageLayout';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { OFFICIAL_CONTACT_EMAIL, OFFICIAL_CONTACT_LABEL } from '../config/contact';
 
 const UPDATED = '14 June 2026';
 
@@ -117,8 +118,8 @@ export default function PrivacyPolicy() {
           Analytics data is retained according to Google Analytics settings. Server logs are kept for a limited period
           for security. Market data in our database is retained to power historical charts and calendars. You may request
           deletion of correspondence sent to us at{' '}
-          <a href="mailto:contact@dividendflow.pk" className="text-ice-700 hover:underline">
-            contact@dividendflow.pk
+          <a href={`mailto:${OFFICIAL_CONTACT_EMAIL}`} className="text-ice-700 hover:underline">
+            {OFFICIAL_CONTACT_LABEL}
           </a>
           .
         </p>
@@ -128,8 +129,8 @@ export default function PrivacyPolicy() {
         <p>
           Depending on your location, you may have rights to access, correct, or delete personal data we hold about you,
           or to object to certain processing. Contact us at{' '}
-          <a href="mailto:contact@dividendflow.pk" className="text-ice-700 hover:underline">
-            contact@dividendflow.pk
+          <a href={`mailto:${OFFICIAL_CONTACT_EMAIL}`} className="text-ice-700 hover:underline">
+            {OFFICIAL_CONTACT_LABEL}
           </a>
           . We will respond within a reasonable time.
         </p>
@@ -153,8 +154,8 @@ export default function PrivacyPolicy() {
       <LegalSection title="10. Contact">
         <p>
           Privacy questions:{' '}
-          <a href="mailto:contact@dividendflow.pk" className="text-ice-700 hover:underline">
-            contact@dividendflow.pk
+          <a href={`mailto:${OFFICIAL_CONTACT_EMAIL}`} className="text-ice-700 hover:underline">
+            {OFFICIAL_CONTACT_LABEL}
           </a>
           {' '}· <Link to="/contact" className="text-ice-700 hover:underline">Contact page</Link>
         </p>

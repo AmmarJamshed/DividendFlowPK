@@ -1,6 +1,7 @@
 /** Routes accessible without a completed account */
 export const PUBLIC_PATHS = new Set([
   '/',
+  '/dividend-calendar',
   '/sign-in',
   '/sign-up',
   '/complete-profile',

@@ -1,5 +1,7 @@
 /** Shared branded HTML email layout for backend mail (contact, newsletters). */
 
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'adminsupport@dividendflow.pk';
+
 const BRAND = {
   name: 'DividendFlow PK',
   from: process.env.AUTH_EMAIL_FROM || 'DividendFlow PK <noreply@dividendflow.pk>',
@@ -51,6 +53,7 @@ function buildSignupConfirmationEmail(email, confirmUrl) {
 
 module.exports = {
   BRAND,
+  SUPPORT_EMAIL,
   escapeHtml,
   buildBrandedEmailHtml,
   buildSignupConfirmationEmail,

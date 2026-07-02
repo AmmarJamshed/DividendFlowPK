@@ -23,7 +23,7 @@ export default function AuthCallback() {
     initSupabaseAuth().then(async (client) => {
       if (!active) return;
       if (!client) {
-        setDestination(`/sign-in?next=${encodeURIComponent(nextPath)}`);
+        setDestination('/');
         return;
       }
 
@@ -31,9 +31,7 @@ export default function AuthCallback() {
       if (hashError) {
         clearAuthHash();
         const message = formatAuthError(hashError);
-        setDestination(
-          `/sign-in?next=${encodeURIComponent(nextPath)}&authError=${encodeURIComponent(message)}`
-        );
+        setDestination(`/?authError=${encodeURIComponent(message)}`);
         return;
       }
 
@@ -41,9 +39,7 @@ export default function AuthCallback() {
       if (code) {
         const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
         if (exchangeError && active) {
-          setDestination(
-            `/sign-in?next=${encodeURIComponent(nextPath)}&authError=${encodeURIComponent(exchangeError.message)}`
-          );
+          setDestination(`/?authError=${encodeURIComponent(exchangeError.message)}`);
           return;
         }
       }
@@ -51,7 +47,7 @@ export default function AuthCallback() {
       const { data: { session }, error } = await client.auth.getSession();
       clearAuthHash();
       if (error || !session?.user) {
-        setDestination(`/sign-in?next=${encodeURIComponent(nextPath)}`);
+        setDestination('/');
         return;
       }
 
@@ -64,7 +60,7 @@ export default function AuthCallback() {
           setDestination(`/complete-profile?next=${encodeURIComponent(nextPath)}`);
         }
       } catch {
-        if (active) setDestination(`/sign-in?next=${encodeURIComponent(nextPath)}`);
+        if (active) setDestination('/');
       }
     });
 

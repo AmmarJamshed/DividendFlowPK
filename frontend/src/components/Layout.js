@@ -1,5 +1,5 @@
 import { useState, useEffect, useTransition, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api';
 import RobotCursor from './RobotCursor';
 import AIGuidance from './AIGuidance';
@@ -8,7 +8,6 @@ import { useAIAssistance } from '../context/AIAssistanceContext';
 import { useMarketBuddy } from '../context/MarketBuddyContext';
 import { useExchange } from '../context/ExchangeContext';
 import { useAuth } from '../context/AuthContext';
-import { authRedirectPath } from '../utils/authPaths';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
 import CookieConsent from './CookieConsent';
@@ -135,11 +134,10 @@ function SidebarDisclaimer() {
 
 export default function Layout({ children }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
   const { exchange, exchangeConfig } = useExchange();
   const { open: buddyOpen, toggle: toggleBuddy, setOpen: setBuddyOpen } = useMarketBuddy();
-  const { signedIn, canAccessTools, profile, signOut, authConfigured } = useAuth();
+  const { signedIn, profile, signOut } = useAuth();
   const [isAiTogglePending, startAiToggleTransition] = useTransition();
   const [aiToggleMinSpin, setAiToggleMinSpin] = useState(false);
   const aiSpinTimerRef = useRef(null);
@@ -179,8 +177,6 @@ export default function Layout({ children }) {
   const pageTitle =
     navItems.find((n) => n.path === location.pathname)?.label ||
     (location.pathname === '/account' ? 'My account' : null) ||
-    (location.pathname === '/sign-in' ? 'Sign in' : null) ||
-    (location.pathname === '/sign-up' ? 'Sign up' : null) ||
     (stockMatch
       ? `${stockMatch[1].toUpperCase()} · ${stockMatch[2].toUpperCase()}`
       : `${exchangeConfig.code} · Overview`);
@@ -230,17 +226,10 @@ export default function Layout({ children }) {
           <nav className="flex-1 py-3 overflow-y-auto">
             {navItems.map(({ path, label, icon }) => {
               const active = location.pathname === path;
-              const gated = path !== '/' && authConfigured && !canAccessTools;
               return (
                 <Link
                   key={path}
-                  to={gated ? authRedirectPath(path) : path}
-                  onClick={(e) => {
-                    if (gated) {
-                      e.preventDefault();
-                      navigate(authRedirectPath(path));
-                    }
-                  }}
+                  to={path}
                   className={`group flex items-center gap-3 px-4 py-3 mx-2 rounded-xl text-sm font-semibold transition-all ${
                     active
                       ? 'nav-link-active shadow-md'
@@ -249,17 +238,11 @@ export default function Layout({ children }) {
                 >
                   <NavIcon name={icon} active={active} />
                   <span className="flex-1">{label}</span>
-                  {gated && (
-                    <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                      <rect x="5" y="11" width="14" height="10" rx="2" />
-                      <path d="M8 11V8a4 4 0 1 1 8 0v3" />
-                    </svg>
-                  )}
                 </Link>
               );
             })}
             <div className="px-2 pt-2 mt-2 border-t border-slate-200/80">
-              {signedIn ? (
+              {signedIn && (
                 <Link
                   to="/account"
                   className={`group flex items-center gap-3 px-4 py-3 mx-0 rounded-xl text-sm font-semibold transition-all ${
@@ -271,21 +254,6 @@ export default function Layout({ children }) {
                   <NavIcon name="user" active={location.pathname === '/account'} />
                   My account
                 </Link>
-              ) : (
-                <div className="space-y-1 px-2 pb-1">
-                  <Link
-                    to={`/sign-up?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                    className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-ink to-ink-soft px-4 py-3 text-sm font-bold text-white shadow-md hover:from-ink-soft hover:to-ink-muted"
-                  >
-                    Create free account
-                  </Link>
-                  <Link
-                    to={`/sign-in?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                    className="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-ice-300 hover:text-ice-700"
-                  >
-                    Sign in
-                  </Link>
-                </div>
               )}
             </div>
           </nav>
@@ -310,7 +278,7 @@ export default function Layout({ children }) {
               </h2>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto flex-wrap justify-end">
-              {signedIn ? (
+              {signedIn && (
                 <div className="flex items-center gap-2">
                   <Link
                     to="/account"
@@ -329,26 +297,6 @@ export default function Layout({ children }) {
                     Sign out
                   </button>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 order-first sm:order-none w-full sm:w-auto justify-end">
-                  <Link
-                    to={`/sign-in?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-ice-300 hover:text-ice-700 transition-colors"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to={`/sign-up?next=${encodeURIComponent(location.pathname === '/' ? '/dividend-calendar' : location.pathname)}`}
-                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-ice-400 bg-gradient-to-r from-ink to-ink-soft text-white shadow-sm hover:from-ink-soft hover:to-ink-muted transition-colors"
-                  >
-                    Sign up
-                  </Link>
-                </div>
-              )}
-              {!signedIn && location.pathname !== '/' && (
-                <span className="hidden xl:inline text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
-                  Free account required for tools
-                </span>
               )}
               <GlobalSearch />
               <button

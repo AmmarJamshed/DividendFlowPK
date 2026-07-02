@@ -37,7 +37,7 @@ export default function Contact() {
     <LegalPageLayout
       eyebrow="Contact"
       title="Contact us"
-      description="Send a message to the official DividendFlow PK channel. We route inquiries from contact@dividendflow.pk."
+      description={`Send a message to DividendFlow PK support. We route inquiries to ${OFFICIAL_CONTACT_EMAIL}.`}
     >
       <LegalSection title="Official channel">
         <p>

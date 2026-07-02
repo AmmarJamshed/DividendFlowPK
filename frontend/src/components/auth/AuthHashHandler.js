@@ -19,7 +19,7 @@ export default function AuthHashHandler() {
     if (authError) {
       clearAuthHash();
       const message = formatAuthError(authError);
-      navigate(`/sign-in?authError=${encodeURIComponent(message)}`, { replace: true });
+      navigate(`/?authError=${encodeURIComponent(message)}`, { replace: true });
       return;
     }
 

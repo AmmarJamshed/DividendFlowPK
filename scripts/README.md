@@ -52,6 +52,8 @@ If `data/dividends/psx_payouts.csv` has at least this many rows (default **120**
 
 Account emails are sent **from `DividendFlow PK <noreply@dividendflow.pk>`** with the logo via the `send-auth-email` Edge Function + Resend.
 
+**Full domain setup (DNS, Resend, receiving at `adminsupport@`):** see [`docs/EMAIL_DOMAIN_SETUP.md`](../docs/EMAIL_DOMAIN_SETUP.md).
+
 ### One-time Supabase setup
 
 1. **Resend** — verify domain `dividendflow.pk` at [resend.com/domains](https://resend.com/domains) and add DNS records.
@@ -68,6 +70,10 @@ Account emails are sent **from `DividendFlow PK <noreply@dividendflow.pk>`** wit
 5. **URL config** — Authentication → URL Configuration:
    - Site URL: `https://dividendflow.pk`
    - Redirect URLs: `https://dividendflow.pk/auth/callback`
+
+   Or run: `node scripts/fix-supabase-auth-urls.mjs` (needs `SUPABASE_ACCESS_TOKEN`).
+
+   If links still show `localhost:3000`, restart the Supabase project from Dashboard → Settings → General.
 
 Templates live in `supabase/functions/send-auth-email/` (auth) and `backend/services/emailBrand.js` (newsletters/contact).
 

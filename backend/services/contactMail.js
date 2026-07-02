@@ -2,7 +2,8 @@ const axios = require('axios');
 const nodemailer = require('nodemailer');
 const { BRAND, buildBrandedEmailHtml, escapeHtml } = require('./emailBrand');
 
-const CONTACT_FROM = process.env.CONTACT_EMAIL_FROM || 'DividendFlow PK <contact@dividendflow.pk>';
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'adminsupport@dividendflow.pk';
+const CONTACT_FROM = process.env.CONTACT_EMAIL_FROM || 'DividendFlow PK <noreply@dividendflow.pk>';
 const CONTACT_TO = process.env.CONTACT_EMAIL_TO || 'ammarjamshed123@gmail.com';
 
 function buildContactHtml({ name, email, subject, message }) {
@@ -15,7 +16,7 @@ function buildContactHtml({ name, email, subject, message }) {
       <p><strong>Received:</strong> ${escapeHtml(when)} (PKT)</p>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0" />
       <p style="white-space:pre-wrap;line-height:1.5">${escapeHtml(message)}</p>`,
-    footerNote: 'Reply directly to this email to reach the sender. Sent via contact@dividendflow.pk',
+    footerNote: `Reply directly to this email to reach the sender. Support: ${SUPPORT_EMAIL}`,
   });
 }
 
@@ -85,6 +86,7 @@ function isContactConfigured() {
 }
 
 module.exports = {
+  SUPPORT_EMAIL,
   CONTACT_FROM,
   CONTACT_TO,
   sendContactMessage,

@@ -61,7 +61,7 @@ function buildEmailHtml(success, changes, error, date) {
 
 async function sendViaResend(to, subject, html) {
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const from = process.env.SCRAPER_EMAIL_FROM || 'DividendFlow <onboarding@resend.dev>';
+  const from = process.env.SCRAPER_EMAIL_FROM || 'DividendFlow PK <noreply@dividendflow.pk>';
   await resend.emails.send({
     from,
     to,

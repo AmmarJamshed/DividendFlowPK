@@ -1863,7 +1863,7 @@ app.post('/api/contact', async (req, res) => {
 
     await contactMail.sendContactMessage({ name, email, subject, message });
     contactRateByIp.set(ip, now);
-    res.json({ ok: true, from: 'contact@dividendflow.pk' });
+    res.json({ ok: true, support: contactMail.SUPPORT_EMAIL });
   } catch (err) {
     console.error('[contact]', err.message);
     res.status(500).json({ ok: false, error: 'Failed to send message. Please try again later.' });

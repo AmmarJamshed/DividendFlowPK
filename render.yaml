@@ -23,10 +23,14 @@ services:
         sync: false
       - key: NODE_ENV
         value: production
+      - key: AUTH_EMAIL_FROM
+        value: DividendFlow PK <noreply@dividendflow.pk>
+      - key: CONTACT_EMAIL_FROM
+        value: DividendFlow PK <noreply@dividendflow.pk>
+      - key: SUPPORT_EMAIL
+        value: adminsupport@dividendflow.pk
       - key: CONTACT_EMAIL_TO
         value: ammarjamshed123@gmail.com
-      - key: CONTACT_EMAIL_FROM
-        value: DividendFlow PK <contact@dividendflow.pk>
       - key: RESEND_API_KEY
         sync: false
       - key: SMTP_HOST
