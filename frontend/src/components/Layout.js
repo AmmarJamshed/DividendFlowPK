@@ -7,12 +7,10 @@ const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
 const topNavItems = [
   { to: '/', label: 'Home', icon: 'home' },
-  { to: '/dividend-calendar', label: 'My Portfolio' },
   { to: '/dividend-calendar', label: 'Dividend Calendar' },
   { to: '/market-closing-prices', label: 'Top Yielders' },
   { to: '/forecast-engine', label: 'Growth Stocks' },
   { to: '/salary-simulator', label: 'Tax Calculator' },
-  { to: '/account', label: 'Profile' },
 ];
 
 const sidebarItems = [
@@ -104,26 +102,6 @@ export default function Layout({ children }) {
           <div className="flex-1 max-w-2xl mx-auto df-header-search">
             <GlobalSearch />
           </div>
-
-          <div className="hidden md:flex items-center gap-3 text-white shrink-0">
-            <svg className="w-4 h-4 text-blue-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <path d="M16 2v4M8 2v4M3 10h18" />
-            </svg>
-            <span className="text-sm font-medium">Fatima Zahra</span>
-            <div className="relative">
-              <svg className="w-5 h-5 text-blue-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1" />
-              </svg>
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold flex items-center justify-center">1</span>
-            </div>
-            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-blue-200 bg-blue-100 text-blue-900 font-bold flex items-center justify-center text-xs">
-              FZ
-            </div>
-            <svg className="w-4 h-4 text-blue-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </div>
         </div>
 
         <nav className="h-11 bg-[#F97316] px-4 lg:px-8 flex items-center gap-1 overflow-x-auto text-white text-[13px] whitespace-nowrap">
@@ -170,7 +148,7 @@ export default function Layout({ children }) {
               className="flex items-center gap-3 rounded-xl bg-[#1E3A8A] text-white px-3 py-2.5 text-sm font-semibold shadow-md"
             >
               <NavIcon name="grid" className="w-4 h-4" />
-              My Portfolios
+              Dividend calendar
             </Link>
 
             {sidebarItems.map((item) => (

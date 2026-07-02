@@ -14,9 +14,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import About from './pages/About';
 import Contact from './pages/Contact';
-import CompleteProfile from './pages/CompleteProfile';
 import AuthCallback from './pages/AuthCallback';
-import Account from './pages/Account';
 import { AIAssistanceProvider } from './context/AIAssistanceContext';
 import { MarketBuddyProvider } from './context/MarketBuddyContext';
 import { ExchangeProvider } from './context/ExchangeContext';
@@ -59,9 +57,9 @@ function App() {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/sign-in" element={<Navigate to="/" replace />} />
                   <Route path="/sign-up" element={<Navigate to="/" replace />} />
-                  <Route path="/complete-profile" element={<CompleteProfile />} />
+                  <Route path="/complete-profile" element={<Navigate to="/" replace />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
-                  <Route path="/account" element={<Account />} />
+                  <Route path="/account" element={<Navigate to="/" replace />} />
                   <Route path="/dividend-calendar" element={<DividendCalendar />} />
                   <Route path="/market-closing-prices" element={<MarketClosingPrices />} />
                   <Route path="/ipo-calendar" element={<IpoCalendar />} />
