@@ -46,7 +46,7 @@ export default function GlobalSearch() {
   }
 
   return (
-    <div ref={wrapRef} className="relative w-full max-w-[11rem] sm:max-w-xs">
+    <div ref={wrapRef} className="relative w-full">
       <input
         type="search"
         value={q}
@@ -55,7 +55,7 @@ export default function GlobalSearch() {
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder="Search ticker…"
+        placeholder="Search ticker or company…"
         className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-ice-400/60"
         aria-label="Search PSX stocks"
       />

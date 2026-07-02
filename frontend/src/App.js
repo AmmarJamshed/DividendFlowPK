@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/DashboardRedesign';
 import DividendCalendar from './pages/DividendCalendar';
 import ForecastEngine from './pages/ForecastEngine';
 import SalarySimulator from './pages/SalarySimulator';

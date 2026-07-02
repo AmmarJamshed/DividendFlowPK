@@ -1,99 +1,68 @@
-import { useState, useEffect, useTransition, useRef } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { api } from '../api';
-import RobotCursor from './RobotCursor';
-import AIGuidance from './AIGuidance';
-import AmmarCursorGuide from './AmmarCursorGuide';
-import { useAIAssistance } from '../context/AIAssistanceContext';
-import { useMarketBuddy } from '../context/MarketBuddyContext';
-import { useExchange } from '../context/ExchangeContext';
-import { useAuth } from '../context/AuthContext';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
-import CookieConsent from './CookieConsent';
-import PwaInstallBanner from './PwaInstallBanner';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
-const navItems = [
-  { path: '/', label: 'Overview', icon: 'home' },
-  { path: '/dividend-calendar', label: 'Dividend calendar', icon: 'calendar' },
-  { path: '/market-closing-prices', label: 'Market data', icon: 'chart' },
-  { path: '/ipo-calendar', label: 'IPO calendar', icon: 'ipo' },
-  { path: '/forecast-engine', label: 'Forecast', icon: 'trend' },
-  { path: '/salary-simulator', label: 'Income planner', icon: 'wallet' },
-  { path: '/reporting-cycles', label: 'Reporting cycles', icon: 'document' },
-  { path: '/market-brokers', label: 'Market brokers', icon: 'broker' },
+const topNavItems = [
+  { to: '/', label: 'Home', icon: 'home' },
+  { to: '/dividend-calendar', label: 'My Portfolio' },
+  { to: '/dividend-calendar', label: 'Dividend Calendar' },
+  { to: '/market-closing-prices', label: 'Top Yielders' },
+  { to: '/forecast-engine', label: 'Growth Stocks' },
+  { to: '/salary-simulator', label: 'Tax Calculator' },
+  { to: '/account', label: 'Profile' },
 ];
 
-function NavIcon({ name, active = false }) {
-  const cls = `w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-500 group-hover:text-ice-600'}`;
+const sidebarItems = [
+  { to: '/dividend-calendar', label: 'Sector Focus', sub: 'high yield', icon: 'pie' },
+  { to: '/forecast-engine', label: 'Watchlist', sub: 'growth', icon: 'star' },
+];
+
+function NavIcon({ name, className = 'w-4 h-4' }) {
+  const cls = className;
   switch (name) {
     case 'home':
       return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <path d="M3 10.5 12 3l9 7.5" />
-          <path d="M5.5 9.5V20h13V9.5" />
+          <path d="M6 10v10h12V10" />
         </svg>
       );
-    case 'calendar':
+    case 'grid':
       return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <rect x="3.5" y="5" width="17" height="15" />
-          <path d="M7.5 3v4M16.5 3v4M3.5 9.5h17" />
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
         </svg>
       );
-    case 'chart':
+    case 'pie':
       return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M4 19.5h16" />
-          <path d="M6 16v-4M12 16V8M18 16v-6" />
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <path d="M12 3v9h9a9 9 0 1 0-9-9z" />
         </svg>
       );
-    case 'ipo':
+    case 'star':
       return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M12 3v18" />
-          <path d="M7 8h10M7 12h10M7 16h6" />
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <path d="m12 2 3.1 6.3L22 9.3l-5 4.9 1.2 6.9L12 17.8 5.8 21.1 7 14.2l-5-4.9 6.9-1z" />
+        </svg>
+      );
+    case 'calc':
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <rect x="4" y="3" width="16" height="18" rx="2" />
+          <path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2" />
         </svg>
       );
-    case 'trend':
+    case 'settings':
       return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M4 16.5 9.5 11l4 4 6.5-7" />
-          <path d="M14 8h6v6" />
-        </svg>
-      );
-    case 'wallet':
-      return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <rect x="3.5" y="6.5" width="17" height="11" rx="1.5" />
-          <path d="M16 12h4.5" />
-          <circle cx="16" cy="12" r="0.9" fill="currentColor" />
-        </svg>
-      );
-    case 'document':
-      return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M7 3.5h7l4 4V20H7z" />
-          <path d="M14 3.5v4h4M9.5 12h5M9.5 15h5" />
-        </svg>
-      );
-    case 'broker':
-      return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M3 21h18" />
-          <path d="M5 21V7l7-4 7 4v14" />
-          <path d="M9 21v-6h6v6" />
-          <path d="M9 10h6M9 14h6" />
-        </svg>
-      );
-    case 'user':
-      return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <circle cx="12" cy="8" r="3.5" />
-          <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" />
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
         </svg>
       );
     default:
@@ -101,279 +70,156 @@ function NavIcon({ name, active = false }) {
   }
 }
 
-function AiToggleSpinner({ className }) {
-  return (
-    <svg
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path
-        className="opacity-90"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
-    </svg>
-  );
-}
-
-function SidebarDisclaimer() {
-  const { exchangeConfig } = useExchange();
-  return (
-    <footer className="mt-auto border-t border-slate-200/80 px-4 py-3 text-[11px] text-slate-600 bg-slate-50/90 leading-relaxed">
-      For learning and research only — not buy/sell advice. Confirm figures with {exchangeConfig.code} and your broker.{' '}
-      <Link to="/privacy" className="text-ice-700 font-medium hover:underline">Privacy</Link>
-      {' · '}
-      <Link to="/contact" className="text-ice-700 font-medium hover:underline">Contact</Link>
-    </footer>
-  );
-}
-
 export default function Layout({ children }) {
   const location = useLocation();
-  const { enabled: aiAssistanceOn, setEnabled: setAiAssistance } = useAIAssistance();
-  const { exchange, exchangeConfig } = useExchange();
-  const { open: buddyOpen, toggle: toggleBuddy, setOpen: setBuddyOpen } = useMarketBuddy();
-  const { signedIn, profile, signOut } = useAuth();
-  const [isAiTogglePending, startAiToggleTransition] = useTransition();
-  const [aiToggleMinSpin, setAiToggleMinSpin] = useState(false);
-  const aiSpinTimerRef = useRef(null);
-  const [dataUpdated, setDataUpdated] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const aiToggleLoading = isAiTogglePending || aiToggleMinSpin;
-
-  useEffect(() => {
-    api
-      .getDataStatus()
-      .then((res) => {
-        const base = res.data.formatted || res.data.latestTradingDate || res.data.lastUpdated;
-        const storageTag = res.data.storage === 'supabase' ? ' · cloud DB' : '';
-        setDataUpdated(`${exchange} · ${base}${storageTag}`);
-      })
-      .catch(() => setDataUpdated(`${exchange} · ${new Date().toLocaleString()}`));
-  }, [exchange]);
-
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (location.hash === '#market-chat') {
-      setBuddyOpen(true);
-    }
-  }, [location.hash, setBuddyOpen]);
-
-  useEffect(() => {
-    return () => {
-      if (aiSpinTimerRef.current) window.clearTimeout(aiSpinTimerRef.current);
-    };
-  }, []);
-
-  const stockMatch = location.pathname.match(/^\/stock\/([^/]+)\/([^/]+)/i);
-  const pageTitle =
-    navItems.find((n) => n.path === location.pathname)?.label ||
-    (location.pathname === '/account' ? 'My account' : null) ||
-    (stockMatch
-      ? `${stockMatch[1].toUpperCase()} · ${stockMatch[2].toUpperCase()}`
-      : `${exchangeConfig.code} · Overview`);
+  const isNavActive = (to) => {
+    if (to === '/') return location.pathname === '/';
+    return location.pathname === to || location.pathname.startsWith(`${to}/`);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col text-slate-700 relative">
-      <div className="flex flex-1 min-h-0 relative">
+    <div className="min-h-screen bg-[#F5F7FA] text-slate-800 font-sans">
+      <header className="sticky top-0 z-50 shadow-sm">
+        <div className="h-[60px] bg-[#1E3A8A] px-4 lg:px-8 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="lg:hidden text-white p-1 rounded-md hover:bg-white/10"
+            aria-label="Toggle sidebar"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          <Link to="/" className="flex items-center gap-2.5 text-white shrink-0">
+            <img src={LOGO} alt="" className="w-9 h-9 rounded-lg" aria-hidden />
+            <span className="font-bold text-[15px] tracking-tight hidden sm:inline">
+              DIVIDEND FLOW PK <span className="text-blue-200 font-semibold">| PSX</span>
+            </span>
+          </Link>
+
+          <div className="flex-1 max-w-2xl mx-auto df-header-search">
+            <GlobalSearch />
+          </div>
+
+          <div className="hidden md:flex items-center gap-3 text-white shrink-0">
+            <svg className="w-4 h-4 text-blue-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+            <span className="text-sm font-medium">Fatima Zahra</span>
+            <div className="relative">
+              <svg className="w-5 h-5 text-blue-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1" />
+              </svg>
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold flex items-center justify-center">1</span>
+            </div>
+            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-blue-200 bg-blue-100 text-blue-900 font-bold flex items-center justify-center text-xs">
+              FZ
+            </div>
+            <svg className="w-4 h-4 text-blue-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <nav className="h-11 bg-[#F97316] px-4 lg:px-8 flex items-center gap-1 overflow-x-auto text-white text-[13px] whitespace-nowrap">
+          {topNavItems.map((item) => {
+            const active = isNavActive(item.to) && (item.icon !== 'home' || location.pathname === '/');
+            const homeActive = item.icon === 'home' && location.pathname === '/';
+            return (
+              <Link
+                key={item.label}
+                to={item.to}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-colors ${
+                  homeActive || (active && item.icon !== 'home')
+                    ? 'bg-white text-[#F97316] shadow-sm'
+                    : 'hover:bg-white/15'
+                }`}
+              >
+                {item.icon === 'home' && <NavIcon name="home" className="w-3.5 h-3.5" />}
+                {item.icon !== 'home' && item.label}
+                {item.icon === 'home' && <span className="sr-only">Home</span>}
+              </Link>
+            );
+          })}
+        </nav>
+      </header>
+
+      <div className="flex min-h-[calc(100vh-4.5rem)]">
         {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-slate-900/20 z-40 lg:hidden backdrop-blur-sm"
+          <button
+            type="button"
             onClick={() => setSidebarOpen(false)}
-            aria-hidden="true"
+            className="lg:hidden fixed inset-0 z-30 bg-slate-900/30"
+            aria-label="Close sidebar overlay"
           />
         )}
 
         <aside
-          className={`fixed lg:relative inset-y-0 left-0 z-50 w-72 flex flex-col bg-white/95 backdrop-blur-xl border-r border-slate-200/80 shadow-xl transform transition-transform duration-300 ease-out lg:top-0
-            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+          className={`fixed lg:sticky top-[4.5rem] lg:top-0 z-40 h-[calc(100vh-4.5rem)] lg:h-[calc(100vh-4.5rem)] w-[240px] shrink-0 bg-[#EEF2F7] border-r border-slate-200 transition-transform ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
         >
-          <div className="px-5 py-5 border-b border-slate-200 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5 min-w-0 group">
-              <img
-                src={LOGO}
-                alt=""
-                className="w-8 h-8 rounded-[10px] shrink-0 object-cover"
-                aria-hidden
-              />
-              <div className="min-w-0">
-                <p className="text-[15px] font-semibold text-slate-900 tracking-tight leading-tight group-hover:text-ice-700 transition-colors">
-                  DividendFlow PK
-                </p>
-                <p className="text-[10px] text-slate-500 font-medium">{exchangeConfig.code} · {exchangeConfig.currency}</p>
-              </div>
-            </Link>
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 text-neutral-500 hover:text-neutral-900"
-              aria-label="Close menu"
+          <div className="h-full flex flex-col p-4 gap-1">
+            <Link
+              to="/dividend-calendar"
+              className="flex items-center gap-3 rounded-xl bg-[#1E3A8A] text-white px-3 py-2.5 text-sm font-semibold shadow-md"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+              <NavIcon name="grid" className="w-4 h-4" />
+              My Portfolios
+            </Link>
 
-          <nav className="flex-1 py-3 overflow-y-auto">
-            {navItems.map(({ path, label, icon }) => {
-              const active = location.pathname === path;
-              return (
-                <Link
-                  key={path}
-                  to={path}
-                  className={`group flex items-center gap-3 px-4 py-3 mx-2 rounded-xl text-sm font-semibold transition-all ${
-                    active
-                      ? 'nav-link-active shadow-md'
-                      : 'text-slate-600 hover:bg-ice-50/80 hover:text-ink'
-                  }`}
-                >
-                  <NavIcon name={icon} active={active} />
-                  <span className="flex-1">{label}</span>
-                </Link>
-              );
-            })}
-            <div className="px-2 pt-2 mt-2 border-t border-slate-200/80">
-              {signedIn && (
-                <Link
-                  to="/account"
-                  className={`group flex items-center gap-3 px-4 py-3 mx-0 rounded-xl text-sm font-semibold transition-all ${
-                    location.pathname === '/account'
-                      ? 'nav-link-active shadow-md'
-                      : 'text-slate-600 hover:bg-ice-50/80 hover:text-ink'
-                  }`}
-                >
-                  <NavIcon name="user" active={location.pathname === '/account'} />
-                  My account
-                </Link>
-              )}
+            {sidebarItems.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-600 hover:bg-white hover:text-slate-900"
+              >
+                <NavIcon name={item.icon} className="w-4 h-4 text-slate-400" />
+                <span>
+                  {item.label}{' '}
+                  <span className="text-xs text-slate-400">({item.sub})</span>
+                </span>
+              </Link>
+            ))}
+
+            <Link
+              to="/salary-simulator"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-600 hover:bg-white hover:text-slate-900 mt-2"
+            >
+              <NavIcon name="calc" className="w-4 h-4 text-slate-400" />
+              Calculator
+            </Link>
+            <Link
+              to="/reporting-cycles"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-600 hover:bg-white hover:text-slate-900"
+            >
+              <NavIcon name="settings" className="w-4 h-4 text-slate-400" />
+              Settings
+            </Link>
+
+            <div className="mt-auto pt-4">
+              <Link
+                to="/dividend-calendar"
+                className="block w-full rounded-xl bg-[#F97316] text-white text-center py-2.5 text-sm font-bold hover:bg-orange-500 shadow-sm"
+              >
+                Explore Payout Calendar
+              </Link>
             </div>
-          </nav>
-          <SidebarDisclaimer />
+          </div>
         </aside>
 
-        <main className="flex-1 flex flex-col overflow-hidden min-w-0 bg-transparent">
-          <header className="min-h-14 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 py-2 px-4 lg:px-8 bg-white/90 backdrop-blur-md shrink-0">
-            <div className="flex items-center gap-3 min-w-0">
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 text-neutral-600 hover:text-neutral-900 shrink-0"
-                aria-label="Open menu"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <h2 className="text-base lg:text-lg font-semibold text-neutral-900 tracking-tight truncate">
-                {pageTitle}
-              </h2>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto flex-wrap justify-end">
-              {signedIn && (
-                <div className="flex items-center gap-2">
-                  <Link
-                    to="/account"
-                    className="hidden sm:inline-flex text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-ice-300 hover:text-ice-700 transition-colors"
-                  >
-                    Account
-                  </Link>
-                  <span className="hidden md:inline text-xs font-semibold text-slate-600 max-w-[120px] truncate">
-                    {profile?.first_name || 'Signed in'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => signOut()}
-                    className="text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-ice-300 hover:text-ice-700 transition-colors"
-                  >
-                    Sign out
-                  </button>
-                </div>
-              )}
-              <GlobalSearch />
-              <button
-                type="button"
-                onClick={toggleBuddy}
-                aria-pressed={buddyOpen}
-                aria-expanded={buddyOpen}
-                aria-label={buddyOpen ? 'Close Market Buddy chat' : 'Open Market Buddy chat'}
-                className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
-                  buddyOpen
-                    ? 'text-white border-ice-400 bg-gradient-to-r from-ink to-ink-soft shadow-md shadow-ink/20'
-                    : 'bg-ice-50 text-ink border-ice-200 hover:bg-ice-100 hover:border-ice-300'
-                }`}
-              >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path d="M4 5h16v11H8l-4 4z" strokeLinejoin="round" />
-                </svg>
-                <span className="hidden sm:inline">Market Buddy</span>
-                <span className="sm:hidden">Buddy</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (aiToggleLoading) return;
-                  if (aiSpinTimerRef.current) window.clearTimeout(aiSpinTimerRef.current);
-                  setAiToggleMinSpin(true);
-                  aiSpinTimerRef.current = window.setTimeout(() => {
-                    setAiToggleMinSpin(false);
-                    aiSpinTimerRef.current = null;
-                  }, 320);
-                  startAiToggleTransition(() => {
-                    setAiAssistance((v) => !v);
-                  });
-                }}
-                aria-pressed={aiAssistanceOn}
-                aria-label={aiAssistanceOn ? 'Turn off Asi assistant' : 'Turn on Asi assistant'}
-                aria-busy={aiToggleLoading}
-                disabled={aiToggleLoading}
-                className={`text-[11px] font-bold uppercase tracking-wide px-3 py-2 rounded-xl border transition-colors ${
-                  aiAssistanceOn
-                    ? 'text-white border-ice-400 bg-gradient-to-r from-ink to-ink-soft shadow-md shadow-ink/20'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-ice-300 hover:text-ice-700'
-                } ${aiToggleLoading ? 'opacity-70 cursor-wait' : ''}`}
-              >
-                {aiToggleLoading ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <AiToggleSpinner className="w-3 h-3 animate-spin" />
-                    Applying
-                  </span>
-                ) : aiAssistanceOn ? (
-                  'Asi on'
-                ) : (
-                  'Asi assistant'
-                )}
-              </button>
-              {dataUpdated && (
-                <span className="hidden md:inline text-[11px] font-medium text-neutral-500 tabular-nums">
-                  Updated {dataUpdated}
-                </span>
-              )}
-            </div>
-          </header>
-
-          <div data-app-scroll-root className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-            <div className="max-w-6xl mx-auto">
-              {children}
-              <SiteFooter />
-            </div>
+        <main className="flex-1 min-w-0 p-4 lg:p-6 overflow-x-hidden">
+          <div className="max-w-[1200px] mx-auto">
+            {children}
+            <SiteFooter />
           </div>
         </main>
       </div>
-
-      <RobotCursor />
-      <AmmarCursorGuide />
-      <AIGuidance />
-      <PwaInstallBanner />
-      <CookieConsent />
     </div>
   );
 }
