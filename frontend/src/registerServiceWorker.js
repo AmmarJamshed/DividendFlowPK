@@ -1,4 +1,4 @@
-const APP_VERSION = '10';
+const APP_VERSION = '11';
 const VERSION_KEY = 'dividendflow_app_version';
 
 async function clearLegacyCaches() {

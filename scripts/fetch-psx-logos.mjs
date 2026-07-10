@@ -1,9 +1,10 @@
 /**
- * One-time PSX company logo fetcher.
- * Sources: TradingView symbol logos, then PSX DPS company page og:image.
+ * Fetch real PSX company logos via TradingView logoid → s3-symbol-logo CDN.
+ * Prefers SVG; rejects known generic placeholders and any hash shared by many symbols.
  *
  * Usage: node scripts/fetch-psx-logos.mjs
  */
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -13,91 +14,110 @@ const ROOT = path.join(__dirname, '..');
 const LOGO_DIR = path.join(ROOT, 'frontend', 'public', 'logos');
 const MANIFEST_PATH = path.join(ROOT, 'frontend', 'src', 'data', 'psxLogos.json');
 
-const SYMBOL_SOURCES = [
-  path.join(ROOT, 'psx_full_dataset.csv'),
-  path.join(ROOT, 'prices', 'psx_full_dataset.csv'),
-];
+const PLACEHOLDER_SHA1 = new Set([
+  // TradingView generic green-circle PNG (5680 bytes) from prior bad scrape
+  '60c8ab0a083c11ff008fed000ded46cb1e3ec416',
+]);
 
-function loadSymbols() {
-  for (const fp of SYMBOL_SOURCES) {
-    if (!fs.existsSync(fp)) continue;
-    const text = fs.readFileSync(fp, 'utf8');
-    const lines = text.split(/\r?\n/).filter(Boolean);
-    const header = (lines[0] || '').toLowerCase();
-    const symIdx = header.includes('symbol') ? header.split(',').indexOf('symbol') : 1;
-    const symbols = new Set();
-    for (const line of lines.slice(1)) {
-      const cols = line.split(',');
-      const sym = (cols[symIdx] || cols[1] || '').trim().replace(/"/g, '');
-      if (sym && /^[A-Z0-9-]{2,12}$/.test(sym)) symbols.add(sym);
-    }
-    if (symbols.size) return [...symbols].sort();
-  }
-  return ['HBL', 'MCB', 'UBL', 'ENGRO', 'LUCK', 'PPL', 'OGDC', 'PSO', 'HUBC', 'FFC'];
+const BAD_LOGOID_PREFIXES = ['indices/', 'country/', 'source/', 'crypto/'];
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
-async function headOk(url) {
-  try {
-    const res = await fetch(url, { method: 'HEAD', redirect: 'follow' });
-    return res.ok;
-  } catch {
+function sha1(buf) {
+  return crypto.createHash('sha1').update(buf).digest('hex');
+}
+
+async function fetchAllLogoids() {
+  const out = new Map();
+  const pageSize = 150;
+  let start = 0;
+  let total = Infinity;
+
+  while (start < total) {
+    const res = await fetch('https://scanner.tradingview.com/pakistan/scan', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'DividendFlowPK-logo-fetch/2.0',
+      },
+      body: JSON.stringify({
+        filter: [{ left: 'exchange', operation: 'equal', right: 'PSX' }],
+        options: { lang: 'en' },
+        markets: ['pakistan'],
+        symbols: { query: { types: [] }, tickers: [] },
+        columns: ['logoid', 'name'],
+        sort: { sortBy: 'name', sortOrder: 'asc' },
+        range: [start, start + pageSize],
+      }),
+    });
+    if (!res.ok) throw new Error(`scanner HTTP ${res.status}`);
+    const json = await res.json();
+    total = json.totalCount || 0;
+    for (const row of json.data || []) {
+      const ticker = String(row.s || '')
+        .replace(/^PSX:/i, '')
+        .toUpperCase();
+      const logoid = row.d?.[0];
+      if (ticker && logoid && typeof logoid === 'string') out.set(ticker, logoid);
+    }
+    start += pageSize;
+    await sleep(80);
+  }
+  return out;
+}
+
+function isBadLogoid(logoid) {
+  if (!logoid || typeof logoid !== 'string') return true;
+  return BAD_LOGOID_PREFIXES.some((p) => logoid.startsWith(p));
+}
+
+function isAcceptableLogo(buf, url, contentType) {
+  if (!buf || buf.length < 200) return false;
+  const hash = sha1(buf);
+  if (PLACEHOLDER_SHA1.has(hash)) return false;
+
+  const ct = (contentType || '').toLowerCase();
+  const isSvg = url.endsWith('.svg') || ct.includes('svg');
+  // Old PSX placeholder PNG was exactly 5680 bytes
+  if (!isSvg && buf.length === 5680) return false;
+  // Tiny error XML / HTML bodies
+  const head = buf.slice(0, 80).toString('utf8').toLowerCase();
+  if (head.includes('<!doctype html') || head.includes('<error') || head.includes('<html')) {
     return false;
   }
+  return true;
 }
 
-async function download(url, dest) {
-  const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync(dest, buf);
-}
-
-async function tradingViewUrl(symbol) {
-  const base = symbol.toLowerCase();
+async function downloadBestLogo(logoid, symbol) {
   const candidates = [
-    `https://s3-symbol-logo.tradingview.com/${base}--big.svg`,
-    `https://s3-symbol-logo.tradingview.com/${base}--big.png`,
+    `https://s3-symbol-logo.tradingview.com/${logoid}--big.svg`,
+    `https://s3-symbol-logo.tradingview.com/${logoid}.svg`,
+    `https://s3-symbol-logo.tradingview.com/${logoid}--big.png`,
+    `https://s3-symbol-logo.tradingview.com/${logoid}--600.png`,
   ];
+
   for (const url of candidates) {
-    if (await headOk(url)) return url;
-  }
-  return null;
-}
+    try {
+      const res = await fetch(url, {
+        redirect: 'follow',
+        headers: { 'User-Agent': 'DividendFlowPK-logo-fetch/2.0' },
+      });
+      if (!res.ok) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      const ct = res.headers.get('content-type') || '';
+      if (!isAcceptableLogo(buf, url, ct)) continue;
 
-async function dpsLogoUrl(symbol) {
-  try {
-    const res = await fetch(`https://dps.psx.com.pk/company/${encodeURIComponent(symbol)}`, {
-      headers: { 'User-Agent': 'DividendFlowPK-logo-fetch/1.0' },
-    });
-    if (!res.ok) return null;
-    const html = await res.text();
-    const og = html.match(/property="og:image"\s+content="([^"]+)"/i);
-    if (og?.[1] && !og[1].includes('psx-logo')) return og[1];
-    const img = html.match(/class="[^"]*company[^"]*"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/i);
-    if (img?.[1]) return img[1].startsWith('http') ? img[1] : `https://dps.psx.com.pk${img[1]}`;
-  } catch {
-    /* ignore */
+      const isSvg = url.endsWith('.svg') || ct.toLowerCase().includes('svg');
+      const ext = isSvg ? 'svg' : 'png';
+      const dest = path.join(LOGO_DIR, `${symbol}.${ext}`);
+      fs.writeFileSync(dest, buf);
+      return { path: `/logos/${symbol}.${ext}`, bytes: buf.length, hash: sha1(buf), url };
+    } catch {
+      /* try next */
+    }
   }
-  return null;
-}
-
-async function fetchLogo(symbol) {
-  const tv = await tradingViewUrl(symbol);
-  if (tv) {
-    const ext = tv.endsWith('.png') ? 'png' : 'svg';
-    const dest = path.join(LOGO_DIR, `${symbol}.${ext}`);
-    await download(tv, dest);
-    return `/logos/${symbol}.${ext}`;
-  }
-
-  const dps = await dpsLogoUrl(symbol);
-  if (dps) {
-    const ext = dps.includes('.png') ? 'png' : dps.includes('.jpg') ? 'jpg' : 'svg';
-    const dest = path.join(LOGO_DIR, `${symbol}.${ext}`);
-    await download(dps, dest);
-    return `/logos/${symbol}.${ext}`;
-  }
-
   return null;
 }
 
@@ -105,35 +125,88 @@ async function main() {
   fs.mkdirSync(LOGO_DIR, { recursive: true });
   fs.mkdirSync(path.dirname(MANIFEST_PATH), { recursive: true });
 
-  const symbols = loadSymbols();
+  // Remove previous logo files so placeholders cannot linger
+  for (const name of fs.readdirSync(LOGO_DIR)) {
+    if (/\.(png|svg|jpg|jpeg|webp)$/i.test(name)) {
+      fs.unlinkSync(path.join(LOGO_DIR, name));
+    }
+  }
+
+  console.log('Fetching TradingView logoids…');
+  const logoids = await fetchAllLogoids();
+  console.log(`Got ${logoids.size} symbols with logoids`);
+
   const manifest = {};
+  const hashCounts = new Map();
   let ok = 0;
-  let fail = 0;
+  let miss = 0;
+  let badId = 0;
+  let i = 0;
 
-  console.log(`Fetching logos for ${symbols.length} symbols…`);
-
-  for (let i = 0; i < symbols.length; i += 1) {
-    const symbol = symbols[i];
-    process.stdout.write(`[${i + 1}/${symbols.length}] ${symbol} … `);
+  for (const [symbol, logoid] of [...logoids.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    i += 1;
+    process.stdout.write(`[${i}/${logoids.size}] ${symbol} (${logoid}) … `);
+    if (isBadLogoid(logoid)) {
+      badId += 1;
+      miss += 1;
+      console.log('skip-bad-id');
+      continue;
+    }
     try {
-      const logoPath = await fetchLogo(symbol);
-      if (logoPath) {
-        manifest[symbol] = logoPath;
+      const result = await downloadBestLogo(logoid, symbol);
+      if (result) {
+        manifest[symbol] = result.path;
+        hashCounts.set(result.hash, (hashCounts.get(result.hash) || 0) + 1);
         ok += 1;
-        console.log('ok');
+        console.log(`ok ${result.bytes}b`);
       } else {
-        fail += 1;
+        miss += 1;
         console.log('miss');
       }
     } catch (err) {
-      fail += 1;
+      miss += 1;
       console.log(`err (${err.message})`);
     }
-    await new Promise((r) => setTimeout(r, 120));
+    await sleep(50);
+  }
+
+  // Drop any logos that share an identical hash across many symbols (generic placeholder)
+  const sharedHashes = new Set(
+    [...hashCounts.entries()].filter(([, n]) => n >= 8).map(([h]) => h)
+  );
+  if (sharedHashes.size) {
+    console.log(`Purging ${sharedHashes.size} shared placeholder hash(es)…`);
+    for (const [symbol, logoPath] of Object.entries(manifest)) {
+      const abs = path.join(ROOT, 'frontend', 'public', logoPath.replace(/^\//, ''));
+      if (!fs.existsSync(abs)) continue;
+      const hash = sha1(fs.readFileSync(abs));
+      if (sharedHashes.has(hash)) {
+        fs.unlinkSync(abs);
+        delete manifest[symbol];
+        ok -= 1;
+        miss += 1;
+      }
+    }
+  }
+
+  // Remove orphan opposite-extension files (e.g. leftover .png when .svg won)
+  for (const name of fs.readdirSync(LOGO_DIR)) {
+    if (!/\.(png|svg|jpg|jpeg|webp)$/i.test(name)) continue;
+    const symbol = path.basename(name, path.extname(name)).toUpperCase();
+    const expected = manifest[symbol];
+    if (!expected) {
+      fs.unlinkSync(path.join(LOGO_DIR, name));
+      continue;
+    }
+    if (`/logos/${name}` !== expected) {
+      fs.unlinkSync(path.join(LOGO_DIR, name));
+    }
   }
 
   fs.writeFileSync(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
-  console.log(`Done. ${ok} logos saved, ${fail} missing. Manifest: ${MANIFEST_PATH}`);
+  console.log(
+    `Done. ${Object.keys(manifest).length} unique logos, ${miss} missing (${badId} bad ids). Manifest: ${MANIFEST_PATH}`
+  );
 }
 
 main().catch((err) => {

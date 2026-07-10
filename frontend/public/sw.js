@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dividendflow-pwa-v10';
+const CACHE_NAME = 'dividendflow-pwa-v11';
 const SHELL = ['/manifest.json', '/dividendflow-logo.png'];
 
 self.addEventListener('install', (event) => {
