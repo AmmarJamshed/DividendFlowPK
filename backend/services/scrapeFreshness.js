@@ -18,44 +18,89 @@ function parseCsvMaxDate(filePath, dateColumns) {
 
   let maxDate = '';
   let rowCount = 0;
+  const todayIso = todayPktIso();
+  // Reject absurd futures (e.g. Date.parse("1,009.40") → year 2040)
+  const maxAllowed = (() => {
+    const d = new Date(`${todayIso}T12:00:00Z`);
+    d.setUTCFullYear(d.getUTCFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  function considerDate(rawVal) {
+    if (!rawVal) return;
+    const trimmed = String(rawVal).replace(/^"|"$/g, '').trim();
+    if (!trimmed) return;
+
+    let iso = null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      iso = trimmed.slice(0, 10);
+    } else if (/^\d{4}$/.test(trimmed)) {
+      // Year-only columns (dividend calendar) — not a trading day
+      return;
+    } else {
+      // Never Date.parse numeric prices like "1,009.40" — they become years 20xx
+      if (/^[\d,.]+%?$/.test(trimmed)) return;
+      const parsed = Date.parse(trimmed);
+      if (Number.isNaN(parsed)) return;
+      iso = new Date(parsed).toISOString().slice(0, 10);
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+    if (iso > maxAllowed || iso < '1990-01-01') return;
+    if (iso > maxDate) maxDate = iso;
+  }
 
   for (let i = 1; i < lines.length; i++) {
     rowCount += 1;
-    let val = '';
-    if (colIdx >= 0) {
-      // RFC2822 dates in news CSV break naive split — grab Date field via regex when needed
-      const dateMatch = lines[i].match(/,"(?:[^"]|"")*",("[^"]+"|[^,]+),/);
-      if (headers[colIdx]?.toLowerCase() === 'date' && dateMatch) {
-        val = dateMatch[1].replace(/^"|"$/g, '');
-      } else {
-        const cols = lines[i].split(',');
-        val = (cols[colIdx] || '').replace(/^"|"$/g, '').trim();
-      }
+    if (colIdx < 0) {
+      const isoHit = lines[i].match(/\d{4}-\d{2}-\d{2}/);
+      if (isoHit) considerDate(isoHit[0]);
+      continue;
     }
-    if (!val) {
-      const parsed = Date.parse(lines[i].match(/\d{4}-\d{2}-\d{2}/)?.[0] || lines[i]);
-      if (!Number.isNaN(parsed)) val = new Date(parsed).toISOString().slice(0, 10);
+
+    // Prefer simple column split for ISO date columns (price CSVs).
+    // Do NOT use the news-CSV quoted-field regex here — it captures prices like "1,009.40".
+    const cols = splitCsvLine(lines[i]);
+    considerDate(cols[colIdx]);
+
+    // News rows sometimes bury RFC2822 dates; only scan the line if column empty
+    if (!cols[colIdx]) {
+      const isoHit = lines[i].match(/\d{4}-\d{2}-\d{2}/);
+      if (isoHit) considerDate(isoHit[0]);
       else {
         const rfc = lines[i].match(/\w{3},\s+\d{2}\s+\w{3}\s+\d{4}/);
-        if (rfc) {
-          const p = Date.parse(rfc[0]);
-          if (!Number.isNaN(p)) val = new Date(p).toISOString().slice(0, 10);
-        }
-      }
-    }
-    if (!val) continue;
-    const iso = val.slice(0, 10);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
-      if (iso > maxDate) maxDate = iso;
-    } else {
-      const parsed = Date.parse(val);
-      if (!Number.isNaN(parsed)) {
-        const d = new Date(parsed).toISOString().slice(0, 10);
-        if (d > maxDate) maxDate = d;
+        if (rfc) considerDate(rfc[0]);
       }
     }
   }
   return { maxDate: maxDate || null, rowCount, fileMtime: stat.mtime.toISOString() };
+}
+
+/** Minimal CSV split that respects double-quoted fields (for volumes like "1,534,459"). */
+function splitCsvLine(line) {
+  const out = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === ',' && !inQuotes) {
+      out.push(cur);
+      cur = '';
+      continue;
+    }
+    cur += ch;
+  }
+  out.push(cur.replace(/\r$/, ''));
+  return out;
 }
 
 function lastTradingDayIso(now = new Date()) {

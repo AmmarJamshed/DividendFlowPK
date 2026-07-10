@@ -1803,13 +1803,39 @@ app.get('/api/data-status', async (req, res) => {
     const scrapeFreshness = require('./services/scrapeFreshness');
     const freshness = await scrapeFreshness.getScrapeFreshnessReport();
     const priceSource = freshness.sources?.psx_prices;
-    const lastDataDate = priceSource?.maxDataDate;
-    const date = lastDataDate ? new Date(`${lastDataDate}T12:00:00Z`) : new Date();
     const supabaseMeta = await dataStore.getDataStatusExtra();
+    // Prefer cloud DB trade date, then scrape file max date (ISO YYYY-MM-DD only)
+    const lastDataDate =
+      (supabaseMeta?.latestTradingDate && String(supabaseMeta.latestTradingDate).slice(0, 10)) ||
+      freshness.supabase?.maxPriceDate ||
+      priceSource?.maxDataDate ||
+      freshness.sources?.daily_prices?.maxDataDate ||
+      null;
+    const isoDay = lastDataDate && /^\d{4}-\d{2}-\d{2}$/.test(String(lastDataDate).slice(0, 10))
+      ? String(lastDataDate).slice(0, 10)
+      : null;
+    const date = isoDay ? new Date(`${isoDay}T12:00:00+05:00`) : new Date();
+    const formatted = isoDay
+      ? date.toLocaleDateString('en-PK', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          timeZone: 'Asia/Karachi',
+        })
+      : date.toLocaleString('en-PK', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Asia/Karachi',
+        });
     res.json({
       lastUpdated: date.toISOString(),
-      formatted: date.toLocaleString('en-PK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      latestTradingDate: lastDataDate,
+      formatted,
+      latestTradingDate: isoDay,
       todayPkt: freshness.todayPkt,
       scrapeVerified: freshness.verified,
       scrapeStatus: freshness.overallStatus,
