@@ -188,9 +188,15 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
     })
     .filter((a) => a.absMove >= minMove);
 
-  const used = new Set(alerts.map((a) => a.company));
+  const usedCompanies = new Set(alerts.map((a) => a.company));
+  const usedHeadlines = new Set(
+    alerts.map((a) => String(a.headline || '').toLowerCase()).filter(Boolean)
+  );
 
-  // 2) Macro / PSX-wide headline → tie to largest decliners still having a real move (liquidity names often move on IMF/subsidy news)
+  // Sort company+move alerts by largest absolute move first
+  alerts.sort((a, b) => (b.absMove || 0) - (a.absMove || 0));
+
+  // 2) Macro / market-wide headline → at most ONE card (top decliner), never repeat the same story
   const macro = pickLatestMacroArticle(news, exchange);
   const marketBrief = (
     commentaryByCo.get(marketKey)?.Commentary ||
@@ -200,51 +206,130 @@ export function buildDashboardRiskAlerts(dailyNews, opts = {}) {
 
   if (macro && priceChanges.length && alerts.length < maxAlerts) {
     const headline = (macro.Headline || macro.headline || '').trim();
-    const source = (macro.Source || macro.source || 'News').trim() || 'News';
-    const url = (macro.Url || macro.url || '').trim();
-    const decliners = [...priceChanges]
+    const headlineKey = headline.toLowerCase();
+    if (headline && !usedHeadlines.has(headlineKey)) {
+      const source = (macro.Source || macro.source || 'News').trim() || 'News';
+      const url = (macro.Url || macro.url || '').trim();
+      const decliner = [...priceChanges]
+        .map((p) => ({
+          company: (p.Company || p.company || '').trim(),
+          pct: parseFloat(p.ChangePct || p.changePct) || 0,
+          date: p.Date || p.date,
+        }))
+        .filter((x) => x.company && x.pct < 0 && Math.abs(x.pct) >= minMove && !usedCompanies.has(x.company))
+        .sort((a, b) => a.pct - b.pct)[0];
+
+      if (decliner) {
+        usedCompanies.add(decliner.company);
+        usedHeadlines.add(headlineKey);
+        const cRow = commentaryByCo.get(decliner.company);
+        const aiExtra = cRow ? (cRow.Commentary || cRow.commentary || '').trim() : '';
+        const bridgeMsg = [
+          `Session: ${decliner.company} ${decliner.pct.toFixed(2)}% (vs prior close).`,
+          `Shown because a macro / market-wide headline appeared the same period — these stories often hit ${exchange} leaders and liquid names first.`,
+          marketBrief ? `Macro AI brief: ${marketBrief}` : null,
+          aiExtra ? `Company AI brief: ${aiExtra}` : null,
+        ]
+          .filter(Boolean)
+          .join(' ');
+
+        alerts.push({
+          company: decliner.company,
+          level: deriveRiskLevel(headline, bridgeMsg),
+          headline,
+          source,
+          url,
+          newsDate: macro.Date || macro.date || decliner.date,
+          message: bridgeMsg,
+          kind: 'macro_link',
+          priceMovePct: decliner.pct,
+          absMove: Math.abs(decliner.pct),
+        });
+      }
+    }
+  }
+
+  // 3) Fill remaining slots with other distinct headlines (one card per story)
+  if (alerts.length < maxAlerts) {
+    const leftoverNews = [...news]
+      .map((row) => ({
+        company: (row.Company || row.company || '').trim(),
+        headline: (row.Headline || row.headline || '').trim(),
+        source: (row.Source || row.source || 'News').trim() || 'News',
+        url: (row.Url || row.url || '').trim(),
+        newsDate: row.Date || row.date || null,
+        t: parseTime(row),
+      }))
+      .filter((r) => r.headline)
+      .sort((a, b) => b.t - a.t);
+
+    const unusedMovers = [...priceChanges]
       .map((p) => ({
         company: (p.Company || p.company || '').trim(),
         pct: parseFloat(p.ChangePct || p.changePct) || 0,
-        date: p.Date || p.date,
       }))
-      .filter((x) => x.company && x.pct < 0 && Math.abs(x.pct) >= minMove)
-      .sort((a, b) => a.pct - b.pct);
+      .filter((x) => x.company && Math.abs(x.pct) >= minMove && !usedCompanies.has(x.company))
+      .sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
 
-    for (const d of decliners) {
+    for (const row of leftoverNews) {
       if (alerts.length >= maxAlerts) break;
-      if (used.has(d.company)) continue;
-      used.add(d.company);
-      const cRow = commentaryByCo.get(d.company);
-      const aiExtra = cRow ? (cRow.Commentary || cRow.commentary || '').trim() : '';
-      const bridgeMsg = [
-        `Session: ${d.company} ${d.pct.toFixed(2)}% (vs prior close).`,
-        `Shown because a macro / market-wide headline appeared the same period — these stories often hit ${exchange} leaders and liquid names first.`,
-        marketBrief ? `Macro AI brief: ${marketBrief}` : null,
-        aiExtra ? `Company AI brief: ${aiExtra}` : null,
-      ]
-        .filter(Boolean)
-        .join(' ');
+      const headlineKey = row.headline.toLowerCase();
+      if (usedHeadlines.has(headlineKey)) continue;
 
+      let company = row.company;
+      let pct = company ? signedPctForCompany(priceChanges, company) : 0;
+      let absMove = Math.abs(pct || 0);
+      let kind = 'news';
+
+      // Company headline without a qualifying move → skip unless we can keep the ticker
+      if (company && absMove < minMove) {
+        // Still show if this is a real company story; attach session % even if small
+        kind = 'news';
+      } else if (!company) {
+        // Orphan / market headline → pair once with next unused mover
+        const mover = unusedMovers.shift();
+        if (!mover) continue;
+        company = mover.company;
+        pct = mover.pct;
+        absMove = Math.abs(mover.pct);
+        kind = 'macro_link';
+      }
+
+      if (!company || usedCompanies.has(company)) continue;
+
+      usedCompanies.add(company);
+      usedHeadlines.add(headlineKey);
+      const cRow = commentaryByCo.get(company);
+      const aiText = cRow ? (cRow.Commentary || cRow.commentary || '').trim() : '';
       alerts.push({
-        company: d.company,
-        level: deriveRiskLevel(headline, bridgeMsg),
-        headline,
-        source,
-        url,
-        newsDate: macro.Date || macro.date || d.date,
-        message: bridgeMsg,
-        kind: 'macro_link',
-        priceMovePct: d.pct,
-        absMove: Math.abs(d.pct),
+        company,
+        level: deriveRiskLevel(row.headline, aiText),
+        headline: row.headline,
+        source: row.source,
+        url: row.url,
+        newsDate: row.newsDate,
+        message:
+          aiText ||
+          (kind === 'macro_link'
+            ? `Session: ${company} ${pct.toFixed(2)}% (vs prior close). Linked to this market headline.`
+            : 'A short AI summary will appear here when available for this story.'),
+        kind,
+        priceMovePct: pct,
+        absMove,
       });
     }
   }
 
-  // No price-only fallback — pure movers without news stay off this card
-
-  const stable = [...alerts].sort((a, b) => a.company.localeCompare(b.company));
-  const rotated = rotateDeterministic(stable, dateKey);
+  // Prefer larger moves, then keep one card per unique headline
+  const byHeadline = new Map();
+  for (const a of alerts) {
+    const key = String(a.headline || '').toLowerCase();
+    if (!key) continue;
+    const prev = byHeadline.get(key);
+    if (!prev || (a.absMove || 0) > (prev.absMove || 0)) byHeadline.set(key, a);
+  }
+  const unique = [...byHeadline.values()].sort((a, b) => (b.absMove || 0) - (a.absMove || 0));
+  const rotated = rotateDeterministic(unique, dateKey);
   return rotated.slice(0, maxAlerts).map((a) => {
     const { absMove: _, ...rest } = a;
     return { ...rest, rotationDate: dateKey };

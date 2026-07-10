@@ -147,8 +147,8 @@ export default function DashboardRedesign() {
           <div>
             <h2 className="text-lg font-bold text-slate-900">News linked to price moves</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Real headlines paired with a session move of about {MIN_PRICE_MOVE_PCT}% or more on{' '}
-              {exchangeConfig.code}. Macro stories show the linked mover ticker.
+              Distinct headlines paired with a session move on {exchangeConfig.code}. Macro stories appear once,
+              linked to the largest mover that day.
             </p>
           </div>
           {(headlineCount > 0 || tradeDate) && (
