@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import logoManifest from '../data/psxLogos.json';
 
 const PUBLIC = process.env.PUBLIC_URL || '';
@@ -24,12 +24,17 @@ export function logoUrlForSymbol(symbol) {
   const base = baseSymbol(raw);
   const path = logoManifest[raw] || logoManifest[base];
   if (!path) return null;
-  return `${PUBLIC}${path}`;
+  // Encode path segments so odd symbols still resolve on static hosts
+  const encoded = path
+    .split('/')
+    .map((part) => (part ? encodeURIComponent(part) : ''))
+    .join('/');
+  return `${PUBLIC}${encoded}`;
 }
 
 export default function CompanyLogo({ symbol, name, className = 'w-8 h-8', rounded = 'rounded-full' }) {
   const [failed, setFailed] = useState(false);
-  const src = logoUrlForSymbol(symbol);
+  const src = useMemo(() => logoUrlForSymbol(symbol), [symbol]);
 
   if (!src || failed) {
     return (
@@ -50,10 +55,11 @@ export default function CompanyLogo({ symbol, name, className = 'w-8 h-8', round
     >
       <img
         src={src}
-        alt=""
+        alt={name || symbol || ''}
         className="w-full h-full object-contain p-0.5"
         onError={() => setFailed(true)}
         loading="lazy"
+        decoding="async"
       />
     </span>
   );

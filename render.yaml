@@ -62,6 +62,9 @@ services:
       - path: /static/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
+      - path: /logos/*
+        name: Cache-Control
+        value: public, max-age=86400
       - path: /sw.js
         name: Content-Type
         value: application/javascript; charset=utf-8
@@ -90,6 +93,16 @@ services:
       - type: rewrite
         source: /manifest.json
         destination: /manifest.json
+      # Serve scraped company logos (must be before SPA catch-all)
+      - type: rewrite
+        source: /logos/*
+        destination: /logos/*
+      - type: rewrite
+        source: /dividendflow-logo.png
+        destination: /dividendflow-logo.png
+      - type: rewrite
+        source: /ammar-guide.png
+        destination: /ammar-guide.png
       - type: redirect
         source: /ads.txt/
         destination: /ads.txt
