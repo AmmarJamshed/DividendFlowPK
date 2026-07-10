@@ -3,25 +3,39 @@ import logoManifest from '../data/psxLogos.json';
 
 const PUBLIC = process.env.PUBLIC_URL || '';
 
+/** Strip PSX futures / preferred suffixes so JVDC-JUL → JVDC, BOP-MARB → BOP */
+export function baseSymbol(symbol) {
+  const s = String(symbol || '').toUpperCase().trim();
+  if (!s) return '';
+  const stripped = s.replace(
+    /-(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|MARB|APRB|JUNB|SEPB|DECB|R\d+|PS|CPS)$/i,
+    ''
+  );
+  return stripped || s;
+}
+
 function initials(symbol) {
-  const s = String(symbol || '').replace(/[^A-Z0-9]/gi, '');
+  const s = baseSymbol(symbol).replace(/[^A-Z0-9]/gi, '');
   return (s.slice(0, 2) || '?').toUpperCase();
 }
 
 export function logoUrlForSymbol(symbol) {
-  const path = logoManifest[symbol];
+  const raw = String(symbol || '').toUpperCase().trim();
+  const base = baseSymbol(raw);
+  const path = logoManifest[raw] || logoManifest[base];
   if (!path) return null;
   return `${PUBLIC}${path}`;
 }
 
-export default function CompanyLogo({ symbol, name, className = 'w-8 h-8' }) {
+export default function CompanyLogo({ symbol, name, className = 'w-8 h-8', rounded = 'rounded-full' }) {
   const [failed, setFailed] = useState(false);
   const src = logoUrlForSymbol(symbol);
 
   if (!src || failed) {
     return (
       <span
-        className={`${className} rounded-full bg-[#1E3A8A] text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0`}
+        className={`${className} ${rounded} bg-[#1E3A8A] text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0`}
+        title={name || symbol}
         aria-hidden
       >
         {initials(symbol)}
@@ -30,12 +44,17 @@ export default function CompanyLogo({ symbol, name, className = 'w-8 h-8' }) {
   }
 
   return (
-    <img
-      src={src}
-      alt=""
-      className={`${className} rounded-full object-cover bg-white border border-slate-200 shrink-0`}
-      onError={() => setFailed(true)}
-      loading="lazy"
-    />
+    <span
+      className={`${className} ${rounded} bg-white border border-slate-200 shrink-0 overflow-hidden inline-flex items-center justify-center`}
+      title={name || symbol}
+    >
+      <img
+        src={src}
+        alt=""
+        className="w-full h-full object-contain p-0.5"
+        onError={() => setFailed(true)}
+        loading="lazy"
+      />
+    </span>
   );
 }
