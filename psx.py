@@ -16,6 +16,10 @@ import urllib.request
 import re
 import calendar
 from datetime import datetime, timedelta
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    ZoneInfo = None  # type: ignore
 
 URL = "https://dps.psx.com.pk/historical"
 PAYOUTS_URL = "https://dps.psx.com.pk/payouts"
@@ -23,6 +27,28 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "prices")
 DIVIDEND_DIR = os.path.join(os.path.dirname(__file__), "data", "dividends")
 DIVIDEND_CSV = os.path.join(DIVIDEND_DIR, "psx_dividend_calendar.csv")
 PAYOUTS_CSV = os.path.join(DIVIDEND_DIR, "psx_payouts.csv")
+
+
+def _karachi_today():
+    """Trading date stamp in Asia/Karachi (not UTC runner calendar)."""
+    if ZoneInfo is not None:
+        return datetime.now(ZoneInfo("Asia/Karachi")).strftime("%Y-%m-%d")
+    return datetime.today().strftime("%Y-%m-%d")
+
+
+def _goto_with_retries(page, url, attempts=4, timeout=90000):
+    """PSX sometimes returns ERR_EMPTY_RESPONSE — retry with backoff."""
+    last_err = None
+    for i in range(attempts):
+        try:
+            page.goto(url, timeout=timeout, wait_until="domcontentloaded")
+            return
+        except Exception as e:
+            last_err = e
+            wait_s = 5 * (i + 1)
+            print(f"[WARN] goto {url} failed ({i + 1}/{attempts}): {e}; retry in {wait_s}s")
+            time.sleep(wait_s)
+    raise last_err
 
 
 def _launch_chromium(p):
@@ -110,7 +136,7 @@ def scrape_psx_payouts():
     with sync_playwright() as p:
         browser = _launch_chromium(p)
         page = browser.new_page()
-        page.goto(PAYOUTS_URL, timeout=90000, wait_until="domcontentloaded")
+        _goto_with_retries(page, PAYOUTS_URL, attempts=4, timeout=90000)
         # networkidle often never settles on SPAs / analytics; don't hang the whole workflow
         try:
             page.wait_for_load_state("networkidle", timeout=20000)
@@ -225,7 +251,7 @@ def _parse_historical_row(row):
     if low in ("symbol", "company", "sr", "#", "no.", "no"):
         return None
     return {
-        "date": datetime.today().strftime("%Y-%m-%d"),
+        "date": _karachi_today(),
         "symbol": symbol,
         "ldcp": cols[1].inner_text().strip(),
         "open": cols[2].inner_text().strip(),
@@ -313,7 +339,7 @@ def scrape_psx():
         page = browser.new_page()
 
         print("Opening PSX historical page...")
-        page.goto(URL, timeout=90000, wait_until="domcontentloaded")
+        _goto_with_retries(page, URL, attempts=4, timeout=90000)
         try:
             page.wait_for_load_state("networkidle", timeout=20000)
         except Exception:
@@ -387,8 +413,14 @@ def scrape_psx():
         except ValueError:
             return 0.0
 
-    today = datetime.today().strftime("%Y-%m-%d")
-    yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+    today = _karachi_today()
+    if ZoneInfo is not None:
+        now_khi = datetime.now(ZoneInfo("Asia/Karachi"))
+        yesterday = (now_khi - timedelta(days=1)).strftime("%Y-%m-%d")
+        cutoff = (now_khi - timedelta(days=14)).strftime("%Y-%m-%d")
+    else:
+        yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+        cutoff = (datetime.today() - timedelta(days=14)).strftime("%Y-%m-%d")
     daily_prices = []
     price_changes = []
 
@@ -421,7 +453,6 @@ def scrape_psx():
             for row in reader:
                 rd = row.get("Date") or row.get("date")
                 if rd and rd != today:
-                    cutoff = (datetime.today() - timedelta(days=14)).strftime("%Y-%m-%d")
                     if rd >= cutoff:
                         existing.append(row)
     today_rows = [{"Company": d["Company"], "Date": d["Date"], "Price": d["Price"]} for d in daily_prices]

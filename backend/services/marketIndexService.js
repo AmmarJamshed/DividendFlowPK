@@ -1,27 +1,56 @@
 const { getSupabase, isSupabaseConfigured } = require('../db/supabaseClient');
-const dataStore = require('./dataStore');
+const exchangeService = require('./exchangeService');
 const csv = require('csv-parser');
 const fs = require('fs');
 const path = require('path');
 
 const DATA_PATH = path.join(__dirname, '..', '..', 'data');
+const PAGE_SIZE = 1000;
+const TARGET_DAYS = 180;
+/** Typical PSX cash-board breadth (spot + a few futures); rejects multi-exchange pollution. */
+const MIN_BREADTH = 200;
+const MAX_BREADTH = 900;
 
-async function readDailyPricesRows() {
+async function readDailyPricesRows(days = TARGET_DAYS) {
   if (isSupabaseConfigured()) {
     try {
       const supabase = getSupabase();
-      const { data, error } = await supabase
-        .from('daily_prices')
-        .select('trade_date, close, securities!inner(symbol)')
-        .order('trade_date', { ascending: false })
-        .limit(50000);
-      if (!error && data?.length) {
-        return data.map((row) => ({
-          symbol: row.securities?.symbol,
-          date: row.trade_date,
-          close: Number(row.close),
-        }));
+      const exchangeId = await exchangeService.getExchangeId('PSX');
+      if (!exchangeId) throw new Error('PSX exchange id missing');
+
+      const rows = [];
+      const datesSeen = new Set();
+      let from = 0;
+
+      // PostgREST caps pages (~1000). Paginate newest-first until we have enough trading days.
+      for (let page = 0; page < 250; page += 1) {
+        const to = from + PAGE_SIZE - 1;
+        const { data, error } = await supabase
+          .from('daily_prices')
+          .select('trade_date, close, securities!inner(symbol, exchange_id)')
+          .eq('securities.exchange_id', exchangeId)
+          .order('trade_date', { ascending: false })
+          .order('security_id', { ascending: true })
+          .range(from, to);
+
+        if (error || !data?.length) break;
+
+        for (const row of data) {
+          const symbol = row.securities?.symbol;
+          const close = Number(row.close);
+          if (!symbol || !(close > 0) || !row.trade_date) continue;
+          // Cash equities only — skip monthly futures (e.g. CNERGY-JUL)
+          if (symbol.includes('-')) continue;
+          rows.push({ symbol, date: row.trade_date, close });
+          datesSeen.add(row.trade_date);
+        }
+
+        if (data.length < PAGE_SIZE) break;
+        if (datesSeen.size >= days + 5) break;
+        from += PAGE_SIZE;
       }
+
+      if (rows.length) return rows;
     } catch {
       /* fall through */
     }
@@ -38,52 +67,79 @@ async function readDailyPricesRows() {
         const symbol = d.Company || d.company || d.symbol;
         const date = d.Date || d.date;
         const close = parseFloat(d.Price || d.close || d.price);
-        if (symbol && date && close > 0) rows.push({ symbol, date, close });
+        if (symbol && date && close > 0 && !String(symbol).includes('-')) {
+          rows.push({ symbol, date, close });
+        }
       })
       .on('end', () => resolve(rows))
       .on('error', reject);
   });
 }
 
+function round2(n) {
+  return Math.round(n * 100) / 100;
+}
+
 /**
- * Equal-weight basket index from archived daily closes (KSE-100 style proxy).
+ * Equal-weight basket index from archived PSX daily closes (KSE-100 style proxy).
+ * Day-over-day return uses only symbols present on both sessions.
  */
-async function getMarketIndexSeries(exchangeCode = 'PSX', days = 180) {
+async function getMarketIndexSeries(exchangeCode = 'PSX', days = TARGET_DAYS) {
   if (exchangeCode !== 'PSX') {
     return { label: exchangeCode, points: [], source: 'none' };
   }
 
-  const rows = await readDailyPricesRows();
+  const rows = await readDailyPricesRows(days);
   if (!rows.length) return { label: 'KSE-100', points: [], source: 'none' };
 
+  /** @type {Map<string, Map<string, number>>} */
   const byDate = new Map();
   for (const row of rows) {
-    if (!byDate.has(row.date)) byDate.set(row.date, []);
-    byDate.get(row.date).push(row.close);
+    if (!byDate.has(row.date)) byDate.set(row.date, new Map());
+    byDate.get(row.date).set(row.symbol, row.close);
   }
 
-  const dates = [...byDate.keys()].sort();
+  let dates = [...byDate.keys()].sort();
+  dates = dates.filter((d) => {
+    const n = byDate.get(d).size;
+    return n >= MIN_BREADTH && n <= MAX_BREADTH;
+  });
+
   const sliced = dates.slice(-days);
   if (!sliced.length) return { label: 'KSE-100', points: [], source: 'csv' };
 
   let index = 100000;
   const points = [];
-  let prevAvg = null;
+  let prevMap = null;
 
   for (const date of sliced) {
-    const prices = byDate.get(date);
-    const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
-    if (prevAvg != null && prevAvg > 0) {
-      index *= avg / prevAvg;
+    const curMap = byDate.get(date);
+    if (prevMap) {
+      let sumRatio = 0;
+      let n = 0;
+      for (const [symbol, close] of curMap) {
+        const prevClose = prevMap.get(symbol);
+        if (prevClose > 0 && close > 0) {
+          const ratio = close / prevClose;
+          // Ignore extreme outliers (bad ticks / corporate actions without adjust)
+          if (ratio >= 0.5 && ratio <= 2) {
+            sumRatio += ratio;
+            n += 1;
+          }
+        }
+      }
+      if (n >= 50) {
+        index *= sumRatio / n;
+      }
     }
-    prevAvg = avg;
+    prevMap = curMap;
     points.push({
       date,
-      close: Math.round(index * 100) / 100,
-      open: Math.round(index * 0.998 * 100) / 100,
-      high: Math.round(index * 1.004 * 100) / 100,
-      low: Math.round(index * 0.996 * 100) / 100,
-      volume: prices.length,
+      close: round2(index),
+      open: round2(index * 0.998),
+      high: round2(index * 1.004),
+      low: round2(index * 0.996),
+      volume: curMap.size,
     });
   }
 
@@ -94,11 +150,9 @@ async function getMarketIndexSeries(exchangeCode = 'PSX', days = 180) {
 
   return {
     label: 'KSE-100',
-    subtitle: 'Equal-weight basket proxy from archived PSX closes',
+    subtitle: 'Equal-weight PSX basket proxy from archived closes (not official KSE-100)',
     points,
-    latest: latest
-      ? { ...latest, change, changePct }
-      : null,
+    latest: latest ? { ...latest, change, changePct } : null,
     source: isSupabaseConfigured() ? 'supabase' : 'csv',
   };
 }

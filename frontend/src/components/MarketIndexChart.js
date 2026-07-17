@@ -79,7 +79,7 @@ export default function MarketIndexChart({ series, loading }) {
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            {series?.label || 'KSE-100'} · Session proxy
+            {series?.label || 'KSE-100'} · Basket proxy
           </p>
           <p className="text-2xl font-extrabold text-slate-900 tabular-nums mt-1">
             {formatIndex(latest?.close)}
