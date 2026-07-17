@@ -262,7 +262,7 @@ export default function Layout({ children }) {
           </div>
         </div>
 
-        <nav className="h-11 bg-[#F97316] px-4 lg:px-8 flex items-center gap-1 overflow-x-auto text-white text-[13px] whitespace-nowrap">
+        <nav className="hidden lg:flex h-11 bg-[#F97316] px-4 lg:px-8 items-center gap-1 overflow-x-auto text-white text-[13px] whitespace-nowrap">
           {navItems.map((item) => {
             const active = isNavActive(item.path);
             const isHome = item.path === '/';
@@ -276,15 +276,14 @@ export default function Layout({ children }) {
               >
                 {isHome && <NavIcon name="home" className="w-3.5 h-3.5" active={active} />}
                 {!isHome && item.label}
-                {isHome && <span className="hidden sm:inline">Overview</span>}
-                {isHome && <span className="sr-only sm:hidden">Overview</span>}
+                {isHome && <span>Overview</span>}
               </Link>
             );
           })}
         </nav>
       </header>
 
-      <div className="flex min-h-[calc(100vh-7.75rem)]">
+      <div className="flex min-h-[calc(100vh-3.75rem)] lg:min-h-[calc(100vh-7.75rem)]">
         {sidebarOpen && (
           <button
             type="button"
@@ -295,8 +294,8 @@ export default function Layout({ children }) {
         )}
 
         <aside
-          className={`fixed lg:sticky top-[7.75rem] z-40 h-[calc(100vh-7.75rem)] w-[240px] shrink-0 bg-[#1E3A8A] border-r border-blue-900 transition-transform ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          className={`fixed lg:hidden top-[3.75rem] z-40 h-[calc(100vh-3.75rem)] w-[240px] shrink-0 bg-[#1E3A8A] border-r border-blue-900 transition-transform ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
           <div className="h-full flex flex-col p-4 gap-1 overflow-y-auto">
