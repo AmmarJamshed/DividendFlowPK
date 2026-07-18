@@ -1,6 +1,7 @@
+﻿# SITE_CLOSED — entire workflow gated. Delete this comment and any `if: false  # SITE_CLOSED` lines to restore.
 # Market Closing Prices scraper - runs psx.py daily after PSX market close
-# Schedule: 12:00 UTC (5pm PKT) Mon–Fri only — PSX closed weekends
-# Outputs: psx_full_dataset.csv, daily_prices.csv, price_changes.csv → pushed to GitHub
+# Schedule: 12:00 UTC (5pm PKT) Monâ€“Fri only â€” PSX closed weekends
+# Outputs: psx_full_dataset.csv, daily_prices.csv, price_changes.csv â†’ pushed to GitHub
 
 name: PSX Market Closing Prices
 
@@ -11,6 +12,7 @@ on:
 
 jobs:
   scrape:
+    if: false  # SITE_CLOSED
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

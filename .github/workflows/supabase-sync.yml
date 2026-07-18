@@ -1,13 +1,15 @@
+﻿# SITE_CLOSED — entire workflow gated. Delete this comment and any `if: false  # SITE_CLOSED` lines to restore.
 name: Supabase CSV Sync
 
 on:
   workflow_dispatch:
   schedule:
-    # Weekdays 12:30 UTC — after PSX price scraper (12:00 UTC)
+    # Weekdays 12:30 UTC â€” after PSX price scraper (12:00 UTC)
     - cron: '30 12 * * 1-5'
 
 jobs:
   sync:
+    if: false  # SITE_CLOSED
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +21,7 @@ jobs:
       - name: Install backend dependencies
         run: cd backend && npm install
 
-      - name: ETL CSV → Supabase
+      - name: ETL CSV â†’ Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -1,5 +1,6 @@
-# Deploys the React app to branch `gh-pages`. In the repo: Settings → Pages →
-# Build and deployment → Source: Deploy from a branch → Branch: gh-pages / / (root).
+﻿# SITE_CLOSED — entire workflow gated. Delete this comment and any `if: false  # SITE_CLOSED` lines to restore.
+# Deploys the React app to branch `gh-pages`. In the repo: Settings â†’ Pages â†’
+# Build and deployment â†’ Source: Deploy from a branch â†’ Branch: gh-pages / / (root).
 
 name: Frontend GitHub Pages
 
@@ -20,6 +21,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    if: false  # SITE_CLOSED
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

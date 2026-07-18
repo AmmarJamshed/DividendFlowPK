@@ -1,3 +1,4 @@
+﻿# SITE_CLOSED — entire workflow gated. Delete this comment and any `if: false  # SITE_CLOSED` lines to restore.
 name: DividendFlow Health Check
 
 on:
@@ -7,6 +8,7 @@ on:
 
 jobs:
   health:
+    if: false  # SITE_CLOSED
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

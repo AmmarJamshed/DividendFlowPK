@@ -1,4 +1,5 @@
-# DISABLED — PSX-only product focus. Re-enable when global markets return.
+﻿# SITE_CLOSED — entire workflow gated. Delete this comment and any `if: false  # SITE_CLOSED` lines to restore.
+# DISABLED â€” PSX-only product focus. Re-enable when global markets return.
 
 name: Global Market Ingest (Asia-GCC manual)
 
@@ -10,4 +11,4 @@ jobs:
     if: false
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Disabled — PSX-only mode"
+      - run: echo "Disabled â€” PSX-only mode"

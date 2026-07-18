@@ -1,3 +1,4 @@
+﻿# SITE_CLOSED — entire workflow gated. Delete this comment and any `if: false  # SITE_CLOSED` lines to restore.
 name: Backend Vercel Deploy
 
 on:
@@ -13,6 +14,7 @@ on:
 
 jobs:
   deploy:
+    if: false  # SITE_CLOSED
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -25,7 +27,7 @@ jobs:
         run: |
           if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping Vercel deploy — set repository secrets VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (Vercel → Project → Settings → General)."
+            echo "::notice::Skipping Vercel deploy â€” set repository secrets VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (Vercel â†’ Project â†’ Settings â†’ General)."
             exit 0
           fi
           echo "ready=true" >> "$GITHUB_OUTPUT"

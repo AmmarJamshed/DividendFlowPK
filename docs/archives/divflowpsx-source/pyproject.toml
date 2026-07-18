@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "divflowpsx"
+version = "0.1.4"
+description = "Delayed Pakistan Stock Exchange (PSX) market data for Python — DividendFlow"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "DividendFlow PK", email = "hello@dividendflow.pk" }
+]
+keywords = ["PSX", "Pakistan", "stock", "market", "dividends", "finance", "delayed"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Financial and Insurance Industry",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business :: Financial :: Investment",
+]
+dependencies = [
+  "pandas>=2.0",
+  "playwright>=1.40",
+  "tqdm>=4.66",
+]
+
+[project.urls]
+Homepage = "https://dividendflow.pk"
+Repository = "https://github.com/AmmarJamshed/DividendFlowPK"
+Issues = "https://github.com/AmmarJamshed/DividendFlowPK/issues"
+
+[project.optional-dependencies]
+dev = ["build", "twine", "pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "divflowpsx"
+version = "0.2.0"
+description = "WITHDRAWN — DividendFlow PSX library temporarily removed. Subscribe at dividendflow.pk"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "DividendFlow PK", email = "hello@dividendflow.pk" }]
+dependencies = []
+
+[project.urls]
+Homepage = "https://dividendflow.pk"
+
+[tool.setuptools.packages.find]
+where = ["src"]

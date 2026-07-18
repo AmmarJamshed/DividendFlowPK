@@ -1911,6 +1911,69 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+/** Surprise launch waitlist — stores emails locally + notifies ops inbox when mail is configured. */
+const waitlistRateByIp = new Map();
+app.post('/api/waitlist', async (req, res) => {
+  try {
+    if (req.body?.website) {
+      return res.json({ ok: true });
+    }
+
+    const rawIp = req.headers['x-forwarded-for'];
+    const ip =
+      typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : rawIp?.[0] || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const prev = waitlistRateByIp.get(ip) || 0;
+    if (now - prev < 30000) {
+      return res.status(429).json({ ok: false, error: 'Please wait a moment before trying again.' });
+    }
+
+    const email = String(req.body?.email || '').trim().toLowerCase().slice(0, 200);
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ ok: false, error: 'Please enter a valid email address.' });
+    }
+
+    const waitlistPath = path.join(DATA_PATH, 'waitlist-emails.json');
+    let entries = [];
+    if (fs.existsSync(waitlistPath)) {
+      try {
+        entries = JSON.parse(fs.readFileSync(waitlistPath, 'utf8'));
+        if (!Array.isArray(entries)) entries = [];
+      } catch {
+        entries = [];
+      }
+    }
+
+    const already = entries.some((e) => String(e.email || '').toLowerCase() === email);
+    if (!already) {
+      entries.push({ email, subscribedAt: new Date().toISOString(), source: 'coming-soon' });
+      fs.mkdirSync(DATA_PATH, { recursive: true });
+      fs.writeFileSync(waitlistPath, JSON.stringify(entries, null, 2), 'utf8');
+    }
+
+    if (contactMail.isContactConfigured()) {
+      try {
+        await contactMail.sendContactMessage({
+          name: 'Waitlist',
+          email,
+          subject: already ? 'Waitlist (already subscribed)' : 'Waitlist signup',
+          message: already
+            ? `${email} submitted again while DividendFlow is offline.`
+            : `${email} subscribed for the DividendFlow surprise relaunch.`,
+        });
+      } catch (mailErr) {
+        console.warn('[waitlist] notify failed:', mailErr.message);
+      }
+    }
+
+    waitlistRateByIp.set(ip, now);
+    res.json({ ok: true, already });
+  } catch (err) {
+    console.error('[waitlist]', err.message);
+    res.status(500).json({ ok: false, error: 'Could not save your email. Please try again later.' });
+  }
+});
+
 app.get('/api/public-config', (_req, res) => {
   res.json({
     supabaseUrl: process.env.SUPABASE_URL || '',

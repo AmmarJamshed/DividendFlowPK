@@ -1,3 +1,4 @@
+﻿# SITE_CLOSED — entire workflow gated. Delete this comment and any `if: false  # SITE_CLOSED` lines to restore.
 name: PSX Workflow Monitor
 
 on:
@@ -15,6 +16,7 @@ permissions:
 
 jobs:
   monitor:
+    if: false  # SITE_CLOSED
     runs-on: ubuntu-latest
     steps:
       - name: Check PSX workflow health and notify

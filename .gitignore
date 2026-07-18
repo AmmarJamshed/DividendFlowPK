@@ -11,5 +11,6 @@ api-keys.txt
 .DS_Store
 frontend/build/
 logs/*.log
+data/waitlist-emails.json
 __pycache__/
 *.pyc

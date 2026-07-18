@@ -1,5 +1,6 @@
+﻿# SITE_CLOSED — entire workflow gated. Delete this comment and any `if: false  # SITE_CLOSED` lines to restore.
 # Manual smoke test for the four suspended Render crons (same steps + retries as scheduled workflows).
-# GitHub: Actions → "Verify all Render cron replacements" → Run workflow
+# GitHub: Actions â†’ "Verify all Render cron replacements" â†’ Run workflow
 # After pushing workflow changes, run this once to confirm secrets and upstream APIs work.
 
 name: Verify all Render cron replacements
@@ -13,6 +14,7 @@ concurrency:
 
 jobs:
   dividendflow-scraper:
+    if: false  # SITE_CLOSED
     name: dividendflow-scraper
     runs-on: ubuntu-latest
     timeout-minutes: 75
@@ -42,6 +44,7 @@ jobs:
           command: cd scripts && node run-all.js
 
   dividendflow-news:
+    if: false  # SITE_CLOSED
     name: dividendflow-news
     runs-on: ubuntu-latest
     timeout-minutes: 75
@@ -73,6 +76,7 @@ jobs:
           command: cd scripts && node run-news.js
 
   dividendflow-health-check:
+    if: false  # SITE_CLOSED
     name: dividendflow-health-check
     runs-on: ubuntu-latest
     timeout-minutes: 10

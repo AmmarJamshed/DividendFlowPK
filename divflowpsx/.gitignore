@@ -1,0 +1,8 @@
+# Never commit secrets. Local build artifacts only.
+dist/
+*.egg-info/
+build/
+.venv/
+__pycache__/
+*.pyc
+.pypirc
