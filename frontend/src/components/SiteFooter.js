@@ -26,8 +26,14 @@ export default function SiteFooter() {
         </Link>
       </nav>
       <p className="mt-3 text-[11px] text-slate-500 leading-relaxed max-w-3xl">
-        © {year} DividendFlow PK. For research and education only — not investment, tax, or legal advice. Confirm all
-        figures with the relevant exchange and your broker.
+        © {year} DividendFlow PK.
+      </p>
+      <p className="mt-2 text-[11px] text-slate-500 leading-relaxed max-w-3xl">
+        DividendFlow PK is an independent educational and analytical platform. All data, including stock summaries,
+        dividend yields, and Shariah-compliance tracking, are sourced from publicly available information for
+        educational purposes only. We are not SECP-registered investment advisors, and our content does not constitute
+        financial advice, buy/sell recommendations, or investment solicitation. Please consult a licensed professional
+        broker before trading.
       </p>
     </footer>
   );

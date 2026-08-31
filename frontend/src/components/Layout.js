@@ -112,7 +112,8 @@ function SidebarDisclaimer() {
   const { exchangeConfig } = useExchange();
   return (
     <p className="mt-auto pt-4 text-[10px] text-blue-200/70 leading-relaxed border-t border-blue-700/50">
-      For learning and research only — not buy/sell advice. Confirm figures with {exchangeConfig.code} and your broker.
+      Educational only — not SECP-registered advice or buy/sell recommendations. Confirm figures with{' '}
+      {exchangeConfig.code} and a licensed broker before trading.
     </p>
   );
 }

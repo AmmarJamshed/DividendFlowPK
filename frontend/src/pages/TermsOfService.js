@@ -3,7 +3,7 @@ import LegalPageLayout, { LegalSection } from '../components/legal/LegalPageLayo
 import { usePageTitle } from '../hooks/usePageTitle';
 import { OFFICIAL_CONTACT_EMAIL, OFFICIAL_CONTACT_LABEL } from '../config/contact';
 
-const UPDATED = '14 June 2026';
+const UPDATED = '1 September 2026';
 
 export default function TermsOfService() {
   usePageTitle('Terms of Service — DividendFlow PK');
@@ -34,10 +34,17 @@ export default function TermsOfService() {
 
       <LegalSection title="3. No investment advice">
         <p>
+          DividendFlow PK is an independent educational and analytical platform. All data, including stock summaries,
+          dividend yields, and Shariah-compliance tracking, are sourced from publicly available information for
+          educational purposes only. We are not SECP-registered investment advisors, and our content does not constitute
+          financial advice, buy/sell recommendations, or investment solicitation. Please consult a licensed professional
+          broker before trading.
+        </p>
+        <p className="mt-3">
           All outputs — including charts, yields, forecasts, risk alerts, and Market Buddy chat replies — are for{' '}
           <strong>general information and learning only</strong>. They may be delayed, incomplete, or incorrect. You are
-          solely responsible for your investment decisions. Consult a qualified adviser and verify figures with the
-          relevant exchange, company announcements, and your broker before acting.
+          solely responsible for your investment decisions. Verify figures with the relevant exchange, company
+          announcements, and your broker before acting.
         </p>
       </LegalSection>
 
