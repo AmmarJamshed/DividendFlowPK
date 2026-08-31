@@ -230,6 +230,8 @@ export default function Layout({ children }) {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
+  const isHome = location.pathname === '/';
+
   return (
     <div className="min-h-screen bg-[#F5F7FA] text-slate-800 font-sans">
       <header className="sticky top-0 z-50 shadow-sm">
@@ -247,8 +249,8 @@ export default function Layout({ children }) {
 
           <Link to="/" className="flex items-center gap-2.5 text-white shrink-0">
             <img src={LOGO} alt="" className="w-9 h-9 rounded-lg" aria-hidden />
-            <span className="font-bold text-[15px] tracking-tight hidden sm:inline">
-              DIVIDEND FLOW PK <span className="text-blue-200 font-semibold">| {exchangeConfig.code}</span>
+            <span className="font-display font-bold text-[15px] tracking-tight hidden sm:inline">
+              DividendFlow PK <span className="text-orange-300 font-semibold">| {exchangeConfig.code}</span>
             </span>
           </Link>
 
@@ -324,7 +326,7 @@ export default function Layout({ children }) {
         </aside>
 
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          {location.pathname !== '/' && (
+          {!isHome && (
             <div className="shrink-0 border-b border-slate-200/80 bg-white px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
               <h1 className="text-base lg:text-lg font-semibold text-slate-900 tracking-tight truncate">
                 {pageTitle}
@@ -337,15 +339,15 @@ export default function Layout({ children }) {
             </div>
           )}
 
-          <div data-app-scroll-root className="flex-1 overflow-auto p-4 lg:p-6">
-            <div className="max-w-[1200px] mx-auto">
-              {location.pathname === '/' && dataUpdated && (
-                <p className="text-[11px] font-medium text-slate-500 tabular-nums mb-4 text-right">
-                  Updated {dataUpdated}
-                </p>
-              )}
+          <div
+            data-app-scroll-root
+            className={`flex-1 overflow-auto ${isHome ? '' : 'p-4 lg:p-6'}`}
+          >
+            <div className={isHome ? '' : 'max-w-[1200px] mx-auto'}>
               {children}
-              <SiteFooter />
+              <div className={isHome ? 'max-w-[1200px] mx-auto px-4 lg:px-6' : ''}>
+                <SiteFooter />
+              </div>
             </div>
           </div>
         </main>

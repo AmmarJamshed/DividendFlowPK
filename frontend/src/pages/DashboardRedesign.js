@@ -9,8 +9,24 @@ import {
   MIN_PRICE_MOVE_PCT,
 } from '../utils/dashboardRiskAlerts';
 import CompanyLogo from '../components/CompanyLogo';
+import ThemeOpening from '../components/ThemeOpening';
 
-const AMMAR_AVATAR = `${process.env.PUBLIC_URL || ''}/ammar-guide.png`;
+const PUBLIC = process.env.PUBLIC_URL || '';
+
+const STORY_FRAMES = [
+  { src: `${PUBLIC}/theme/dfpk-theme-01-title.png`, label: 'Title' },
+  { src: `${PUBLIC}/theme/dfpk-theme-02-race.png`, label: 'The race' },
+  { src: `${PUBLIC}/theme/dfpk-theme-03-ipo.png`, label: 'IPO gate' },
+  { src: `${PUBLIC}/theme/dfpk-theme-04-dividends.png`, label: 'Dividends' },
+  { src: `${PUBLIC}/theme/dfpk-theme-05-finale.png`, label: 'Finale' },
+];
+
+const QUICK_LINKS = [
+  { to: '/dividend-calendar', label: 'Dividend calendar', hint: 'Payouts & calculator' },
+  { to: '/market-closing-prices', label: 'Market data', hint: 'Session closes' },
+  { to: '/ipo-calendar', label: 'IPO calendar', hint: 'Upcoming listings' },
+  { to: '/forecast-engine', label: 'Forecast', hint: 'Scenario tools' },
+];
 
 function Sparkline({ points, trend }) {
   if (!points?.length) return null;
@@ -85,70 +101,84 @@ export default function DashboardRedesign() {
   }, [exchange]);
 
   return (
-    <div className="space-y-4">
-      <section className="df-hero-card">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-          <div className="flex-1 min-w-0">
-            <span className="df-tag">Daily Missions · Pakistan (PSX)</span>
-            <h2 className="text-2xl lg:text-[28px] font-extrabold text-slate-900 mt-3 leading-tight tracking-tight">
-              Your dividend &amp; market snaps
-            </h2>
-            <p className="text-sm text-slate-600 mt-3 leading-relaxed max-w-2xl">
-              Track payout calendars, closing prices, and headline-linked moves from archived PSX data.
-              Updated on weekdays after the session — for research only, not investment advice.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link to="/market-closing-prices" className="df-btn-primary">
-                View market data
-              </Link>
-              <Link to="/dividend-calendar" className="df-btn-outline">
-                Dividend calendar
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 shrink-0 lg:max-w-[280px]">
-            <img
-              src={AMMAR_AVATAR}
-              alt="Ammar guide"
-              className="w-14 h-14 rounded-full border-2 border-[#1E3A8A] object-cover shadow-md bg-white"
-            />
-            <div className="relative bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-3.5 py-2.5 shadow-sm text-xs text-slate-600 leading-relaxed">
-              <p className="font-bold text-[#1E3A8A] text-[11px] uppercase tracking-wide mb-1">Ammar</p>
-              Taking a look at what you&apos;re hovering over…
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="df-card flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-5">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm sm:text-base font-semibold text-slate-800 leading-snug">
-            If you wish to know how much dividends you&apos;ll get this time,{' '}
-            <Link to="/dividend-calendar#dividend-calculator" className="text-[#1E3A8A] underline font-bold">
-              please click here
+    <div className="df-home">
+      <section className="df-cinematic-hero" aria-label="DividendFlow PK">
+        <div
+          className="df-cinematic-hero__bg"
+          style={{ backgroundImage: `url(${PUBLIC}/theme/dfpk-theme-02-race.png)` }}
+        />
+        <div className="df-cinematic-hero__shade" />
+        <div className="df-cinematic-hero__inner">
+          <p className="df-cinematic-hero__brand">DividendFlow PK</p>
+          <h1 className="df-cinematic-hero__title">Gotta Track &apos;Em All</h1>
+          <p className="df-cinematic-hero__lede">
+            PSX dividends, closes, and IPOs — research tools for Pakistan&apos;s market.
+          </p>
+          <div className="df-cinematic-hero__cta">
+            <Link to="/market-closing-prices" className="df-btn-primary df-btn-hero">
+              Open market data
             </Link>
-            .
-          </p>
-          <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            Opens the dividend calculator — enter your symbols and share counts to estimate cash by month.
-          </p>
+            <a href="#theme-song" className="df-btn-ghost">
+              Play theme song
+            </a>
+          </div>
         </div>
-        <Link
-          to="/dividend-calendar#dividend-calculator"
-          className="shrink-0 inline-flex items-center justify-center rounded-xl bg-[#F97316] text-white px-5 py-2.5 text-sm font-bold hover:bg-orange-500 shadow-sm"
-        >
-          View Dividend History
-        </Link>
       </section>
 
-      <section>
+      <div id="theme-song">
+        <ThemeOpening />
+      </div>
+
+      <section className="df-story-strip" aria-labelledby="story-heading">
+        <div className="max-w-[1200px] mx-auto px-4 lg:px-6 py-10 lg:py-14">
+          <h2 id="story-heading" className="font-display text-xl sm:text-2xl font-extrabold text-slate-900">
+            From the opening
+          </h2>
+          <p className="mt-1 text-sm text-slate-600 max-w-xl">
+            Keyframes from the DividendFlow PK theme — race the charts, catch the IPO, bank the payout.
+          </p>
+          <div className="df-story-rail mt-6">
+            {STORY_FRAMES.map((frame) => (
+              <figure key={frame.label} className="df-story-frame">
+                <img src={frame.src} alt="" loading="lazy" />
+                <figcaption>{frame.label}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-[1200px] mx-auto px-4 lg:px-6 pb-4">
+        <div className="df-tools-row">
+          {QUICK_LINKS.map((item) => (
+            <Link key={item.to} to={item.to} className="df-tool-link">
+              <span className="df-tool-link__label">{item.label}</span>
+              <span className="df-tool-link__hint">{item.hint}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="max-w-[1200px] mx-auto px-4 lg:px-6 py-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl bg-[#1E3A8A] px-5 py-4 text-white">
+          <p className="text-sm font-semibold leading-snug">
+            Estimate this period&apos;s dividends with your share counts.
+          </p>
+          <Link
+            to="/dividend-calendar#dividend-calculator"
+            className="shrink-0 inline-flex items-center justify-center rounded-xl bg-[#F97316] px-5 py-2.5 text-sm font-bold hover:bg-orange-500 transition-colors"
+          >
+            Dividend calculator
+          </Link>
+        </div>
+      </section>
+
+      <section className="max-w-[1200px] mx-auto px-4 lg:px-6 pb-12">
         <div className="flex flex-wrap items-end justify-between gap-2 mb-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">News linked to price moves</h2>
+            <h2 className="font-display text-lg font-bold text-slate-900">News linked to price moves</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Distinct headlines paired with a session move on {exchangeConfig.code}. Macro stories appear once,
-              linked to the largest mover that day.
+              Headlines paired with a session move on {exchangeConfig.code}. Research only — not advice.
             </p>
           </div>
           {(headlineCount > 0 || tradeDate) && (
@@ -195,7 +225,7 @@ export default function DashboardRedesign() {
                         {alert.source || 'News'}
                       </span>
                       {alert.kind === 'macro_link' && (
-                        <span className="text-[10px] uppercase tracking-wide text-violet-700 font-bold">
+                        <span className="text-[10px] uppercase tracking-wide text-orange-700 font-bold">
                           Macro
                         </span>
                       )}
@@ -207,9 +237,7 @@ export default function DashboardRedesign() {
                           }`}
                         >
                           {ticker}{' '}
-                          {pct !== 0
-                            ? `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%`
-                            : ''}
+                          {pct !== 0 ? `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%` : ''}
                         </Link>
                       )}
                     </div>

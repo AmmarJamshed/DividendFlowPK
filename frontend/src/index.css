@@ -1,35 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* DividendFlow — logo palette: charcoal ink + icy cyan */
+/* DividendFlow — navy + orange, Sora display / Plus Jakarta body */
 :root {
-  --cream: #f4f9fd;
-  --cream-warm: #e8f0f6;
-  --ink: #0a0e14;
-  --ink-soft: #141c28;
+  --df-navy: #1e3a8a;
+  --df-orange: #f97316;
+  --ink: #0f172a;
+  --ink-soft: #1e293b;
   --muted: #64748b;
-  --ice: #5eb8e8;
-  --ice-soft: #e5f2fa;
-  --violet: #6366f1;
-  --violet-soft: #e0e7ff;
   --positive: #059669;
   --negative: #dc2626;
 }
 
 html {
   -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   background: #f5f7fa;
   color: var(--ink);
+}
+
+.font-display {
+  font-family: 'Sora', 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 html.df-robot-cursor,
@@ -228,6 +228,256 @@ html.df-robot-cursor label[for] {
   }
   .df-table-row {
     @apply border-t border-slate-100 hover:bg-blue-50/40 transition-colors;
+  }
+}
+
+/* —— Cinematic home (theme opening art) —— */
+.df-cinematic-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: min(88vh, 720px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: #0b1a3d;
+}
+
+.df-cinematic-hero__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 28%;
+  transform: scale(1.06);
+  animation: df-kenburns 18s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+.df-cinematic-hero__shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(105deg, rgba(11, 26, 61, 0.92) 0%, rgba(11, 26, 61, 0.55) 48%, rgba(11, 26, 61, 0.25) 100%),
+    linear-gradient(to top, rgba(11, 26, 61, 0.88) 0%, transparent 55%);
+}
+
+.df-cinematic-hero__inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3.5rem 1rem 3rem;
+  animation: df-rise 0.9s ease-out both;
+}
+
+@media (min-width: 1024px) {
+  .df-cinematic-hero__inner {
+    padding: 4.5rem 1.5rem 3.5rem;
+  }
+}
+
+.df-cinematic-hero__brand {
+  font-family: Sora, 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(2rem, 6vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: #fff;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+}
+
+.df-cinematic-hero__title {
+  margin-top: 0.65rem;
+  font-family: Sora, 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(1.15rem, 2.8vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fdba74;
+}
+
+.df-cinematic-hero__lede {
+  margin-top: 0.75rem;
+  max-width: 28rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.df-cinematic-hero__cta {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.df-btn-hero {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+  background: #f97316 !important;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35);
+}
+
+.df-btn-hero:hover {
+  background: #ea580c !important;
+}
+
+.df-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 0.7rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.df-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.df-theme-section {
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(249, 115, 22, 0.08), transparent 55%),
+    linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.df-theme-video-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #0f172a;
+  box-shadow: 0 20px 50px -20px rgba(30, 58, 138, 0.45);
+  animation: df-rise 1s 0.15s ease-out both;
+}
+
+.df-story-strip {
+  background: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 40%, #fff 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.df-story-rail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .df-story-rail {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .df-story-rail {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+.df-story-frame {
+  margin: 0;
+  animation: df-rise 0.7s ease-out both;
+}
+
+.df-story-frame:nth-child(2) { animation-delay: 0.06s; }
+.df-story-frame:nth-child(3) { animation-delay: 0.12s; }
+.df-story-frame:nth-child(4) { animation-delay: 0.18s; }
+.df-story-frame:nth-child(5) { animation-delay: 0.24s; }
+
+.df-story-frame img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.35);
+  transition: transform 0.35s ease;
+}
+
+.df-story-frame:hover img {
+  transform: translateY(-3px) scale(1.02);
+}
+
+.df-story-frame figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.df-tools-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+@media (min-width: 640px) {
+  .df-tools-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.df-tool-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 1rem 0.85rem;
+  transition: background 0.2s ease;
+}
+
+@media (min-width: 640px) {
+  .df-tool-link:not(:last-child) {
+    border-right: 1px solid #e2e8f0;
+  }
+}
+
+.df-tool-link:hover {
+  background: rgba(30, 58, 138, 0.04);
+}
+
+.df-tool-link__label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.df-tool-link__hint {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+@keyframes df-kenburns {
+  from { transform: scale(1.04) translate3d(0, 0, 0); }
+  to { transform: scale(1.12) translate3d(-1.5%, -1%, 0); }
+}
+
+@keyframes df-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .df-cinematic-hero__bg,
+  .df-cinematic-hero__inner,
+  .df-theme-video-frame,
+  .df-story-frame {
+    animation: none !important;
   }
 }
 
