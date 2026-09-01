@@ -1,10 +1,29 @@
-# Site status (updated Aug 2026)
+# Site status (updated Sep 2026)
 
-The temporary ComingSoon waitlist shutdown has been **lifted** in the frontend.
+The temporary ComingSoon shutdown has been **fully lifted**.
 
-- Full app routes are restored in `frontend/src/App.js`.
-- Home is redesigned around theme opening art + YouTube embed (`1PqDWTfUNHQ`).
-- GitHub Pages deploy workflow (`frontend-pages.yml`) is re-enabled.
-- Scraper / ingest / health workflows may still be gated with `if: false  # SITE_CLOSED` until Render cron services are resumed.
+## Restored
 
-When bringing backends back online on Render, also remove remaining `SITE_CLOSED` gates in `.github/workflows/` and re-enable disabled Actions via `gh workflow enable`.
+- Full frontend app routes (`frontend/src/App.js`)
+- GitHub Pages deploy (`frontend-pages.yml`)
+- PSX data pipelines (GitHub Actions):
+  - DividendFlow Scraper
+  - DividendFlow News
+  - DividendFlow Health Check
+  - PSX Market Closing Prices
+  - PSX Workflow Monitor
+  - Supabase CSV Sync
+  - Verify all Render cron replacements
+  - Backend Vercel Deploy (on `backend/**` pushes)
+
+## Still off by design (PSX-only product focus)
+
+These workflows remain gated with `if: false` until global markets return:
+
+- Global market ingest (NYSE, NASDAQ, LSE, HKEX)
+- Global dividend sync
+- IPO calendar sync (PSX IPOs are curated in `data/ipos/psx_ipos.json`)
+
+## Render
+
+Resume cron/web services in the Render dashboard when billing is active. GitHub Actions can run the same jobs as a backup while Render crons spin up.
