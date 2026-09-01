@@ -1,5 +1,31 @@
 [
   {
+    "id": "naya-nazimabad-apartment-reit-2026",
+    "exchange": "PSX",
+    "country": "PK",
+    "companyName": "Naya Nazimabad Apartment REIT",
+    "symbol": "NNAR",
+    "sector": "Real Estate (Shariah-compliant REIT)",
+    "offerType": "REIT offer for sale",
+    "parentCompany": "Arif Habib Dolmen REIT Management Limited",
+    "issueSizeShares": 44062500,
+    "floorPrice": 18,
+    "priceCap": 23,
+    "currency": "PKR",
+    "registrationStart": "2026-08-27",
+    "registrationEnd": "2026-09-02",
+    "bookBuildingStart": "2026-09-01",
+    "bookBuildingEnd": "2026-09-02",
+    "subscriptionStart": "2026-09-07",
+    "subscriptionEnd": "2026-09-08",
+    "prospectusUrl": "https://www.psx.com.pk/psx/themes/psx/uploads/NNAR-OFSD.pdf",
+    "companyUrl": "https://www.arifhabibdolmenreit.com/",
+    "registerUrl": "https://eipo.psx.com.pk/EIPO/",
+    "source": "PSX PRIDE / Offer for Sale Document (Aug 2026)",
+    "notes": "Closed-end developmental REIT (15% units offered). Book building is for eligible participants; retail public subscription opens 7–8 Sep 2026. Apply via PSX e-IPO or CDC e-IPO.",
+    "updatedAt": "2026-09-01"
+  },
+  {
     "id": "select-technologies-2026",
     "exchange": "PSX",
     "country": "PK",
@@ -22,7 +48,7 @@
     "companyUrl": "https://selecttechnologies.pk/",
     "registerUrl": "https://eipo.psx.com.pk/EIPO/",
     "source": "PSX prospectus (16 Jun 2026)",
-    "notes": "Retail investors apply via PSX e-IPO or CDC e-IPO during the public subscription window. Open the main PSX e-IPO portal and choose Register from the menu if a direct link times out.",
-    "updatedAt": "2026-06-25"
+    "notes": "Listed 13 Jul 2026 at strike price PKR 34. Now trading on PSX as SELECT.",
+    "updatedAt": "2026-09-01"
   }
 ]
