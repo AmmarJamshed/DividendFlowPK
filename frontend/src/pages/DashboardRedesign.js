@@ -15,14 +15,6 @@ const PUBLIC = process.env.PUBLIC_URL || '';
 
 const NASDAQ_NEWSLETTER_URL = 'https://psxbluechips.com/nasdaq.html';
 
-const STORY_FRAMES = [
-  { src: `${PUBLIC}/theme/dfpk-theme-01-title.png`, label: 'Title' },
-  { src: `${PUBLIC}/theme/dfpk-theme-02-race.png`, label: 'The race' },
-  { src: `${PUBLIC}/theme/dfpk-theme-03-ipo.png`, label: 'IPO gate' },
-  { src: `${PUBLIC}/theme/dfpk-theme-04-dividends.png`, label: 'Dividends' },
-  { src: `${PUBLIC}/theme/dfpk-theme-05-finale.png`, label: 'Finale' },
-];
-
 const QUICK_LINKS = [
   { to: '/dividend-calendar', label: 'Dividend calendar', hint: 'Payouts & calculator' },
   { to: '/market-closing-prices', label: 'Market data', hint: 'Session closes' },
@@ -136,25 +128,6 @@ export default function DashboardRedesign() {
       <div id="theme-song">
         <ThemeOpening />
       </div>
-
-      <section className="df-story-strip" aria-labelledby="story-heading">
-        <div className="max-w-[1200px] mx-auto px-4 lg:px-6 py-10 lg:py-14">
-          <h2 id="story-heading" className="font-display text-xl sm:text-2xl font-extrabold text-slate-900">
-            From the opening
-          </h2>
-          <p className="mt-1 text-sm text-slate-600 max-w-xl">
-            Keyframes from the DividendFlow PK theme — race the charts, catch the IPO, bank the payout.
-          </p>
-          <div className="df-story-rail mt-6">
-            {STORY_FRAMES.map((frame) => (
-              <figure key={frame.label} className="df-story-frame">
-                <img src={frame.src} alt="" loading="lazy" />
-                <figcaption>{frame.label}</figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section className="max-w-[1200px] mx-auto px-4 lg:px-6 pb-4">
         <div className="df-tools-row">

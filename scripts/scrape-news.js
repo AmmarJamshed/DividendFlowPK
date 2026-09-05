@@ -138,7 +138,7 @@ Reply with your analysis only.`;
     const { data } = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 200,
         temperature: 0.3,
@@ -173,7 +173,7 @@ In 2-3 sentences, explain why this stock likely ${direction === 'gained' ? 'gain
     const { data } = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 150,
         temperature: 0.3,

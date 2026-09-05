@@ -155,7 +155,7 @@ function buildSiteDataDigest() {
 }
 
 /** Groq chat model (override on Render if Groq deprecates defaults). */
-const GROQ_MODEL = (process.env.GROQ_MODEL || 'llama-3.1-8b-instant').trim();
+const GROQ_MODEL = (process.env.GROQ_MODEL || 'openai/gpt-oss-20b').trim();
 
 function getGroqKey() {
   const k = (process.env.GROQ_API_KEY || '').trim();
@@ -178,9 +178,12 @@ function groqHttpErrorMessage(err) {
   if (status === 429) {
     return 'Groq rate limit (429). Wait a minute or check quotas on console.groq.com.';
   }
-  if (status === 400 && (low.includes('model') || low.includes('decommission') || low.includes('invalid'))) {
+  if (
+    (status === 400 || status === 404) &&
+    (low.includes('model') || low.includes('decommission') || low.includes('not found') || low.includes('invalid'))
+  ) {
     const hint = groqErr ? ` ${groqErr.slice(0, 160)}` : '';
-    return `Groq rejected the request (400).${hint} You can set GROQ_MODEL on the backend to a current model from console.groq.com/docs/models.`;
+    return `Groq model unavailable (${status}).${hint} Set GROQ_MODEL on dividendflow-backend to a current id from console.groq.com/docs/models (e.g. openai/gpt-oss-20b), then redeploy.`;
   }
   if (err.code === 'ECONNABORTED' || String(err.message || '').toLowerCase().includes('timeout')) {
     return 'Groq request timed out. Try again; slow or unstable mobile data can cause this.';
