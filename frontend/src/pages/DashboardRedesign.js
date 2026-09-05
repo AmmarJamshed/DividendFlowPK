@@ -13,6 +13,8 @@ import ThemeOpening from '../components/ThemeOpening';
 
 const PUBLIC = process.env.PUBLIC_URL || '';
 
+const NASDAQ_NEWSLETTER_URL = 'https://psxbluechips.com/nasdaq.html';
+
 const STORY_FRAMES = [
   { src: `${PUBLIC}/theme/dfpk-theme-01-title.png`, label: 'Title' },
   { src: `${PUBLIC}/theme/dfpk-theme-02-race.png`, label: 'The race' },
@@ -26,6 +28,12 @@ const QUICK_LINKS = [
   { to: '/market-closing-prices', label: 'Market data', hint: 'Session closes' },
   { to: '/ipo-calendar', label: 'IPO calendar', hint: 'Upcoming listings' },
   { to: '/forecast-engine', label: 'Forecast', hint: 'Scenario tools' },
+  {
+    to: NASDAQ_NEWSLETTER_URL,
+    label: 'US stock enthusiasts',
+    hint: "DividendFlow's New Service",
+    external: true,
+  },
 ];
 
 function Sparkline({ points, trend }) {
@@ -150,12 +158,25 @@ export default function DashboardRedesign() {
 
       <section className="max-w-[1200px] mx-auto px-4 lg:px-6 pb-4">
         <div className="df-tools-row">
-          {QUICK_LINKS.map((item) => (
-            <Link key={item.to} to={item.to} className="df-tool-link">
-              <span className="df-tool-link__label">{item.label}</span>
-              <span className="df-tool-link__hint">{item.hint}</span>
-            </Link>
-          ))}
+          {QUICK_LINKS.map((item) =>
+            item.external ? (
+              <a
+                key={item.to}
+                href={item.to}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="df-tool-link"
+              >
+                <span className="df-tool-link__label">{item.label}</span>
+                <span className="df-tool-link__hint">{item.hint}</span>
+              </a>
+            ) : (
+              <Link key={item.to} to={item.to} className="df-tool-link">
+                <span className="df-tool-link__label">{item.label}</span>
+                <span className="df-tool-link__hint">{item.hint}</span>
+              </Link>
+            )
+          )}
         </div>
       </section>
 

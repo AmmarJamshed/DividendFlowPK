@@ -14,6 +14,8 @@ import PwaInstallBanner from './PwaInstallBanner';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
 
+const NASDAQ_NEWSLETTER_URL = 'https://psxbluechips.com/nasdaq.html';
+
 const navItems = [
   { path: '/', label: 'Overview', icon: 'home' },
   { path: '/dividend-calendar', label: 'Dividend calendar', icon: 'calendar' },
@@ -23,6 +25,12 @@ const navItems = [
   { path: '/salary-simulator', label: 'Income planner', icon: 'wallet' },
   { path: '/reporting-cycles', label: 'Reporting cycles', icon: 'document' },
   { path: '/market-brokers', label: 'Market brokers', icon: 'broker' },
+  {
+    path: NASDAQ_NEWSLETTER_URL,
+    label: 'US stock enthusiasts',
+    icon: 'external',
+    external: true,
+  },
 ];
 
 function NavIcon({ name, className = 'w-4 h-4', active = false, onDark = false }) {
@@ -88,6 +96,14 @@ function NavIcon({ name, className = 'w-4 h-4', active = false, onDark = false }
           <path d="M3 21h18" />
           <path d="M5 21V7l7-4 7 4v14" />
           <path d="M9 21v-6h6v6" />
+        </svg>
+      );
+    case 'external':
+      return (
+        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <path d="M14 3h7v7" />
+          <path d="M10 14 21 3" />
+          <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
         </svg>
       );
     default:
@@ -226,7 +242,8 @@ export default function Layout({ children }) {
       ? `${stockMatch[1].toUpperCase()} · ${stockMatch[2].toUpperCase()}`
       : `${exchangeConfig.code} · Overview`);
 
-  const isNavActive = (path) => {
+  const isNavActive = (path, external = false) => {
+    if (external) return false;
     if (path === '/') return location.pathname === '/';
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
@@ -267,16 +284,27 @@ export default function Layout({ children }) {
 
         <nav className="hidden lg:flex h-11 bg-[#F97316] px-4 lg:px-8 items-center gap-1 overflow-x-auto text-white text-[13px] whitespace-nowrap">
           {navItems.map((item) => {
-            const active = isNavActive(item.path);
+            const active = isNavActive(item.path, item.external);
             const isHome = item.path === '/';
+            const className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-colors shrink-0 ${
+              active ? 'bg-white text-[#F97316] shadow-sm' : 'hover:bg-white/15'
+            }`;
+            if (item.external) {
+              return (
+                <a
+                  key={item.path}
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                  title="DividendFlow's New Service"
+                >
+                  {item.label}
+                </a>
+              );
+            }
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-colors shrink-0 ${
-                  active ? 'bg-white text-[#F97316] shadow-sm' : 'hover:bg-white/15'
-                }`}
-              >
+              <Link key={item.path} to={item.path} className={className}>
                 {isHome && <NavIcon name="home" className="w-3.5 h-3.5" active={active} />}
                 {!isHome && item.label}
                 {isHome && <span>Overview</span>}
@@ -306,16 +334,34 @@ export default function Layout({ children }) {
               <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300">Navigate</p>
             </div>
             {navItems.map((item) => {
-              const active = isNavActive(item.path);
+              const active = isNavActive(item.path, item.external);
+              const className = `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                active
+                  ? 'bg-[#3B82F6] text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10'
+              }`;
+              if (item.external) {
+                return (
+                  <a
+                    key={item.path}
+                    href={item.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={className}
+                    title="DividendFlow's New Service"
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <NavIcon name={item.icon} className="w-4 h-4" active={active} onDark />
+                    {item.label}
+                  </a>
+                );
+              }
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
-                    active
-                      ? 'bg-[#3B82F6] text-white shadow-md'
-                      : 'text-blue-100 hover:bg-white/10'
-                  }`}
+                  className={className}
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <NavIcon name={item.icon} className="w-4 h-4" active={active} onDark />
                   {item.label}
