@@ -5,6 +5,7 @@ import RobotCursor from './RobotCursor';
 import AIGuidance from './AIGuidance';
 import AmmarCursorGuide from './AmmarCursorGuide';
 import ChallengersSideGuides from './ChallengersSideGuides';
+import ChallengersWallpaper from './ChallengersWallpaper';
 import { useAIAssistance } from '../context/AIAssistanceContext';
 import { useMarketBuddy } from '../context/MarketBuddyContext';
 import { useExchange } from '../context/ExchangeContext';
@@ -201,7 +202,8 @@ export default function Layout({ children }) {
   const isHome = location.pathname === '/';
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] text-slate-800 font-sans">
+    <div className="min-h-screen bg-transparent text-slate-800 font-sans relative isolate">
+      <ChallengersWallpaper />
       <header className="sticky top-0 z-50 shadow-sm">
         <div className="h-[60px] bg-[#1E3A8A] px-4 lg:px-8 flex items-center gap-4">
           <button
@@ -274,7 +276,7 @@ export default function Layout({ children }) {
         </nav>
       </header>
 
-      <div className="flex min-h-[calc(100vh-3.75rem)] lg:min-h-[calc(100vh-7.75rem)]">
+      <div className="relative z-10 flex min-h-[calc(100vh-3.75rem)] lg:min-h-[calc(100vh-7.75rem)]">
         {sidebarOpen && (
           <button
             type="button"
@@ -341,9 +343,9 @@ export default function Layout({ children }) {
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-transparent">
           {!isHome && (
-            <div className="shrink-0 border-b border-slate-200/80 bg-white px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="shrink-0 border-b border-slate-200/80 bg-white/90 backdrop-blur-sm px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
               <h1 className="text-base lg:text-lg font-semibold text-slate-900 tracking-tight truncate">
                 {pageTitle}
               </h1>

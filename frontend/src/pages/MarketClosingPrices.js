@@ -95,7 +95,7 @@ export default function MarketClosingPrices() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px]">
+      <div className="flex items-center justify-center min-h-[55vh]">
         <div className="animate-spin w-10 h-10 border-2 border-[#1E3A8A] border-t-transparent rounded-full" />
       </div>
     );
