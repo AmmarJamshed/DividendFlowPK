@@ -212,7 +212,7 @@ html.df-robot-cursor label[for] {
     @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
   }
   .df-header-search input {
-    @apply w-full rounded-lg border-0 bg-white/95 px-4 py-2 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300;
+    @apply w-full rounded-full border-0 bg-white pl-8 pr-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300/70;
   }
   .df-header-search .relative {
     @apply max-w-none w-full;
@@ -508,7 +508,7 @@ html.df-robot-cursor label[for] {
 }
 .df-challengers-wallpaper__art {
   position: absolute;
-  top: 4.5rem;
+  top: 5.75rem;
   bottom: 0;
   width: min(32vw, 480px);
   background-size: cover;
@@ -531,7 +531,7 @@ html.df-robot-cursor label[for] {
 }
 .df-challengers-wallpaper__hero {
   position: absolute;
-  inset: 4.5rem 8% 0;
+  inset: 5.75rem 8% 0;
   background-size: cover;
   background-position: center 28%;
   opacity: 0.22;
@@ -548,7 +548,7 @@ html.df-robot-cursor label[for] {
 }
 .df-challengers-wallpaper__grid {
   position: absolute;
-  inset: 4.5rem 0 0;
+  inset: 5.75rem 0 0;
   opacity: 0.07;
   background-image:
     linear-gradient(rgba(30, 58, 138, 0.35) 1px, transparent 1px),
@@ -559,7 +559,7 @@ html.df-robot-cursor label[for] {
 }
 .df-challengers-wallpaper__floaters {
   position: absolute;
-  inset: 4.5rem 0 0;
+  inset: 5.75rem 0 0;
 }
 .df-challengers-floater {
   position: absolute;
@@ -584,7 +584,7 @@ html.df-robot-cursor label[for] {
 }
 .df-challengers-wallpaper__coins {
   position: absolute;
-  inset: 4.5rem 0 0;
+  inset: 5.75rem 0 0;
 }
 .df-challengers-coin {
   position: absolute;
@@ -683,7 +683,7 @@ html.df-robot-cursor label[for] {
   }
   .df-challengers-rail__inner {
     position: fixed;
-    inset: 7.5rem 0 1.25rem;
+    inset: 6rem 0 1.25rem;
     z-index: 35;
     display: flex;
     justify-content: space-between;

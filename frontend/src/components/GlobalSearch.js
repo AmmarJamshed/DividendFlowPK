@@ -47,20 +47,28 @@ export default function GlobalSearch() {
 
   return (
     <div ref={wrapRef} className="relative w-full">
-      <input
-        type="search"
-        value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        placeholder="Search ticker or company…"
-        className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-ice-400/60"
-        aria-label="Search PSX stocks"
-      />
+      <label className="relative block">
+        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <circle cx="11" cy="11" r="7" />
+            <path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+          </svg>
+        </span>
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder="Search ticker or company…"
+          className="w-full rounded-full border-0 bg-white pl-8 pr-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300/70"
+          aria-label="Search ticker or company"
+        />
+      </label>
       {open && q.trim() && (
-        <ul className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg text-sm">
+        <ul className="absolute z-50 mt-1.5 w-full max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg text-sm">
           {loading && <li className="px-3 py-2 text-slate-500">Searching…</li>}
           {!loading && results.length === 0 && (
             <li className="px-3 py-2 text-slate-500">No matches</li>
@@ -70,7 +78,7 @@ export default function GlobalSearch() {
               <button
                 type="button"
                 onClick={() => pick(r)}
-                className="w-full text-left px-3 py-2 hover:bg-ice-50 flex justify-between gap-2"
+                className="w-full text-left px-3 py-2 hover:bg-orange-50 flex justify-between gap-2"
               >
                 <span>
                   <strong>{r.symbol}</strong>

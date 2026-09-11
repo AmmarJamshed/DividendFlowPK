@@ -10,7 +10,8 @@
     "health": "node health-check.js",
     "news": "node scrape-news.js",
     "run-news": "node run-news.js",
-    "sync-ipos": "node sync-ipos.mjs"
+    "sync-ipos": "node sync-ipos.mjs",
+    "research": "node market-research-agent.js"
   },
   "dependencies": {
     "axios": "^1.6.0",

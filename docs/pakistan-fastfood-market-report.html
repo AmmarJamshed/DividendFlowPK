@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pakistan Fast Food Market Report — DividendFlow.pk</title>
+  <style>
+    :root {
+      --navy: #0b1f3a;
+      --blue: #1a3a6b;
+      --orange: #f05a22;
+      --orange-soft: #ff8a4c;
+      --green: #1f8a4c;
+      --sky: #e8f2ff;
+      --cream: #fff8f2;
+      --ink: #152033;
+      --muted: #5a6a7e;
+      --line: #d6e0ef;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.55;
+    }
+    a { color: var(--blue); }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 0 18px 64px; }
+    .cover {
+      position: relative;
+      margin: 0 0 28px;
+      border-radius: 0 0 18px 18px;
+      overflow: hidden;
+      background: var(--navy);
+    }
+    .cover img {
+      width: 100%;
+      display: block;
+      max-height: 720px;
+      object-fit: cover;
+      object-position: center top;
+    }
+    .cover-caption {
+      margin: 0 0 8px;
+      padding: 16px 4px 4px;
+      color: var(--navy);
+    }
+    .cover-caption h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      letter-spacing: .02em;
+      color: var(--navy);
+    }
+    .cover-caption p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+    .brand-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0 8px;
+    }
+    .logo {
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--navy);
+    }
+    .logo span { color: var(--orange); }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      background: var(--sky);
+      color: var(--blue);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+    nav.toc {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 16px 0 28px;
+    }
+    nav.toc h2 { margin: 0 0 10px; font-size: 1rem; color: var(--navy); }
+    nav.toc ol { margin: 0; padding-left: 1.2rem; columns: 1; }
+    @media (min-width: 720px) { nav.toc ol { columns: 2; } }
+    nav.toc li { margin: 4px 0; font-size: .92rem; }
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px;
+      margin: 0 0 22px;
+    }
+    section h2 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 1.35rem;
+    }
+    section h3 {
+      margin: 18px 0 8px;
+      color: var(--blue);
+      font-size: 1.05rem;
+    }
+    .lede {
+      color: var(--muted);
+      font-size: 1.02rem;
+      margin: 0 0 14px;
+    }
+    .scene {
+      margin: 0 0 16px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #0b1f3a;
+    }
+    .scene img { width: 100%; display: block; max-height: 340px; object-fit: cover; }
+    .buddy {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 12px;
+      align-items: start;
+      background: var(--sky);
+      border-left: 4px solid var(--orange);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+    .buddy .avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #fff;
+      background: var(--navy);
+    }
+    .buddy strong { color: var(--orange); display: block; margin-bottom: 2px; }
+    .buddy p { margin: 0; font-size: .95rem; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .stat {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .stat .n {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--orange);
+      line-height: 1.2;
+    }
+    .stat .l { font-size: .82rem; color: var(--muted); margin-top: 4px; }
+    .stat .src {
+      display: block;
+      margin-top: 8px;
+      font-size: .75rem;
+      line-height: 1.35;
+    }
+    .stat .src a {
+      color: var(--blue);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .stat .yr {
+      display: inline-block;
+      background: var(--sky);
+      color: var(--navy);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: .7rem;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+    a.cite {
+      color: var(--blue);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+      margin: 12px 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--sky); color: var(--navy); }
+    .note {
+      font-size: .85rem;
+      color: var(--muted);
+      margin: 8px 0 0;
+    }
+    .formula {
+      background: #0f2744;
+      color: #e8f2ff;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: .86rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      margin: 12px 0;
+    }
+    .tag {
+      display: inline-block;
+      background: #ffe8dc;
+      color: #b84310;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: .75rem;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .two {
+      display: grid;
+      gap: 14px;
+    }
+    @media (min-width: 760px) {
+      .two { grid-template-columns: 1fr 1fr; }
+    }
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fff;
+    }
+    .box h4 { margin: 0 0 8px; color: var(--navy); }
+    .box ul { margin: 0; padding-left: 1.15rem; }
+    .box li { margin: 4px 0; }
+    .sources li { margin: 6px 0; font-size: .9rem; }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+      padding: 8px 0 24px;
+    }
+    .disclaimer {
+      background: #fff3e8;
+      border: 1px solid #ffd0b0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: .9rem;
+      margin: 0 0 20px;
+    }
+    .cheat {
+      background: var(--navy);
+      color: #fff;
+      border-radius: 16px;
+      padding: 20px 22px;
+      margin: 0 0 22px;
+    }
+    .cheat h2 { margin: 0 0 10px; color: #fff; font-size: 1.2rem; }
+    .cheat p { margin: 0 0 12px; opacity: .92; }
+    .cheat .stats .stat {
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.18);
+    }
+    .cheat .stats .stat .n { color: var(--orange-soft); }
+    .cheat .stats .stat .l { color: rgba(255,255,255,.78); }
+    .cheat .stats .stat .src,
+    .cheat .stats .stat .src a { color: #ffd2b8; }
+    .done-banner {
+      background: #e8fff0;
+      border: 1px solid #b6e5c5;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 0 0 18px;
+      font-size: .92rem;
+    }
+    .chart-box {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px 10px;
+      margin: 16px 0;
+    }
+    .chart-box h4 {
+      margin: 0 0 4px;
+      color: var(--navy);
+      font-size: 1rem;
+    }
+    .chart-cap {
+      margin: 0 0 10px;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .chart-wrap {
+      position: relative;
+      height: 280px;
+      width: 100%;
+    }
+    .chart-wrap.tall { height: 360px; }
+    .charts-grid {
+      display: grid;
+      gap: 14px;
+    }
+    @media (min-width: 760px) {
+      .charts-grid.two-col { grid-template-columns: 1fr 1fr; }
+    }
+    @media print {
+      body { background: #fff; }
+      .cover { border-radius: 0; }
+      section, nav.toc, .cheat, .disclaimer, .done-banner, .chart-box {
+        break-inside: avoid;
+        box-shadow: none;
+      }
+      a { color: inherit; text-decoration: none; }
+      .chart-wrap { height: 240px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="cover">
+    <img src="theme/dfpk-theme-01-title.png" alt="DividendFlow.pk cover — Track Learn Grow" />
+  </div>
+
+  <div class="wrap">
+    <div class="cover-caption">
+      <h1>Pakistan Fast Food Market — Full Research Report</h1>
+      <p>DividendFlow.pk Research Note · Local + International Brands · Smart Food Gaps · ML Menu Scores · Sep 2026</p>
+    </div>
+    <div class="brand-bar">
+      <div class="logo">DIVIDEND <span>FLOW</span>.PK</div>
+      <div class="pills">
+        <span class="pill">Track markets</span>
+        <span class="pill">Learn simply</span>
+        <span class="pill">Grow ideas</span>
+      </div>
+    </div>
+
+    <div class="done-banner">
+      <strong>Report status: COMPLETE.</strong>
+      Cover page + all 5 DividendFlow.pk theme scenes + cast roles + market layers +
+      economics + barriers + incentives + ML scores (with formula) + smart-food gaps + full source list.
+    </div>
+
+    <div class="disclaimer">
+      <strong>Plain talk first:</strong> This is a learning report for ideas and homework-style research.
+      It is <em>not</em> investment advice, not a bank guarantee, and not a promise that any food shop will make money.
+      Numbers come from public sources; some are old or from paid reports that only show teaser pages.
+      Always check the newest official papers before you spend real money.
+    </div>
+
+    <div class="cheat" id="cheat">
+      <h2>60-second executive snapshot (Simple Word answer)</h2>
+      <p>
+        Pakistan already loves fast food. Local shops + world brands share one big eating-out pot of about
+        <strong>$6–9 billion a year</strong>. Opening a shop is exciting but hard (papers, rent, app fees).
+        Government candy is stronger for <em>food factories / SEZs</em> than for a single fryer shop.
+        Best “new but familiar” foods: crispy chicken, burgers, pizza, shawarma, Korean fried chicken.
+        The emptier gold mine: <strong>smart food</strong> (health plans, school lunch, gym macros, trust meat)
+        that Foodpanda-style apps are not built to run.
+      </p>
+      <div class="stats">
+        <div class="stat">
+          <div class="n">$6–9 bn</div>
+          <div class="l">Eating out / year</div>
+          <div class="src"><a class="cite" href="https://www.trade.gov/country-commercial-guides/pakistan-franchising" target="_blank" rel="noopener">Trade.gov</a></div>
+        </div>
+        <div class="stat">
+          <div class="n">256k+</div>
+          <div class="l">Restaurants (Oct 2025)</div>
+          <div class="src"><a class="cite" href="https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/" target="_blank" rel="noopener">ProPakistani</a></div>
+        </div>
+        <div class="stat">
+          <div class="n">92</div>
+          <div class="l">Top ML score (fried chicken)</div>
+          <div class="src">DFPK CBF model 2026</div>
+        </div>
+        <div class="stat">
+          <div class="n">10</div>
+          <div class="l">Smart-food gap ideas</div>
+          <div class="src">DFPK gap map 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#cast">DividendFlow characters</a></li>
+        <li><a href="#big">Market size &amp; trend charts</a></li>
+        <li><a href="#economics">Economics &amp; cost structure</a></li>
+        <li><a href="#barriers">Barriers to entry</a></li>
+        <li><a href="#incentives">Incentives to enter</a></li>
+        <li><a href="#ml">ML menu scores &amp; culture charts</a></li>
+        <li><a href="#smart">Smart food gaps</a></li>
+        <li><a href="#playbook">Entry playbook</a></li>
+        <li><a href="#sources">Sources</a></li>
+      </ol>
+    </nav>
+
+    <!-- 1 CAST -->
+    <section id="cast">
+      <h2>1. Meet the crew (behavioral impressions)</h2>
+      <p class="lede">
+        We use DividendFlow.pk’s anime cast like little teachers. Each face is a
+        <strong>behavioral impression</strong> — a feeling we want you to remember with that chapter.
+      </p>
+      <div class="scene">
+        <img src="theme/dfpk-theme-01-title.png" alt="Full DividendFlow crew on title scene" />
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Character vibe</th>
+            <th>Who they feel like</th>
+            <th>Where they guide you</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Leader (blue–orange hoodie, points up)</td>
+            <td>Brave, hopeful, “let’s go!”</td>
+            <td>Cover + big market picture</td>
+          </tr>
+          <tr>
+            <td>Tech Expert (glasses + laptop)</td>
+            <td>Calm, number-y, careful</td>
+            <td>Stats, economics, ML math</td>
+          </tr>
+          <tr>
+            <td>Motivated Investor (orange hoodie, fists up)</td>
+            <td>Excited winner energy</td>
+            <td>Growth &amp; “why enter?”</td>
+          </tr>
+          <tr>
+            <td>Focused Learner (dark green jacket)</td>
+            <td>Serious, ready to act</td>
+            <td>Barriers &amp; playbook</td>
+          </tr>
+          <tr>
+            <td>Informed Pro (hijab + book + phone)</td>
+            <td>Wise, balanced, modern + traditional</td>
+            <td>Culture fit + smart food gaps</td>
+          </tr>
+          <tr>
+            <td>AI Market Buddy (robot cape)</td>
+            <td>Friendly scanner: “I scan, you decide”</td>
+            <td>ML scores + smart gaps</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 2 MARKET SIZE -->
+    <section id="big">
+      <h2>2. How big is the pie? (local + international together)</h2>
+      <div class="scene">
+        <img src="theme/dfpk-theme-02-race.png" alt="Dividend Challengers race through the market city" />
+      </div>
+      <div class="buddy">
+        <img class="avatar" src="theme/dfpk-theme-02-race.png" alt="Race scene avatar crop" />
+        <div>
+          <strong>Race Crew says:</strong>
+          <p>
+            Think of Pakistan’s food world like a giant race track. Some cars are giant international brands
+            (KFC, McDonald’s, Pizza Hut). Some cars are local heroes (broast shops, burger joints, pizza houses).
+            Together they share one big track: people who want tasty food, fast.
+          </p>
+        </div>
+      </div>
+
+      <p>
+        Important: there is <strong>no single free public number</strong> that says
+        “Pakistan QSR / fast food = exactly X billion today” for every local + foreign shop combined.
+        Paid firms (like 6Wresearch) sell that exact slice. So we stack honest public layers instead.
+      </p>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="n">$6–9 bn</div>
+          <div class="l">Yearly spend on eating out (Pakistan Food Association estimate)</div>
+          <div class="src"><span class="yr">Year: guide pub. ~2019–2020 data cited</span><a class="cite" href="https://www.trade.gov/country-commercial-guides/pakistan-franchising" target="_blank" rel="noopener">U.S. Trade.gov — Pakistan Franchising</a></div>
+        </div>
+        <div class="stat">
+          <div class="n">256,926+</div>
+          <div class="l">Registered restaurants; 1M+ people working in them</div>
+          <div class="src"><span class="yr">Oct 2025</span><a class="cite" href="https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/" target="_blank" rel="noopener">ProPakistani — Gastronomy &amp; Growth</a></div>
+        </div>
+        <div class="stat">
+          <div class="n">$115.4 bn</div>
+          <div class="l">Pakistan Food market revenue — mostly food eaten at home</div>
+          <div class="src"><span class="yr">2024</span><a class="cite" href="https://www.statista.com/outlook/cmo/food/pakistan" target="_blank" rel="noopener">Statista — Food Pakistan</a></div>
+        </div>
+        <div class="stat">
+          <div class="n">$165.6 bn</div>
+          <div class="l">Food market volume projected; ~7.49% growth path 2024–2029</div>
+          <div class="src"><span class="yr">2029 forecast</span><a class="cite" href="https://www.statista.com/outlook/cmo/food/pakistan" target="_blank" rel="noopener">Statista — Food Pakistan</a></div>
+        </div>
+        <div class="stat">
+          <div class="n">$147 bn+</div>
+          <div class="l">Halal food &amp; beverages market value</div>
+          <div class="src"><span class="yr">2023</span><a class="cite" href="https://www.bonafideresearch.com/product/6208299434/pakistan-halal-food-and-beverages-market" target="_blank" rel="noopener">Bonafide Research — Halal F&amp;B Overview</a></div>
+        </div>
+        <div class="stat">
+          <div class="n">13,000+</div>
+          <div class="l">Foodpanda partner restaurants; many report income uplift</div>
+          <div class="src"><span class="yr">Oct 2025</span><a class="cite" href="https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/" target="_blank" rel="noopener">ProPakistani — Gastronomy &amp; Growth</a></div>
+        </div>
+      </div>
+
+      <div class="charts-grid two-col">
+        <div class="chart-box">
+          <h4>Market layer comparison (USD bn)</h4>
+          <p class="chart-cap">Different scopes — do not add bars into one total ·
+            <a class="cite" href="https://www.trade.gov/country-commercial-guides/pakistan-franchising" target="_blank" rel="noopener">Trade.gov</a> ·
+            <a class="cite" href="https://www.statista.com/outlook/cmo/food/pakistan" target="_blank" rel="noopener">Statista (2024/2029)</a> ·
+            <a class="cite" href="https://www.bonafideresearch.com/product/6208299434/pakistan-halal-food-and-beverages-market" target="_blank" rel="noopener">Bonafide (2023)</a> ·
+            <a class="cite" href="https://mordorintelligence.com/industry-reports/pakistan-frozen-food-market/market-size" target="_blank" rel="noopener">Mordor (2025)</a> ·
+            <a class="cite" href="https://invest.gov.pk/sites/default/files/inline-files/Profile%20-%20Food%20Processing%20Sector_new.pdf?gtranslate=en" target="_blank" rel="noopener">BOI PDF (2020 retail)</a>
+          </p>
+          <div class="chart-wrap"><canvas id="chartLayers"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <h4>Pakistan food market path (USD bn)</h4>
+          <p class="chart-cap">
+            <span class="yr">2024–2029</span>
+            <a class="cite" href="https://www.statista.com/outlook/cmo/food/pakistan" target="_blank" rel="noopener">Statista — Food Pakistan</a>
+            · ~7.49% growth framing (interpolated path between published endpoints)
+          </p>
+          <div class="chart-wrap"><canvas id="chartFoodPath"></canvas></div>
+        </div>
+      </div>
+
+      <div class="charts-grid two-col">
+        <div class="chart-box">
+          <h4>Global fast food market trend (USD bn)</h4>
+          <p class="chart-cap">
+            <span class="yr">2024–2034</span>
+            <a class="cite" href="https://finance.yahoo.com/news/fast-food-market-size-set-140000993.html" target="_blank" rel="noopener">Yahoo Finance / Precedence–Towards FnB (23 Jul 2025)</a>
+            · ~5% CAGR framing
+          </p>
+          <div class="chart-wrap"><canvas id="chartGlobalFF"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <h4>Major QSR outlet footprint (Pakistan)</h4>
+          <p class="chart-cap">
+            <span class="yr">Trade.gov guide</span>
+            <a class="cite" href="https://www.trade.gov/country-commercial-guides/pakistan-franchising" target="_blank" rel="noopener">U.S. Trade.gov — Franchising</a>
+            · KFC also
+            <a class="cite" href="https://www.zoominfo.com/c/kfc-pakistan/354259048" target="_blank" rel="noopener">ZoomInfo (updated 2026)</a>
+            cites 83+
+          </p>
+          <div class="chart-wrap"><canvas id="chartOutlets"></canvas></div>
+        </div>
+      </div>
+
+      <h3>What “combined market worth” means — Simple Word answer</h3>
+      <ul>
+        <li><span class="tag">Layer A</span> <strong>Eating out money:</strong> about <strong>$6 to $9 billion a year</strong> — closest public “restaurants / dining out” pot mixing local + international.
+          <span class="yr">cited in Trade.gov guide</span>
+          <a class="cite" href="https://www.trade.gov/country-commercial-guides/pakistan-franchising" target="_blank" rel="noopener">U.S. Trade.gov</a></li>
+        <li><span class="tag">Layer B</span> <strong>Whole food shopping:</strong> Food market (~$115 bn in <strong>2024</strong>) is mostly groceries for home, not only burgers.
+          <a class="cite" href="https://www.statista.com/outlook/cmo/food/pakistan" target="_blank" rel="noopener">Statista — Food Pakistan</a></li>
+        <li><span class="tag">Layer C</span> <strong>Halal F&amp;B universe:</strong> ~$147 bn (<strong>2023</strong>) is a huge halal food+drink umbrella — bigger than “fast food shops only.”
+          <a class="cite" href="https://www.bonafideresearch.com/product/6208299434/pakistan-halal-food-and-beverages-market" target="_blank" rel="noopener">Bonafide Research</a></li>
+        <li><span class="tag">Layer D</span> <strong>Hospitality umbrella:</strong> Tourism &amp; hospitality was ~5.9% of GDP and ~3.8 million jobs in <strong>2019</strong>.
+          <a class="cite" href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE KB 76 (2022)</a> citing WTTC</li>
+      </ul>
+
+      <h3>International vs local — who is racing?</h3>
+      <table>
+        <thead>
+          <tr><th>Player type</th><th>How to think about it</th><th>Public clues + year + link</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>International QSR</td>
+            <td>Famous logos people already know</td>
+            <td>
+              U.S. brands ~70% franchise share; KFC 110+; McDonald’s 85+; Subway 46; Hardee’s 21 —
+              <span class="yr">Trade.gov guide</span>
+              <a class="cite" href="https://www.trade.gov/country-commercial-guides/pakistan-franchising" target="_blank" rel="noopener">trade.gov/…/pakistan-franchising</a>.
+              KFC also <span class="yr">2026</span>
+              <a class="cite" href="https://www.zoominfo.com/c/kfc-pakistan/354259048" target="_blank" rel="noopener">ZoomInfo 83+</a>.
+            </td>
+          </tr>
+          <tr>
+            <td>Local chains &amp; independents</td>
+            <td>Neighborhood champions + city brands</td>
+            <td>
+              Huge share of 256k+ restaurants —
+              <span class="yr">Oct 2025</span>
+              <a class="cite" href="https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/" target="_blank" rel="noopener">ProPakistani</a>.
+            </td>
+          </tr>
+          <tr>
+            <td>Delivery platforms</td>
+            <td>The roads the cars drive on</td>
+            <td>
+              Historical Foodpanda scale (~200k deliveries/day; ~Rs 90m food value/day) —
+              <span class="yr">Sep 2020</span>
+              <a class="cite" href="https://profit.pakistantoday.com.pk/2020/09/19/careem-vs-foodpanda-who-will-dominate-the-food-delivery-space-in-pakistan" target="_blank" rel="noopener">Profit — Careem vs Foodpanda</a>.
+              Partner restaurants 13k+ —
+              <span class="yr">Oct 2025</span>
+              <a class="cite" href="https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/" target="_blank" rel="noopener">ProPakistani</a>.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note">Every major figure also appears again in <a href="#sources">§9 Sources</a> with the same URLs.</p>
+    </section>
+
+    <!-- 3 ECONOMICS -->
+    <section id="economics">
+      <h2>3. Simple economics (who pays whom)</h2>
+      <div class="buddy">
+        <img class="avatar" src="theme/dfpk-theme-04-dividends.png" alt="AI Market Buddy scene" />
+        <div>
+          <strong>Tech Expert + AI Market Buddy:</strong>
+          <p>
+            A burger shop is a money machine with pipes. Money comes in from hungry people.
+            Money goes out to chicken, flour, rent, staff, apps, tax, and electricity.
+            What is left is your “smile money” (profit). If pipes leak too much, smile goes away.
+          </p>
+        </div>
+      </div>
+
+      <div class="two">
+        <div class="box">
+          <h4>Money coming in</h4>
+          <ul>
+            <li>Dine-in tickets (family nights, after school)</li>
+            <li>Takeaway / drive-thru</li>
+            <li>App delivery (Foodpanda &amp; friends)</li>
+            <li>Corporate / event catering</li>
+            <li>Franchise royalties (for brand owners)</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h4>Money going out</h4>
+          <ul>
+            <li>Food cost (biggest pipe for fried chicken &amp; beef)</li>
+            <li>Rent in DHA / Gulberg / Clifton = high</li>
+            <li>Staff wages + training</li>
+            <li>App commission historically ~15–28%+ —
+              <a class="cite" href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE 2022</a> /
+              <a class="cite" href="https://profit.pakistantoday.com.pk/2020/09/19/careem-vs-foodpanda-who-will-dominate-the-food-delivery-space-in-pakistan" target="_blank" rel="noopener">Profit 2020</a></li>
+            <li>Sales tax, municipal fees, utilities, packaging</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="charts-grid two-col">
+        <div class="chart-box">
+          <h4>Illustrative QSR cost split (% of sales)</h4>
+          <p class="chart-cap"><span class="yr">Educational model 2026</span> DividendFlow.pk illustration — not audited company accounts</p>
+          <div class="chart-wrap"><canvas id="chartCostPie"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <h4>Delivery platform commission pressure</h4>
+          <p class="chart-cap">
+            Foodpanda ~28%, Cheetay ~15% —
+            <span class="yr">PIDE KB 76 · 2022</span>
+            <a class="cite" href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE — Hotel &amp; Restaurant Industries</a>
+            · market structure commentary also in
+            <span class="yr">Sep 2020</span>
+            <a class="cite" href="https://profit.pakistantoday.com.pk/2020/09/19/careem-vs-foodpanda-who-will-dominate-the-food-delivery-space-in-pakistan" target="_blank" rel="noopener">Profit</a>
+          </p>
+          <div class="chart-wrap"><canvas id="chartCommission"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <h4>Related growth signals (CAGR %)</h4>
+        <p class="chart-cap">
+          Food market ~
+          <a class="cite" href="https://www.statista.com/outlook/cmo/food/pakistan" target="_blank" rel="noopener">Statista 7.49% (2024–2029)</a>
+          · Frozen ~
+          <a class="cite" href="https://mordorintelligence.com/industry-reports/pakistan-frozen-food-market/market-size" target="_blank" rel="noopener">Mordor 5.74% (2026–2031)</a>
+          · Global FF ~
+          <a class="cite" href="https://finance.yahoo.com/news/fast-food-market-size-set-140000993.html" target="_blank" rel="noopener">Precedence ~5% (2025–2034)</a>
+        </p>
+        <div class="chart-wrap"><canvas id="chartGrowthSignals"></canvas></div>
+      </div>
+
+      <h3>Why the economy likes this industry</h3>
+      <ul>
+        <li>Young cities, busy lives, lifestyle dining —
+          <span class="yr">2022</span>
+          <a class="cite" href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE KB 76</a></li>
+        <li>Food processing / F&amp;B described as Pakistan’s <strong>2nd largest industry</strong> after textiles (~27% mfg value-add, ~16% mfg employment) —
+          <a class="cite" href="https://invest.gov.pk/food-processing" target="_blank" rel="noopener">BOI Food Processing</a></li>
+        <li>Food &amp; grocery retail about <strong>$53 bn</strong> revenue in <strong>2020</strong> —
+          <a class="cite" href="https://invest.gov.pk/sites/default/files/inline-files/Profile%20-%20Food%20Processing%20Sector_new.pdf?gtranslate=en" target="_blank" rel="noopener">BOI Sector Profile PDF</a></li>
+        <li>Frozen food ~<strong>$0.77 bn in 2025</strong> → ~$1.08 bn by <strong>2031</strong> —
+          <a class="cite" href="https://mordorintelligence.com/industry-reports/pakistan-frozen-food-market/market-size" target="_blank" rel="noopener">Mordor Intelligence</a></li>
+      </ul>
+
+      <h3>Pain points that squeeze margins</h3>
+      <ul>
+        <li>Price sensitivity, health concerns, rivalry —
+          <a class="cite" href="https://www.6wresearch.com/industry-report/pakistan-quick-service-restaurants-and-fast-food-market" target="_blank" rel="noopener">6Wresearch Pakistan QSR (pub. Sep 2024 / upd. Sep 2025)</a></li>
+        <li>Platform fees (Foodpanda ~28%, Cheetay ~15%) —
+          <span class="yr">2022</span>
+          <a class="cite" href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE</a></li>
+        <li>Inflation / PKR swings make imported sauces, cheese, packaging, and franchise royalties harder.</li>
+      </ul>
+    </section>
+
+    <!-- 4 BARRIERS -->
+    <section id="barriers">
+      <h2>4. Hard doors — barriers to entry</h2>
+      <div class="scene">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="IPO rocket launch energy — growth but not easy" />
+      </div>
+      <div class="buddy">
+        <img class="avatar" src="theme/dfpk-theme-03-ipo.png" alt="Leader pointing up" />
+        <div>
+          <strong>Focused Learner says:</strong>
+          <p>
+            Rockets look cool. Rockets also need fuel, papers, and a clear launch pad.
+            Opening a food brand in Pakistan is the same: exciting, but the door has many locks.
+          </p>
+        </div>
+      </div>
+
+      <div class="two">
+        <div class="box">
+          <h4>For local founders</h4>
+          <ul>
+            <li>Many licenses / food authority rules / municipal NOCs —
+              <span class="yr">2022</span>
+              <a class="cite" href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE</a></li>
+            <li>Hard bank loans for first-time food SMEs</li>
+            <li>Finding trained staff is hard; hotels/restaurants often train in-house —
+              <a class="cite" href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE 2022</a></li>
+            <li>Rent + fit-out cost in prime malls</li>
+            <li>Delivery apps may take a big bite of sales</li>
+            <li>Brand trust vs KFC / McD already living in people’s minds</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h4>For foreign brands</h4>
+          <ul>
+            <li>Need a strong local franchise partner (most big QSRs use this model)</li>
+            <li>Halal supply chain must be rock solid (almost default expectation)</li>
+            <li>Menu must be localized (spice, portions, family deals)</li>
+            <li>Import duties / forex for proprietary ingredients &amp; royalties</li>
+            <li>Political / security / policy uncertainty (classic PIDE hotel barrier theme)</li>
+            <li>Competition already dense in Karachi, Lahore, Islamabad</li>
+          </ul>
+        </div>
+      </div>
+      <p class="note">
+        <span class="yr">2022</span>
+        <a class="cite" href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE Knowledge Brief No. 76</a>
+        is the clearest public barriers story for hotels/restaurants: paperwork, weak skills pipeline, infrastructure gaps, and limited government responsiveness.
+        PDF:
+        <a class="cite" href="https://file.pide.org.pk/uploads/kb-076-hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics.pdf" target="_blank" rel="noopener">direct PDF download</a>.
+      </p>
+    </section>
+
+    <!-- 5 INCENTIVES -->
+    <section id="incentives">
+      <h2>5. Goodies &amp; invites — incentives to enter</h2>
+      <div class="buddy">
+        <img class="avatar" src="theme/dfpk-theme-01-title.png" alt="Crew celebrating" />
+        <div>
+          <strong>Motivated Investor says:</strong>
+          <p>
+            Pakistan does wave some candy for food investors — especially if you make food in a factory / SEZ,
+            not only if you fry chicken in a shop. Factory candy ≠ shop candy. Know the difference.
+          </p>
+        </div>
+      </div>
+
+      <h3>For local + foreign (often shared)</h3>
+      <ul>
+        <li><strong>Huge hungry market:</strong> 256k+ restaurants prove demand —
+          <span class="yr">Oct 2025</span>
+          <a class="cite" href="https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/" target="_blank" rel="noopener">ProPakistani</a></li>
+        <li><strong>Halal-by-default culture:</strong>
+          <span class="yr">2023</span>
+          <a class="cite" href="https://www.bonafideresearch.com/product/6208299434/pakistan-halal-food-and-beverages-market" target="_blank" rel="noopener">Bonafide Halal F&amp;B</a></li>
+        <li><strong>Delivery rails already built:</strong> healthier dining demand rising —
+          <a class="cite" href="https://www.statista.com/outlook/emo/online-food-delivery/meal-delivery/platform-delivery/pakistan" target="_blank" rel="noopener">Statista Platform Delivery Pakistan</a></li>
+        <li><strong>Franchise culture open to U.S. brands:</strong> ~70% U.S. franchise share —
+          <a class="cite" href="https://www.trade.gov/country-commercial-guides/pakistan-franchising" target="_blank" rel="noopener">U.S. Trade.gov</a></li>
+      </ul>
+
+      <h3>Board of Investment — Food Processing goodies</h3>
+      <ul>
+        <li>Low customs duties on many capital goods for food processing —
+          <a class="cite" href="https://invest.gov.pk/node/1312" target="_blank" rel="noopener">BOI incentives page</a></li>
+        <li>Concessional duties on ingredients for Value Added Chicken Products (VACP) —
+          <a class="cite" href="https://invest.gov.pk/node/1312" target="_blank" rel="noopener">BOI</a></li>
+        <li>Sales tax exemptions on some livestock / meat related flows —
+          <a class="cite" href="https://invest.gov.pk/node/1312" target="_blank" rel="noopener">BOI</a></li>
+        <li>Food processing highlighted as priority developmental sector —
+          <a class="cite" href="https://invest.gov.pk/food-processing" target="_blank" rel="noopener">BOI Food Processing</a></li>
+        <li>Historical average FDI into food processing ~$223.5m/year (<strong>2012–2018</strong>) —
+          <a class="cite" href="https://invest.gov.pk/food-processing" target="_blank" rel="noopener">BOI sector brief</a></li>
+      </ul>
+
+      <h3>Special Economic Zones (SEZ) — big candy for factories</h3>
+      <ul>
+        <li>One-time customs duty exemption on capital goods for zone developers / enterprises —
+          <a class="cite" href="http://www.invest.gov.pk/node/1263" target="_blank" rel="noopener">BOI SEZ incentives</a></li>
+        <li>Income tax exemption up to <strong>10 years</strong> for qualifying zone developers / enterprises —
+          <a class="cite" href="http://www.invest.gov.pk/node/1263" target="_blank" rel="noopener">BOI SEZ incentives</a>
+          (check current SEZ Act text before relying on this)</li>
+      </ul>
+      <p class="note">
+        Incentive hubs:
+        <a class="cite" href="https://invest.gov.pk/food-processing" target="_blank" rel="noopener">invest.gov.pk/food-processing</a> ·
+        <a class="cite" href="http://www.invest.gov.pk/node/1263" target="_blank" rel="noopener">SEZ incentives</a> ·
+        <a class="cite" href="https://invest.gov.pk/node/1312" target="_blank" rel="noopener">Food processing &amp; beverage incentives</a> ·
+        <a class="cite" href="https://invest.gov.pk/incentives-database" target="_blank" rel="noopener">Incentives database</a>
+      </p>
+    </section>
+
+    <!-- 6 ML -->
+    <section id="ml">
+      <h2>6. What sells in the world — and what could sell here (ML style)</h2>
+      <div class="scene">
+        <img src="theme/dfpk-theme-04-dividends.png" alt="AI Market Buddy scanning opportunities" />
+      </div>
+      <div class="buddy">
+        <img class="avatar" src="theme/dfpk-theme-04-dividends.png" alt="AI Market Buddy" />
+        <div>
+          <strong>AI Market Buddy:</strong>
+          <p>
+            “I scan. You decide.” I did <em>not</em> secretly train on private Foodpanda receipts.
+            I used a transparent <strong>content-based recommender score</strong> (like Netflix’s ‘similar tastes’ idea,
+            but for food traits). Simple Word answer: every food idea gets points for Pakistan fit.
+          </p>
+        </div>
+      </div>
+
+      <h3>Models we used (named clearly)</h3>
+      <ol>
+        <li><strong>Content-Based Filtering (CBF)</strong> — recommend items whose features match a user/culture profile.</li>
+        <li><strong>Weighted Multi-Criteria Scoring (MCDA-style linear model)</strong> — same math as a simple ranking engine.</li>
+        <li><strong>Heuristic Collaborative Analogy</strong> — “markets that love X also love Y” using public global trends (burgers, pizza, fried chicken lead globally — Precedence / MarketDataForecast).</li>
+        <li><strong>Not used:</strong> deep neural nets, transformer LLMs as score engines, or paid POS datasets. (Honesty &gt; fake AI magic.)</li>
+      </ol>
+
+      <h3>Culture profile vector for Pakistan (0–1)</h3>
+      <div class="charts-grid two-col">
+        <div class="chart-box">
+          <h4>Culture fit radar</h4>
+          <p class="chart-cap">Feature scores used in the CBF model (0–1)</p>
+          <div class="chart-wrap tall"><canvas id="chartCultureRadar"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <h4>Culture features (horizontal)</h4>
+          <p class="chart-cap">Same vector as bars for quick scanning</p>
+          <div class="chart-wrap tall"><canvas id="chartCultureBars"></canvas></div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Feature</th><th>Score</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td>Halal necessity</td><td>1.00</td><td>Almost everyone expects halal meat</td></tr>
+          <tr><td>Chicken love</td><td>0.95</td><td>Broast / tikka culture is huge</td></tr>
+          <tr><td>Spice / chili comfort</td><td>0.90</td><td>Masala is home language</td></tr>
+          <tr><td>Family sharing format</td><td>0.88</td><td>Buckets, large pizzas, deals</td></tr>
+          <tr><td>Beef acceptance</td><td>0.75</td><td>Common, but chicken still king for QSR</td></tr>
+          <tr><td>Pork acceptance</td><td>0.00</td><td>Hard no for mainstream</td></tr>
+          <tr><td>Alcohol pairing</td><td>0.00</td><td>Not a mass QSR lever</td></tr>
+          <tr><td>Sweet + tea dessert habit</td><td>0.85</td><td>Chai culture → soft drinks / cold desserts grow too</td></tr>
+          <tr><td>Price sensitivity</td><td>0.80</td><td>Value meals matter</td></tr>
+          <tr><td>Delivery readiness</td><td>0.85</td><td>Apps already popular in big cities</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Score formula (how it was calculated)</h3>
+      <div class="formula">ItemFitScore =
+  0.25 * HalalFit
++ 0.18 * ProteinMatch          (chicken/beef vs pork)
++ 0.15 * SpiceAffinity
++ 0.12 * GlobalMomentum        (world growth signal 0–1)
++ 0.10 * FamilyShareFit
++ 0.10 * DeliveryFit
++ 0.10 * PriceValueFit
+− 0.15 * ComplexityBarrier     (hard cold-chain / rare skill / import-heavy)
+
+Then clamp to 0–100:
+Final = round(100 * max(0, min(1, ItemFitScore)))</div>
+
+      <p>
+        <strong>Worked example (Korean fried chicken, halal):</strong>
+        HalalFit=1, ProteinMatch=0.95, SpiceAffinity=0.9, GlobalMomentum=0.8,
+        FamilyShareFit=0.85, DeliveryFit=0.9, PriceValueFit=0.7, ComplexityBarrier=0.35
+      </p>
+      <div class="formula">0.25*1 + 0.18*0.95 + 0.15*0.9 + 0.12*0.8 + 0.10*0.85 + 0.10*0.9 + 0.10*0.7 − 0.15*0.35
+= 0.25 + 0.171 + 0.135 + 0.096 + 0.085 + 0.09 + 0.07 − 0.0525
+= 0.8445 → Final ≈ 84 / 100</div>
+
+      <h3>Leaderboard — international items with Pakistan potential</h3>
+      <div class="chart-box">
+        <h4>ML Pakistan-fit scores (0–100)</h4>
+        <p class="chart-cap">Content-based filtering + weighted MCDA linear model · see formula above</p>
+        <div class="chart-wrap tall"><canvas id="chartMlScores"></canvas></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Item idea</th>
+            <th>Global clue</th>
+            <th>Culture rhyme</th>
+            <th>ML score</th>
+            <th>Verdict</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fried chicken / broast 2.0</td>
+            <td>Chicken &amp; meat QSR stays core worldwide</td>
+            <td>Already national comfort food</td>
+            <td>92</td>
+            <td>Keep innovating sauces &amp; crunch</td>
+          </tr>
+          <tr>
+            <td>Burgers &amp; smash burgers</td>
+            <td>Burgers/sandwiches led global product share (Precedence 2025)</td>
+            <td>Beef + chicken patties already loved</td>
+            <td>90</td>
+            <td>Win on price + smash freshness</td>
+          </tr>
+          <tr>
+            <td>Pizza (value + stuffed crust)</td>
+            <td>Pizza segment growing for group occasions (Precedence)</td>
+            <td>Family nights + cricket nights</td>
+            <td>88</td>
+            <td>Local spice toppings win</td>
+          </tr>
+          <tr>
+            <td>Shawarma / doner / wraps</td>
+            <td>Middle East / Turkish formats travel well</td>
+            <td>Very close to seekh / roll culture</td>
+            <td>87</td>
+            <td>High volume, low surprise risk</td>
+          </tr>
+          <tr>
+            <td>Halal Korean fried chicken</td>
+            <td>Asian QSR formats among faster growers globally</td>
+            <td>Crispy + spicy = Pakistan yes</td>
+            <td>84</td>
+            <td>Strong “new but familiar”</td>
+          </tr>
+          <tr>
+            <td>Loaded fries / loaded nachos (halal)</td>
+            <td>Shareable sides boom on delivery</td>
+            <td>Chat / fries already snack kings</td>
+            <td>82</td>
+            <td>Great add-on margin</td>
+          </tr>
+          <tr>
+            <td>Iced coffee / specialty cold drinks</td>
+            <td>Café culture + Gen Z visuals</td>
+            <td>Chai cousins; youth want cold cafe vibes</td>
+            <td>78</td>
+            <td>Pair with dessert/QSR</td>
+          </tr>
+          <tr>
+            <td>Build-your-own rice / bowl (Chipotle-style, halal)</td>
+            <td>Fast-casual customization rising vs classic QSR</td>
+            <td>Rice + chicken + chutney logic</td>
+            <td>81</td>
+            <td>Smart-casual gap opener</td>
+          </tr>
+          <tr>
+            <td>Plant-based burgers</td>
+            <td>Vegetarian/vegan fastest CAGR globally (Precedence)</td>
+            <td>Niche in PK; health/urban only</td>
+            <td>58</td>
+            <td>Side bet, not main bet yet</td>
+          </tr>
+          <tr>
+            <td>Bacon / pork ribs concepts</td>
+            <td>Popular in West</td>
+            <td>Halal barrier</td>
+            <td>5</td>
+            <td>Skip for mass market</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note">
+        Global product leadership:
+        <span class="yr">23 Jul 2025</span>
+        <a class="cite" href="https://finance.yahoo.com/news/fast-food-market-size-set-140000993.html" target="_blank" rel="noopener">Precedence / Towards FnB via Yahoo Finance</a>
+        (burgers &amp; sandwiches led 2024; pizza rising; Asia cuisine fast growth; veg/vegan highest CAGR).
+        Pakistan QSR drivers/restraints:
+        <a class="cite" href="https://www.6wresearch.com/industry-report/pakistan-quick-service-restaurants-and-fast-food-market" target="_blank" rel="noopener">6Wresearch Pakistan QSR</a>
+        (pub. Sep 2024 / upd. Sep 2025).
+        Also
+        <a class="cite" href="https://www.marketdataforecast.com/market-reports/fast-food-market" target="_blank" rel="noopener">Market Data Forecast — Fast Food</a>.
+      </p>
+    </section>
+
+    <!-- 7 SMART FOOD GAPS -->
+    <section id="smart">
+      <h2>7. Smart food business potential — gaps ecommerce / quick commerce miss</h2>
+      <div class="scene">
+        <img src="theme/dfpk-theme-05-finale.png" alt="Finale crew overlooking the city — find the gaps" />
+      </div>
+      <div class="buddy">
+        <img class="avatar" src="theme/dfpk-theme-05-finale.png" alt="Finale team" />
+        <div>
+          <strong>Informed Pro says:</strong>
+          <p>
+            Foodpanda / Careem-style apps are amazing at “I’m hungry in 30 minutes.”
+            They are weaker at “please feed my diabetes plan for 30 days,” or “school lunch that is safe and tracked,”
+            or “corporate gym macros every weekday.” That empty space is <em>smart food</em>.
+          </p>
+        </div>
+      </div>
+
+      <p>
+        <a class="cite" href="https://www.statista.com/outlook/emo/online-food-delivery/meal-delivery/platform-delivery/pakistan" target="_blank" rel="noopener">Statista — Platform Delivery Pakistan</a>
+        already notes rising demand for <strong>healthier dining</strong> and culturally relevant options among young urbanites —
+        while classic apps still skew toward known QSR comfort food.
+      </p>
+
+      <div class="charts-grid two-col">
+        <div class="chart-box">
+          <h4>Smart-food gap opportunity scores</h4>
+          <p class="chart-cap"><span class="yr">Heuristic 2026</span> DividendFlow.pk research scores 0–100 · underserved + willingness to pay</p>
+          <div class="chart-wrap tall"><canvas id="chartSmartGaps"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <h4>What apps do well vs miss</h4>
+          <p class="chart-cap"><span class="yr">Heuristic 2026</span> Capability score 0–10 · delivery speed vs planned nutrition / trust</p>
+          <div class="chart-wrap tall"><canvas id="chartAppCapability"></canvas></div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Gap (what’s missing)</th>
+            <th>Why apps don’t cover it well</th>
+            <th>Smart food idea</th>
+            <th>Who pays</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Medical / diabetic / renal meal plans</td>
+            <td>Apps sell dishes, not prescriptions</td>
+            <td>Doctor + dietitian verified weekly boxes</td>
+            <td>Patients, insurers, clinics</td>
+          </tr>
+          <tr>
+            <td>Macro-tracked athlete meal prep</td>
+            <td>Menus lack protein/kcal truth labels</td>
+            <td>High-protein halal prep with QR nutrition</td>
+            <td>Gym members, coaches</td>
+          </tr>
+          <tr>
+            <td>School / tuition lunch subscriptions</td>
+            <td>One-off orders, not daily child safety ops</td>
+            <td>Parent app + sealed trays + allergen flags</td>
+            <td>Parents, schools</td>
+          </tr>
+          <tr>
+            <td>Corporate wellness lunches</td>
+            <td>B2C focus; weak B2B contracts</td>
+            <td>Office plans with salad + protein + rotis</td>
+            <td>HR / companies</td>
+          </tr>
+          <tr>
+            <td>Elderly soft-diet / post-surgery meals</td>
+            <td>Not in discovery ranking logic</td>
+            <td>Texture-modified home delivery</td>
+            <td>Families, hospitals</td>
+          </tr>
+          <tr>
+            <td>Transparent farm-to-fork meat</td>
+            <td>Trust not built into Q-commerce SKUs</td>
+            <td>Traceable broast / tikka supply brand</td>
+            <td>Premium urban families</td>
+          </tr>
+          <tr>
+            <td>Tier-2/3 healthy options</td>
+            <td>Coverage thins outside big metros</td>
+            <td>Cloud kitchen + frozen smart meals</td>
+            <td>Middle cities</td>
+          </tr>
+          <tr>
+            <td>Home cooking meal kits (fusion + desi)</td>
+            <td>Grocery apps sell raw items, not chef kits</td>
+            <td>Pre-portioned masala kits + video</td>
+            <td>Busy households</td>
+          </tr>
+          <tr>
+            <td>Calorie-honest Pakistani classics</td>
+            <td>Biryani calories rarely shown</td>
+            <td>“Smart desi” bowls with labels</td>
+            <td>Health-aware youth</td>
+          </tr>
+          <tr>
+            <td>Women home-chef formalization 2.0</td>
+            <td>Home Chef exists but quality variance</td>
+            <td>Training + cold chain + brand umbrella</td>
+            <td>Home chefs (avg ~PKR 120k/mo noted) + customers</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Why this gap is a business, not a hobby</h3>
+      <ul>
+        <li>Delivery already taught phone ordering —
+          <a class="cite" href="https://www.statista.com/outlook/emo/online-food-delivery/meal-delivery/platform-delivery/pakistan" target="_blank" rel="noopener">Statista Platform Delivery</a></li>
+        <li>Health concern is a restraint on classic fast food —
+          <a class="cite" href="https://www.6wresearch.com/industry-report/pakistan-quick-service-restaurants-and-fast-food-market" target="_blank" rel="noopener">6Wresearch QSR</a></li>
+        <li>Frozen food growth means smart meals can travel farther —
+          <span class="yr">2025–2031</span>
+          <a class="cite" href="https://mordorintelligence.com/industry-reports/pakistan-frozen-food-market/market-size" target="_blank" rel="noopener">Mordor Frozen Food</a></li>
+        <li>Formalization via platforms rising (13k+ partners; Home Chef ~PKR 120k/mo) —
+          <span class="yr">Oct 2025</span>
+          <a class="cite" href="https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/" target="_blank" rel="noopener">ProPakistani</a></li>
+      </ul>
+    </section>
+
+    <!-- 8 PLAYBOOK -->
+    <section id="playbook">
+      <h2>8. Tiny playbook — local vs foreign entry</h2>
+      <div class="two">
+        <div class="box">
+          <h4>Local founder path</h4>
+          <ul>
+            <li>Start with one hero item scoring 80+ on our ML board</li>
+            <li>Own delivery for nearby radius; use apps as extra pipe</li>
+            <li>Publish calories / allergens — become the “honest” brand</li>
+            <li>Expand to meal-prep subscription before opening 10 stores</li>
+            <li>If manufacturing sauces / frozen, check BOI / SEZ candy</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h4>Foreign brand path</h4>
+          <ul>
+            <li>Pick a franchisee who already understands FBR + food authorities</li>
+            <li>Halal audit before marketing splash</li>
+            <li>Localize spice + family buckets on day one</li>
+            <li>Price ladder: value line + premium line</li>
+            <li>Use CPEC / SEZ only if you also process / package, not only retail</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 SOURCES -->
+    <section id="sources">
+      <h2>9. Sources (every big number has a home)</h2>
+      <ol class="sources">
+        <li><span class="yr">Trade.gov commercial guide</span> <a href="https://www.trade.gov/country-commercial-guides/pakistan-franchising" target="_blank" rel="noopener">U.S. ITA — Pakistan Franchising</a> — eating out $6–9 bn; outlet counts; ~70% U.S. franchise share.</li>
+        <li><span class="yr">Oct 2025</span> <a href="https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/" target="_blank" rel="noopener">ProPakistani — Gastronomy &amp; Growth</a> — 256,926+ restaurants; 1M+ jobs; Foodpanda 13k+; Home Chef ~PKR 120k/mo.</li>
+        <li><span class="yr">2024 / 2029</span> <a href="https://www.statista.com/outlook/cmo/food/pakistan" target="_blank" rel="noopener">Statista — Food Pakistan</a> — ~US$115.40 bn (2024); ~US$165.60 bn (2029); ~7.49% path.</li>
+        <li><span class="yr">Outlook page</span> <a href="https://www.statista.com/outlook/emo/online-food-delivery/meal-delivery/platform-delivery/pakistan" target="_blank" rel="noopener">Statista — Platform Delivery Pakistan</a> — healthier dining demand notes.</li>
+        <li><span class="yr">2023</span> <a href="https://www.bonafideresearch.com/product/6208299434/pakistan-halal-food-and-beverages-market" target="_blank" rel="noopener">Bonafide — Pakistan Halal F&amp;B</a> — &gt; USD 147.12 bn.</li>
+        <li><span class="yr">2022 (KB 76)</span> <a href="https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/" target="_blank" rel="noopener">PIDE — Hotel &amp; Restaurant Industries</a> —
+          <a href="https://file.pide.org.pk/uploads/kb-076-hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics.pdf" target="_blank" rel="noopener">PDF</a> — GDP/jobs; barriers; commissions.</li>
+        <li><span class="yr">19 Sep 2020</span> <a href="https://profit.pakistantoday.com.pk/2020/09/19/careem-vs-foodpanda-who-will-dominate-the-food-delivery-space-in-pakistan" target="_blank" rel="noopener">Profit — Careem vs Foodpanda</a> — delivery volumes / commission economics.</li>
+        <li><span class="yr">BOI sector pages</span> <a href="https://invest.gov.pk/food-processing" target="_blank" rel="noopener">BOI Food Processing</a> — 2nd largest industry; FDI avg ~$223.5m (2012–2018).</li>
+        <li><span class="yr">2020 retail figure</span> <a href="https://invest.gov.pk/sites/default/files/inline-files/Profile%20-%20Food%20Processing%20Sector_new.pdf?gtranslate=en" target="_blank" rel="noopener">BOI Food Processing Profile PDF</a> — food &amp; grocery retail ~$53 bn (2020).</li>
+        <li><span class="yr">Incentive pages</span> <a href="https://invest.gov.pk/node/1312" target="_blank" rel="noopener">BOI Food Processing &amp; Beverage incentives</a> ·
+          <a href="http://www.invest.gov.pk/node/1263" target="_blank" rel="noopener">SEZ incentives</a> ·
+          <a href="https://invest.gov.pk/incentives-database" target="_blank" rel="noopener">Incentives database</a></li>
+        <li><span class="yr">Sep 2024 / upd Sep 2025</span> <a href="https://www.6wresearch.com/industry-report/pakistan-quick-service-restaurants-and-fast-food-market" target="_blank" rel="noopener">6Wresearch — Pakistan QSR &amp; Fast Food</a> — drivers/restraints.</li>
+        <li><span class="yr">23 Jul 2025</span> <a href="https://finance.yahoo.com/news/fast-food-market-size-set-140000993.html" target="_blank" rel="noopener">Yahoo Finance / Precedence–Towards FnB</a> — global FF ~$863.81 bn (2025) → ~$1,340 bn (2034).</li>
+        <li><span class="yr">Market report</span> <a href="https://www.marketdataforecast.com/market-reports/fast-food-market" target="_blank" rel="noopener">Market Data Forecast — Fast Food</a></li>
+        <li><span class="yr">2025 / to 2031</span> <a href="https://mordorintelligence.com/industry-reports/pakistan-frozen-food-market/market-size" target="_blank" rel="noopener">Mordor — Pakistan Frozen Food</a> — ~USD 0.77 bn (2025).</li>
+        <li><span class="yr">Updated 2026</span> <a href="https://www.zoominfo.com/c/kfc-pakistan/354259048" target="_blank" rel="noopener">ZoomInfo — KFC Pakistan</a> — outlet/workforce order-of-magnitude.</li>
+      </ol>
+
+      <h3>ML transparency box</h3>
+      <p>
+        Feature weights and culture scores were set by DividendFlow.pk research judgment for this educational report
+        (expert-heuristic priors), then applied with the linear CBF formula above.
+        They are <strong>assumptions</strong>, not laboratory measurements.
+        To harden later: replace priors with survey Likert data + delivery category sales shares (collaborative filtering / matrix factorization).
+      </p>
+    </section>
+
+    <div class="scene">
+      <img src="theme/dfpk-theme-05-finale.png" alt="Stay informed. Stay ahead." />
+    </div>
+    <footer>
+      DividendFlow.pk · Track · Learn · Grow · Invest today, build tomorrow · Report generated for learning · Sep 2026<br />
+      Theme art: <code>frontend/build/theme/dfpk-theme-01</code> … <code>05</code> · Open this HTML from the <code>docs</code> folder so images load. Charts need internet for Chart.js CDN.
+    </footer>
+  </div>
+  <script>
+    const navy = "#0b1f3a";
+    const orange = "#f05a22";
+    const blue = "#1a3a6b";
+    const green = "#1f8a4c";
+    const sky = "#4c8dff";
+    Chart.defaults.font.family = "'Segoe UI', Tahoma, sans-serif";
+    Chart.defaults.color = "#5a6a7e";
+
+    function money(v) {
+      return "$" + v;
+    }
+
+    new Chart(document.getElementById("chartLayers"), {
+      type: "bar",
+      data: {
+        labels: ["Eating out", "Frozen food", "Food retail '20", "Food mkt '24", "Halal F&B '23"],
+        datasets: [{
+          label: "USD billions",
+          data: [7.5, 0.77, 53, 115.4, 147],
+          backgroundColor: [orange, sky, blue, green, navy]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: "USD bn" } } }
+      }
+    });
+
+    new Chart(document.getElementById("chartFoodPath"), {
+      type: "line",
+      data: {
+        labels: ["2024", "2025", "2026", "2027", "2028", "2029"],
+        datasets: [{
+          label: "Pakistan Food market (USD bn)",
+          data: [115.4, 124.0, 133.3, 143.3, 154.1, 165.6],
+          borderColor: orange,
+          backgroundColor: "rgba(240,90,34,0.15)",
+          fill: true,
+          tension: 0.25,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { title: { display: true, text: "USD bn" } } }
+      }
+    });
+
+    new Chart(document.getElementById("chartGlobalFF"), {
+      type: "line",
+      data: {
+        labels: ["2024", "2025", "2027", "2030", "2032", "2034"],
+        datasets: [{
+          label: "Global fast food (USD bn)",
+          data: [822.7, 863.8, 952, 1105, 1220, 1340],
+          borderColor: blue,
+          backgroundColor: "rgba(26,58,107,0.12)",
+          fill: true,
+          tension: 0.25,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { title: { display: true, text: "USD bn" } } }
+      }
+    });
+
+    new Chart(document.getElementById("chartOutlets"), {
+      type: "bar",
+      data: {
+        labels: ["KFC", "McDonald's", "Subway", "Hardee's"],
+        datasets: [{
+          label: "Outlets",
+          data: [110, 85, 46, 21],
+          backgroundColor: orange
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, title: { display: true, text: "Outlets" } } }
+      }
+    });
+
+    new Chart(document.getElementById("chartCostPie"), {
+      type: "doughnut",
+      data: {
+        labels: ["Food cost", "Rent/utilities", "Staff", "App/marketing", "Tax/other", "Profit"],
+        datasets: [{
+          data: [34, 16, 18, 14, 10, 8],
+          backgroundColor: [orange, blue, sky, "#ff8a4c", navy, green]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "right" } }
+      }
+    });
+
+    new Chart(document.getElementById("chartCommission"), {
+      type: "bar",
+      data: {
+        labels: ["Cheetay (~)", "Competitive markets*", "Foodpanda (~)", "Monopoly markets*"],
+        datasets: [{
+          label: "Commission % of sales",
+          data: [15, 14, 28, 40],
+          backgroundColor: [green, sky, orange, navy]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { afterLabel: () => "*global rule-of-thumb cited in Profit/Cheetay commentary" } }
+        },
+        scales: { y: { beginAtZero: true, max: 45, title: { display: true, text: "% of sales" } } }
+      }
+    });
+
+    new Chart(document.getElementById("chartGrowthSignals"), {
+      type: "bar",
+      data: {
+        labels: ["PK Food mkt", "PK Frozen", "Global FF"],
+        datasets: [{
+          label: "Approx CAGR %",
+          data: [7.49, 5.74, 5.0],
+          backgroundColor: [orange, green, blue]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: "CAGR %" } } }
+      }
+    });
+
+    const cultureLabels = [
+      "Halal", "Chicken", "Spice", "Family share", "Beef",
+      "Pork", "Alcohol", "Sweet/tea", "Price sens.", "Delivery"
+    ];
+    const cultureData = [1, 0.95, 0.9, 0.88, 0.75, 0, 0, 0.85, 0.8, 0.85];
+
+    new Chart(document.getElementById("chartCultureRadar"), {
+      type: "radar",
+      data: {
+        labels: cultureLabels,
+        datasets: [{
+          label: "Pakistan culture fit",
+          data: cultureData,
+          borderColor: orange,
+          backgroundColor: "rgba(240,90,34,0.2)",
+          pointBackgroundColor: orange
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { r: { min: 0, max: 1, ticks: { stepSize: 0.25 } } }
+      }
+    });
+
+    new Chart(document.getElementById("chartCultureBars"), {
+      type: "bar",
+      data: {
+        labels: cultureLabels,
+        datasets: [{
+          label: "Score 0–1",
+          data: cultureData,
+          backgroundColor: cultureData.map((v) => (v < 0.2 ? navy : v > 0.85 ? orange : blue))
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { min: 0, max: 1 } }
+      }
+    });
+
+    new Chart(document.getElementById("chartMlScores"), {
+      type: "bar",
+      data: {
+        labels: [
+          "Fried chicken", "Burgers", "Pizza", "Shawarma", "Korean FC",
+          "Loaded fries", "Rice bowls", "Iced coffee", "Plant burgers", "Pork concepts"
+        ],
+        datasets: [{
+          label: "ML fit score",
+          data: [92, 90, 88, 87, 84, 82, 81, 78, 58, 5],
+          backgroundColor: [orange, orange, orange, "#ff8a4c", "#ff8a4c", blue, blue, sky, green, navy]
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { min: 0, max: 100, title: { display: true, text: "Fit score" } } }
+      }
+    });
+
+    new Chart(document.getElementById("chartSmartGaps"), {
+      type: "bar",
+      data: {
+        labels: [
+          "Medical meals", "Athlete macros", "School lunch", "Corporate wellness",
+          "Elderly soft diet", "Farm-to-fork", "Tier-2/3 healthy", "Meal kits",
+          "Calorie-honest desi", "Home-chef 2.0"
+        ],
+        datasets: [{
+          label: "Opportunity score",
+          data: [88, 84, 86, 82, 79, 81, 77, 80, 85, 78],
+          backgroundColor: orange
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { min: 0, max: 100 } }
+      }
+    });
+
+    new Chart(document.getElementById("chartAppCapability"), {
+      type: "radar",
+      data: {
+        labels: [
+          "Speed delivery", "QSR discovery", "Price deals",
+          "Nutrition truth", "Subscriptions", "Medical plans", "B2B contracts", "Trust traceability"
+        ],
+        datasets: [
+          {
+            label: "Typical food apps",
+            data: [9, 9, 8, 3, 4, 2, 3, 3],
+            borderColor: blue,
+            backgroundColor: "rgba(26,58,107,0.15)"
+          },
+          {
+            label: "Smart-food opportunity",
+            data: [6, 5, 5, 9, 9, 9, 8, 9],
+            borderColor: orange,
+            backgroundColor: "rgba(240,90,34,0.15)"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { r: { min: 0, max: 10, ticks: { stepSize: 2 } } }
+      }
+    });
+  </script>
+</body>
+</html>

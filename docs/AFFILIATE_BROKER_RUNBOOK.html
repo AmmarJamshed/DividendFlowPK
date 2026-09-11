@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DividendFlow.pk — Partner Affiliate Runbook</title>
+  <style>
+    :root {
+      --df-navy: #1E3A8A;
+      --df-navy-deep: #0B1A3D;
+      --df-blue: #3B82F6;
+      --df-orange: #F97316;
+      --df-orange-hot: #EA580C;
+      --df-green: #16A34A;
+      --df-bg: #F5F7FA;
+      --df-ink: #0F172A;
+      --df-muted: #64748B;
+      --df-card: #FFFFFF;
+      --df-line: #E2E8F0;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--df-ink);
+      background:
+        radial-gradient(1000px 420px at 0% -5%, rgba(249,115,22,.14), transparent 55%),
+        radial-gradient(900px 400px at 100% 0%, rgba(30,58,138,.16), transparent 50%),
+        var(--df-bg);
+      line-height: 1.55;
+    }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: .85rem 1.2rem;
+      background: linear-gradient(135deg, var(--df-navy), #1e40af 55%, var(--df-navy-deep));
+      color: #fff; box-shadow: 0 10px 28px rgba(11,26,61,.28);
+    }
+    .brand { display: flex; align-items: center; gap: .8rem; font-weight: 800; }
+    .brand-logo {
+      width: 44px; height: 44px; border-radius: 12px; object-fit: cover;
+      border: 2px solid rgba(249,115,22,.9);
+      animation: pulseSoft 2.6s ease-in-out infinite;
+    }
+    .pill {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px; padding: .35rem .85rem; font-size: .78rem; font-weight: 600;
+    }
+    .stripe {
+      height: 6px;
+      background: linear-gradient(90deg, var(--df-orange), #FDBA74, var(--df-orange));
+      background-size: 200% 100%; animation: shimmer 3.2s linear infinite;
+    }
+
+    .wrap { max-width: 980px; margin: 0 auto; padding: 1.25rem 1.15rem 2.8rem; }
+
+    .hero {
+      position: relative; border-radius: 24px; overflow: hidden;
+      border: 1px solid var(--df-line); box-shadow: 0 18px 40px rgba(30,58,138,.12);
+      animation: riseIn .7s ease both; margin-bottom: 1.1rem;
+    }
+    .hero-art {
+      display: block; width: 100%; height: auto;
+      animation: ken 18s ease-in-out infinite alternate;
+      transform-origin: center;
+    }
+    .hero-overlay {
+      position: absolute; inset: auto 0 0 0;
+      padding: 1.35rem 1.3rem 1.2rem;
+      background: linear-gradient(180deg, transparent, rgba(11,26,61,.92) 55%);
+      color: #fff;
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+      color: #FDBA74; background: rgba(249,115,22,.18); border: 1px solid rgba(249,115,22,.35);
+      border-radius: 999px; padding: .3rem .7rem;
+    }
+    .hero h1 {
+      margin: .65rem 0 .35rem; font-size: clamp(1.45rem, 3.2vw, 2.05rem); line-height: 1.2;
+    }
+    .hero p { margin: 0; max-width: 54ch; color: rgba(255,255,255,.88); font-size: .95rem; }
+
+    .cast {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: .55rem;
+      margin: 0 0 1.1rem;
+    }
+    .cast figcaption {
+      margin-top: .35rem; text-align: center; font-size: .72rem; font-weight: 700;
+      color: var(--df-navy);
+    }
+    .cast-card {
+      margin: 0; background: #fff; border: 1px solid var(--df-line); border-radius: 14px;
+      overflow: hidden; opacity: 0; transform: translateY(12px);
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    .cast-card.in-view { opacity: 1; transform: none; }
+    .cast-card:nth-child(1) { transition-delay: .05s; }
+    .cast-card:nth-child(2) { transition-delay: .12s; }
+    .cast-card:nth-child(3) { transition-delay: .19s; }
+    .cast-card:nth-child(4) { transition-delay: .26s; }
+    .cast-card:nth-child(5) { transition-delay: .33s; }
+    .cast-card img {
+      display: block; width: 100%; aspect-ratio: 1 / 1.05; object-fit: cover;
+      object-position: center top;
+      transition: transform .45s ease;
+    }
+    .cast-card:hover img { transform: scale(1.05); }
+
+    .section {
+      background: var(--df-card); border: 1px solid var(--df-line); border-radius: 20px;
+      overflow: hidden; margin-bottom: 1rem;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity .55s ease, transform .55s ease, border-color .25s;
+    }
+    .section.in-view { opacity: 1; transform: none; }
+    .section:hover { border-color: rgba(249,115,22,.45); }
+    .section-art {
+      position: relative; overflow: hidden; max-height: 280px;
+      background: #0B1A3D;
+    }
+    .section-art img {
+      display: block; width: 100%; height: 280px; object-fit: cover; object-position: center 28%;
+      animation: floatArt 7s ease-in-out infinite;
+    }
+    .section-art .badge {
+      position: absolute; left: .9rem; bottom: .85rem;
+      background: rgba(11,26,61,.82); color: #fff; border: 1px solid rgba(249,115,22,.55);
+      border-radius: 999px; padding: .35rem .75rem; font-size: .75rem; font-weight: 700;
+      backdrop-filter: blur(4px);
+    }
+    .section-body { padding: 1.15rem 1.2rem 1.3rem; }
+    .section h2 { margin: 0; font-size: 1.15rem; color: var(--df-navy); }
+    .tagline { margin: .25rem 0 .75rem; color: var(--df-muted); font-size: .9rem; }
+
+    table {
+      width: 100%; border-collapse: separate; border-spacing: 0; font-size: .92rem;
+      margin: .55rem 0 .2rem; overflow: hidden; border-radius: 12px; border: 1px solid var(--df-line);
+    }
+    th, td { padding: .62rem .72rem; text-align: left; border-bottom: 1px solid var(--df-line); }
+    th { background: var(--df-navy); color: #fff; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #F8FAFC; }
+    ul, ol { margin: .3rem 0; padding-left: 1.15rem; }
+    li { margin: .26rem 0; }
+    a { color: var(--df-navy); font-weight: 650; }
+    .callout {
+      margin-top: .85rem; padding: .85rem 1rem; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(30,58,138,.06), rgba(249,115,22,.1));
+      border-left: 4px solid var(--df-orange); font-size: .95rem;
+    }
+    .soft {
+      margin-top: .85rem; padding: .85rem 1rem; border-radius: 12px; background: #F8FAFC;
+      border: 1px dashed var(--df-line); color: var(--df-muted); font-size: .9rem;
+    }
+    .checks label { display: flex; gap: .55rem; align-items: flex-start; padding: .32rem 0; }
+    .doctrine .section-body {
+      background: linear-gradient(135deg, var(--df-navy), #1e40af 60%, var(--df-navy-deep));
+      color: #fff;
+    }
+    .doctrine h2 { color: #fff; }
+    .doctrine .tagline { color: #FDBA74; }
+    .doctrine p { margin: .35rem 0 0; font-size: 1.05rem; font-weight: 650; }
+
+    footer {
+      text-align: center; color: var(--df-muted); font-size: .82rem; margin-top: .5rem;
+    }
+
+    @keyframes riseIn { from { opacity: 0; transform: translateY(14px);} to { opacity: 1; transform: none; } }
+    @keyframes pulseSoft { 0%,100% { transform: scale(1);} 50% { transform: scale(1.05);} }
+    @keyframes shimmer { to { background-position: 200% 50%; } }
+    @keyframes ken {
+      from { transform: scale(1) translateY(0); }
+      to { transform: scale(1.06) translateY(-1.5%); }
+    }
+    @keyframes floatArt {
+      0%,100% { transform: translateY(0) scale(1.02); }
+      50% { transform: translateY(-6px) scale(1.045); }
+    }
+
+    @media (max-width: 760px) {
+      .cast { grid-template-columns: repeat(2, 1fr); }
+      .section-art, .section-art img { max-height: 200px; height: 200px; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+    }
+    @media print {
+      .topbar { position: static; }
+      .section, .cast-card { opacity: 1 !important; transform: none !important; break-inside: avoid; }
+      .hero-art, .section-art img, .brand-logo { animation: none !important; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <img class="brand-logo" src="theme/dfpk-theme-02-race.png" alt="Dividend Challengers" />
+      <div>
+        <div>DividendFlow.pk</div>
+        <div style="font-size:.75rem;font-weight:500;opacity:.85">Partner Affiliate Runbook · Dividend Challengers cast</div>
+      </div>
+    </div>
+    <div class="pill">Official theme art · Track · Learn · Grow</div>
+  </div>
+  <div class="stripe"></div>
+
+  <div class="wrap">
+    <header class="hero">
+      <img class="hero-art" src="theme/dfpk-theme-01-title.png" alt="DividendFlow.pk title cast at PSX" />
+      <div class="hero-overlay">
+        <span class="eyebrow">Dividend Challengers · Official cast</span>
+        <h1>Bring dividend investors.<br />You keep the brokerage franchise.</h1>
+        <p>
+          These are DividendFlow.pk’s characters — not stock stickers.
+          We educate and convert; your licensed broker clears and executes. No desk. Fair introducer share.
+        </p>
+      </div>
+    </header>
+
+    <div class="cast" aria-label="Theme scenes featuring the cast">
+      <figure class="cast-card">
+        <img src="theme/dfpk-theme-01-title.png" alt="Title cast" />
+        <figcaption>Title crew</figcaption>
+      </figure>
+      <figure class="cast-card">
+        <img src="theme/dfpk-theme-02-race.png" alt="Race scene" />
+        <figcaption>Ride. Catch. Grow</figcaption>
+      </figure>
+      <figure class="cast-card">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="IPO launch" />
+        <figcaption>IPO energy</figcaption>
+      </figure>
+      <figure class="cast-card">
+        <img src="theme/dfpk-theme-04-dividends.png" alt="Dividends calendar" />
+        <figcaption>Dividends + AI buddy</figcaption>
+      </figure>
+      <figure class="cast-card">
+        <img src="theme/dfpk-theme-05-finale.png" alt="Finale rooftop" />
+        <figcaption>This is our time</figcaption>
+      </figure>
+    </div>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-02-race.png" alt="Dividend Challengers racing on ticker discs" />
+        <span class="badge">Scene · Race · Partner energy</span>
+      </div>
+      <div class="section-body">
+        <h2>1 · Decision summary</h2>
+        <p class="tagline">Same crew you see on DividendFlow — digital affiliate only, no desk.</p>
+        <table>
+          <tr><th>Choice</th><th>Decision</th></tr>
+          <tr><td>Business model</td><td>Affiliate / introducer only</td></tr>
+          <tr><td>Physical desk / CFC</td><td><strong>No</strong></td></tr>
+          <tr><td>Own Online Only Broker</td><td>Not yet (optional later)</td></tr>
+          <tr><td>Brand</td><td>dividendflow.pk · Dividend Challengers</td></tr>
+          <tr><td>Regulatory posture</td><td>Clients trade via partner TREC broker</td></tr>
+        </table>
+        <div class="callout">Near-zero regulatory capital · Fast launch · Product brand stays yours.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-01-title.png" alt="Full cast in front of PSX" />
+        <span class="badge">Scene · Title · Why brokers say yes</span>
+      </div>
+      <div class="section-body">
+        <h2>2 · Why brokers say yes</h2>
+        <p class="tagline">Lead with audience and brand — not fee scare charts.</p>
+        <ul>
+          <li><strong>Warm dividend audience</strong> already engaging DividendFlow tools and stories</li>
+          <li><strong>Recognisable cast & brand</strong> that feels retail-native for Pakistan</li>
+          <li><strong>Digital acquisition only</strong> — no desk or branch cost from us</li>
+          <li><strong>You keep</strong> the client relationship, platform, custody, and majority economics</li>
+          <li><strong>Tracked referrals</strong> via code / UIN / deep link</li>
+          <li><strong>Compliance-friendly</strong> — we never take client funds or execute trades</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-04-dividends.png" alt="Dividends calendar with AI Market Buddy" />
+        <span class="badge">Scene · Dividends · Honest boundaries</span>
+      </div>
+      <div class="section-body">
+        <h2>3 · What DividendFlow is</h2>
+        <p class="tagline">Education + tools + introducer funnel — not the broker.</p>
+        <p><strong>Is:</strong> content, dividend calendar, AI market buddy, referral funnel for PSX investors.</p>
+        <p><strong>Is not:</strong> SECP broker, TREC holder, desk, or custodian of client money/shares.</p>
+        <div class="soft">Stick to education, tools, and broker referral. Paid investment advice may need a Securities Advisor licence.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-05-finale.png" alt="Cast looking over PSX skyline" />
+        <span class="badge">Scene · Finale · Capital light</span>
+      </div>
+      <div class="section-body">
+        <h2>4 · Capital (no desk)</h2>
+        <p class="tagline">Start light. Own licence later if you want.</p>
+        <table>
+          <tr><th>Item</th><th>Amount</th></tr>
+          <tr><td>TREC / SECP broker licence</td><td><strong>Rs 0</strong></td></tr>
+          <tr><td>Net worth / BMC</td><td><strong>Rs 0</strong></td></tr>
+          <tr><td>Typical setup</td><td>Rs 0–2 lakh (marketing, ads, phone)</td></tr>
+          <tr><td>Ongoing</td><td>Content, hosting, acquisition</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="IPO launch arena" />
+        <span class="badge">Scene · IPO · Launch checklist</span>
+      </div>
+      <div class="section-body">
+        <h2>5 · Process to go live</h2>
+        <p class="tagline">Six clean steps. No PSX desk filing.</p>
+        <ol>
+          <li><strong>Shortlist</strong> Retail/BD at active TREC brokers — introducers, share %, tracking, deep-link.</li>
+          <li><strong>Sign</strong> commercial schedule (share, payout, attribution, branding, exit).</li>
+          <li><strong>Onboard</strong> training + referral code + one test open.</li>
+          <li><strong>Wire funnel</strong> on dividendflow.pk (CTA, tracking, disclaimer).</li>
+          <li><strong>Operate</strong> — refer only; accounts open on broker flow.</li>
+          <li><strong>Get paid</strong> — reconcile monthly against referral report.</li>
+        </ol>
+        <div class="checks" style="margin-top:.75rem">
+          <label><input type="checkbox" /> Agreement: share %, payout, attribution, claims, prohibited acts</label>
+          <label><input type="checkbox" /> Referral code live + test account opened</label>
+          <label><input type="checkbox" /> Site CTA + disclaimer + UTM tracking shipped</label>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-02-race.png" alt="Team racing on market discs" />
+        <span class="badge">Scene · Race · Partner-friendly money</span>
+      </div>
+      <div class="section-body">
+        <h2>6 · How money works (partner-friendly)</h2>
+        <p class="tagline">Keep fee math light — sell pipeline quality.</p>
+        <p>
+          PSX Ready brokerage sits on a published floor (commonly <strong>0.15% or 3 paisa</strong>, whichever higher).
+          Retail pricing and the <strong>introducer share</strong> live in the commercial schedule — not in scare charts.
+        </p>
+        <ul>
+          <li>Broker keeps platform, relationship, and the <strong>majority</strong> of brokerage</li>
+          <li>DividendFlow is paid only for <strong>attributed referred activity</strong></li>
+          <li>No desk, no branch, no fixed rent from our side</li>
+        </ul>
+        <div class="callout"><strong>Pitch tip:</strong> talk Dividend Challengers audience + digital CAC — not crore-volume break-even tables.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-04-dividends.png" alt="Catch dividends build wealth" />
+        <span class="badge">Scene · Dividends · Funnel</span>
+      </div>
+      <div class="section-body">
+        <h2>7 · DividendFlow funnel</h2>
+        <p class="tagline">Calendar → CTA → KYC → trade → share.</p>
+        <ol>
+          <li>User uses dividend tools / cast-led content on dividendflow.pk</li>
+          <li>CTA → partner account opening (tracked)</li>
+          <li>KYC on partner platform</li>
+          <li>User trades PSX</li>
+          <li>Partner pays introducer share</li>
+          <li>Reinvest into content, SEO, product</li>
+        </ol>
+        <p style="margin-top:.75rem"><strong>Build now:</strong> CTA, disclaimer, tracking, lead CRM, nurture.</p>
+        <p><strong>Not yet:</strong> order routing, wallets, custody, “DividendFlow Securities” branding.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="SECP PSX guidelines" />
+        <span class="badge">Scene · IPO · SECP / PSX guidelines</span>
+      </div>
+      <div class="section-body">
+        <h2>8 · SECP &amp; PSX guidelines</h2>
+        <p class="tagline">No separate “affiliate broker” licence — operate under the partner’s licence.</p>
+        <table>
+          <tr><th>Rule</th><th>Practical takeaway</th></tr>
+          <tr><td>SECP securities broker licence</td><td>Only TREC + SECP licensed brokers offer brokerage to the public. We refer into theirs.</td></tr>
+          <tr><td>Old Agents Rules 2001</td><td>Repealed — no standalone affiliate registration form.</td></tr>
+          <tr><td>Path A (us)</td><td>Digital introducer, no desk; broker trains/controls; no trade execution by us.</td></tr>
+          <tr><td>Path B (optional)</td><td>PSX Chapter 22A CFC if a physical help center is needed — broker files with PSX.</td></tr>
+        </table>
+        <div class="callout">
+          Ch. 22A red lines if a Center is used: no advisory/trading at Center, no trading terminal, no cash dealing; broker remains liable.
+          Sources:
+          <a href="https://www.secp.gov.pk/licensing/capital-markets/agents-and-brokers/" target="_blank" rel="noopener">SECP</a> ·
+          <a href="https://www.psx.com.pk/psx/resources-and-tools/brokerage-firms/account-facilitation-customer-help-center" target="_blank" rel="noopener">PSX CFC</a> ·
+          <a href="https://www.psx.com.pk/psx/themes/psx/uploads/PSX-Rulebook-July-14-2025.pdf" target="_blank" rel="noopener">Rule Book Ch. 22A</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="Serious launch energy" />
+        <span class="badge">Scene · IPO · Red lines</span>
+      </div>
+      <div class="section-body">
+        <h2>9 · Forbidden actions</h2>
+        <p class="tagline">Protect the partnership and the brand.</p>
+        <ol>
+          <li>Calling DividendFlow a stock broker / brokerage house</li>
+          <li>Collecting client trading funds</li>
+          <li>Executing or clearing trades yourself</li>
+          <li>Guaranteeing profits or yields</li>
+          <li>Taking orders outside broker process</li>
+          <li>Operating client accounts without proper authority</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-01-title.png" alt="Brand disclaimer backdrop" />
+        <span class="badge">Scene · Title · Disclaimer</span>
+      </div>
+      <div class="section-body">
+        <h2>10 · Site disclaimer</h2>
+        <p class="tagline">Put this on every CTA surface.</p>
+        <div class="callout">
+          DividendFlow.pk provides educational information and analytical tools related to the Pakistan Stock Exchange.
+          We are <strong>not</strong> a licensed securities broker. Accounts and trades run solely through our
+          <strong>partner brokerage firm</strong> (PSX TREC + SECP). We do not hold client funds or securities.
+          Past dividends are not guarantees. Investing involves risk of loss.
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-05-finale.png" alt="Horizon over PSX" />
+        <span class="badge">Scene · Finale · Optional licence path</span>
+      </div>
+      <div class="section-body">
+        <h2>11 · Optional later — Online Only Broker</h2>
+        <p class="tagline">Separate decision when you want your own licence.</p>
+        <p>
+          TREC, net worth, BMC, SECP fees, and a Clearing Member (PCM or T&amp;C).
+          See <a href="https://www.psx.com.pk/psx/online-only-broker" target="_blank" rel="noopener">PSX Online Only Broker</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-02-race.png" alt="30 day race plan" />
+        <span class="badge">Scene · Race · 30-day plan</span>
+      </div>
+      <div class="section-body">
+        <h2>12 · 30-day action plan</h2>
+        <p class="tagline">Ship partnership, then prove flow.</p>
+        <table>
+          <tr><th>Week</th><th>Actions</th></tr>
+          <tr><td><strong>1</strong></td><td>Call 5 brokers; collect offers; pick 1–2</td></tr>
+          <tr><td><strong>2</strong></td><td>Sign; train; referral code; test open</td></tr>
+          <tr><td><strong>3</strong></td><td>Ship CTA + disclaimer + tracking on dividendflow.pk</td></tr>
+          <tr><td><strong>4</strong></td><td>Content push with Challengers art; first referred accounts live</td></tr>
+        </table>
+        <div class="callout">
+          <strong>Month 1:</strong> opens on code + first trades + clean report.<br />
+          <strong>Month 3:</strong> steady referred flow and a renewable commercial relationship.
+        </div>
+      </div>
+    </section>
+
+    <section class="section doctrine">
+      <div class="section-art">
+        <img src="theme/dfpk-theme-05-finale.png" alt="This is our time" />
+        <span class="badge">Scene · Finale · Doctrine</span>
+      </div>
+      <div class="section-body">
+        <h2>Doctrine</h2>
+        <p class="tagline">One line. Every broker meeting.</p>
+        <p>
+          DividendFlow.pk educates and converts; the partner broker licences, clears, and executes;
+          we earn a fair introducer share — no desk, no client funds, no fake broker claims.
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      DividendFlow.pk · Dividend Challengers theme art · Sep 2026 · Confirm splits &amp; compliance with your partner broker before launch.
+    </footer>
+  </div>
+
+  <script>
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('in-view'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.section, .cast-card').forEach((el) => io.observe(el));
+  </script>
+</body>
+</html>

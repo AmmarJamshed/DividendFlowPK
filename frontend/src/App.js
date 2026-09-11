@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/DashboardRedesign';
 import DividendCalendar from './pages/DividendCalendar';
 import ForecastEngine from './pages/ForecastEngine';
+import ResearchLab from './pages/ResearchLab';
 import SalarySimulator from './pages/SalarySimulator';
 import ReportingCycles from './pages/ReportingCycles';
 import MarketBrokers from './pages/MarketBrokers';
@@ -67,6 +68,7 @@ function App() {
                   <Route path="/weak-month-optimizer" element={<Navigate to="/dividend-calendar" replace />} />
                   <Route path="/ai-risk-dashboard" element={<Navigate to="/" replace />} />
                   <Route path="/forecast-engine" element={<ForecastEngine />} />
+                  <Route path="/research-lab" element={<ResearchLab />} />
                   <Route path="/salary-simulator" element={<SalarySimulator />} />
                   <Route path="/reporting-cycles" element={<ReportingCycles />} />
                   <Route path="/market-brokers" element={<MarketBrokers />} />

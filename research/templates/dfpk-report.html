@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{TITLE}} — DividendFlow.pk Research</title>
+  <style>
+    :root {
+      --navy: #0b1f3a; --blue: #1a3a6b; --orange: #f05a22; --sky: #e8f2ff;
+      --cream: #fff8f2; --ink: #152033; --muted: #5a6a7e; --line: #d6e0ef;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Segoe UI", Tahoma, sans-serif; color: var(--ink); background: var(--cream); line-height: 1.55; }
+    a { color: var(--blue); font-weight: 600; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 0 18px 64px; }
+    .cover { background: var(--navy); border-radius: 0 0 18px 18px; overflow: hidden; margin-bottom: 20px; }
+    .cover img { width: 100%; display: block; max-height: 420px; object-fit: cover; object-position: center top; }
+    .caption h1 { margin: 12px 0 4px; color: var(--navy); font-size: clamp(1.3rem, 3vw, 1.9rem); }
+    .caption p { margin: 0; color: var(--muted); font-size: .95rem; }
+    .logo { font-weight: 800; color: var(--navy); margin: 14px 0; }
+    .logo span { color: var(--orange); }
+    .pill { display: inline-block; background: var(--sky); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: .75rem; font-weight: 600; color: var(--blue); margin-right: 6px; }
+    .disclaimer { background: #fff3e8; border: 1px solid #ffd0b0; border-radius: 12px; padding: 12px 14px; font-size: .9rem; margin: 14px 0; }
+    .cheat { background: var(--navy); color: #fff; border-radius: 16px; padding: 18px 20px; margin: 16px 0; }
+    .cheat h2 { margin: 0 0 8px; font-size: 1.15rem; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
+    .stat { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 12px; }
+    .stat .n { font-size: 1.25rem; font-weight: 800; color: #ff8a4c; }
+    .stat .l { font-size: .78rem; color: rgba(255,255,255,.8); margin-top: 4px; }
+    .stat .src { font-size: .72rem; margin-top: 6px; }
+    .stat .src a { color: #ffd2b8; }
+    section { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin: 0 0 16px; }
+    section h2 { margin: 0 0 8px; color: var(--navy); font-size: 1.25rem; }
+    .yr { display: inline-block; background: var(--sky); color: var(--navy); border-radius: 4px; padding: 1px 6px; font-size: .7rem; font-weight: 700; margin-right: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; margin: 10px 0; }
+    th, td { border: 1px solid var(--line); padding: 8px; text-align: left; vertical-align: top; }
+    th { background: var(--sky); }
+    .chart-box { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 12px 0; }
+    .chart-wrap { position: relative; height: 260px; }
+    .charts-grid { display: grid; gap: 12px; }
+    @media (min-width: 760px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
+    .stock-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+    .stock-card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--cream); }
+    .stock-card .sym { font-weight: 800; color: var(--navy); }
+    .stock-card .px { font-size: 1.1rem; color: var(--orange); font-weight: 700; }
+    footer { text-align: center; color: var(--muted); font-size: .82rem; padding: 16px 0 32px; }
+    ul { padding-left: 1.2rem; }
+    li { margin: 6px 0; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="cover">
+    <img src="{{COVER_IMG}}" alt="DividendFlow.pk research cover" />
+  </div>
+  <div class="wrap">
+    <div class="caption">
+      <h1>{{TITLE}}</h1>
+      <p>DividendFlow.pk Market Research Agent · {{GEO}} · Audience: {{AUDIENCE}} · {{GENERATED_AT}}</p>
+    </div>
+    <div class="logo">DIVIDEND <span>FLOW</span>.PK · Research Lab</div>
+    <span class="pill">Simple Word answer</span>
+    <span class="pill">Cited sources</span>
+    <span class="pill">PSX stock join</span>
+
+    <div class="disclaimer">
+      <strong>Educational only.</strong> Not SECP-registered advice. Numbers come from public crawl evidence + DividendFlow market data. Confirm before real decisions.
+    </div>
+
+    <div class="cheat">
+      <h2>60-second executive snapshot (Simple Word answer)</h2>
+      <p>{{EXECUTIVE_SNAPSHOT}}</p>
+      <div class="stats">{{STAT_CARDS}}</div>
+    </div>
+
+    <section>
+      <h2>1. Market layers</h2>
+      <div class="charts-grid">
+        <div class="chart-box">
+          <h3 style="margin:0 0 8px;font-size:1rem;color:var(--navy)">Layer comparison</h3>
+          <div class="chart-wrap"><canvas id="chartLayers"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <h3 style="margin:0 0 8px;font-size:1rem;color:var(--navy)">Product / opportunity scores</h3>
+          <div class="chart-wrap"><canvas id="chartScores"></canvas></div>
+        </div>
+      </div>
+      <ul>{{MARKET_LAYERS_LIST}}</ul>
+    </section>
+
+    <section>
+      <h2>2. Economics</h2>
+      <h3 style="color:var(--blue);font-size:1rem">Drivers</h3>
+      <ul>{{DRIVERS_LIST}}</ul>
+      <h3 style="color:var(--blue);font-size:1rem">Restraints</h3>
+      <ul>{{RESTRAINTS_LIST}}</ul>
+    </section>
+
+    <section>
+      <h2>3. Barriers to entry</h2>
+      <ul>{{BARRIERS_LIST}}</ul>
+    </section>
+
+    <section>
+      <h2>4. Incentives</h2>
+      <ul>{{INCENTIVES_LIST}}</ul>
+    </section>
+
+    <section>
+      <h2>5. Product / menu fit scores</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Score</th><th>Verdict</th></tr></thead>
+        <tbody>{{SCORE_ROWS}}</tbody>
+      </table>
+      <p style="font-size:.85rem;color:var(--muted)">{{ML_NOTES}}</p>
+    </section>
+
+    <section>
+      <h2>6. Smart gaps (demand / supply planners)</h2>
+      <div class="chart-box">
+        <div class="chart-wrap"><canvas id="chartGaps"></canvas></div>
+      </div>
+      <table>
+        <thead><tr><th>Gap</th><th>Score</th><th>Who pays</th><th>Idea</th></tr></thead>
+        <tbody>{{GAP_ROWS}}</tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>7. Related PSX stocks</h2>
+      <p>{{STOCKS_NOTE}}</p>
+      <div class="stock-grid">{{STOCK_CARDS}}</div>
+    </section>
+
+    <section>
+      <h2>8. Sources</h2>
+      <ol>{{SOURCES_LIST}}</ol>
+    </section>
+
+    <footer>DividendFlow.pk · Track · Learn · Grow · Generated by Market Research Agent · {{GENERATED_AT}}</footer>
+  </div>
+  <script>
+    const layers = {{CHART_LAYERS_JSON}};
+    const scores = {{CHART_SCORES_JSON}};
+    const gaps = {{CHART_GAPS_JSON}};
+    const orange = '#f05a22', blue = '#1a3a6b', navy = '#0b1f3a';
+    if (window.Chart) {
+      if (layers.length) new Chart(document.getElementById('chartLayers'), {
+        type: 'bar',
+        data: { labels: layers.map(d => d.label), datasets: [{ data: layers.map(d => d.value), backgroundColor: orange }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+      if (scores.length) new Chart(document.getElementById('chartScores'), {
+        type: 'bar',
+        data: { labels: scores.map(d => d.label), datasets: [{ data: scores.map(d => d.value), backgroundColor: blue }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { max: 100 } } }
+      });
+      if (gaps.length) new Chart(document.getElementById('chartGaps'), {
+        type: 'bar',
+        data: { labels: gaps.map(d => d.label), datasets: [{ data: gaps.map(d => d.value), backgroundColor: navy }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { max: 100 } } }
+      });
+    }
+  </script>
+</body>
+</html>

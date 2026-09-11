@@ -2,6 +2,12 @@
 
 A web-based financial analysis platform for the Pakistan Stock Exchange (PSX), providing dividend optimization tools, AI risk analysis, and salary replacement simulation.
 
+## Business / GTM (affiliate, no desk)
+
+Operating playbook to run **dividendflow.pk** as a PSX affiliate/introducer under a licensed broker (no TREC, no physical desk):
+
+- [`docs/AFFILIATE_BROKER_RUNBOOK.md`](docs/AFFILIATE_BROKER_RUNBOOK.md)
+
 ## Project Structure
 
 ```

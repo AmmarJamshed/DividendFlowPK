@@ -1,0 +1,287 @@
+{
+  "slug": "pakistan-cement-demand",
+  "topic": "Pakistan cement demand",
+  "geo": "Pakistan",
+  "audience": "demand_planner",
+  "generated_at": "2026-09-11T21:03:17.644Z",
+  "executive_snapshot": "Simple Word answer: Research pack for “Pakistan cement demand” in Pakistan. Evidence items: 6. Listed peers resolved: 3. Use sources below for sizing; treat thin evidence as a signal to dig deeper — not as a finished market size.",
+  "market_layers": [
+    {
+      "label": "Topic focus",
+      "value": "Cement / construction demand",
+      "year": "2026",
+      "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+      "source_title": "U.S. Trade.gov — Pakistan Franchising"
+    },
+    {
+      "label": "Policy / investment context",
+      "value": "See BOI / industry sources",
+      "year": "2020",
+      "url": "https://invest.gov.pk/food-processing",
+      "source_title": "BOI (cross-sector hub)"
+    },
+    {
+      "label": "Listed peer coverage",
+      "value": "3 PSX names",
+      "year": "2026",
+      "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+      "source_title": "DividendFlow PSX store"
+    }
+  ],
+  "economics": {
+    "drivers": [
+      {
+        "text": "Urban demand and convenience channels keep expanding in Pakistan consumer markets.",
+        "year": "2019",
+        "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+        "source_title": "U.S. Trade.gov — Pakistan Franchising"
+      },
+      {
+        "text": "Public investment / industry pages highlight food and related processing as a priority developmental area.",
+        "year": "2020",
+        "url": "https://invest.gov.pk/food-processing",
+        "source_title": "BOI Food Processing"
+      }
+    ],
+    "restraints": [
+      {
+        "text": "Documentation and operating frictions raise barriers for hospitality and restaurant-like businesses.",
+        "year": "2022",
+        "url": "https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/",
+        "source_title": "PIDE KB 76"
+      },
+      {
+        "text": "Price sensitivity and thin margins compress growth when input costs or platform fees rise.",
+        "year": "2019",
+        "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+        "source_title": "U.S. Trade.gov — Pakistan Franchising"
+      }
+    ],
+    "cost_split_pct": [
+      {
+        "label": "COGS / inputs",
+        "value": 34
+      },
+      {
+        "label": "Rent / utilities",
+        "value": 16
+      },
+      {
+        "label": "Staff",
+        "value": 18
+      },
+      {
+        "label": "Distribution / marketing",
+        "value": 14
+      },
+      {
+        "label": "Tax / other",
+        "value": 10
+      },
+      {
+        "label": "Profit",
+        "value": 8
+      }
+    ]
+  },
+  "barriers": [
+    {
+      "text": "Licenses, food-authority / municipal paperwork, and slow responses deter new operators.",
+      "year": "2022",
+      "url": "https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/",
+      "source_title": "PIDE"
+    },
+    {
+      "text": "Skilled labor often needs in-house training.",
+      "year": "2022",
+      "url": "https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/",
+      "source_title": "PIDE"
+    }
+  ],
+  "incentives": [
+    {
+      "text": "BOI lists customs and related concessions for food processing capital goods and some value-added chicken inputs.",
+      "year": "2020",
+      "url": "https://invest.gov.pk/node/1312",
+      "source_title": "BOI incentives"
+    },
+    {
+      "text": "SEZ framework offers capital-goods duty relief and multi-year income tax holidays for qualifying enterprises.",
+      "year": "2020",
+      "url": "http://www.invest.gov.pk/node/1263",
+      "source_title": "BOI SEZ"
+    }
+  ],
+  "menu_or_product_scores": [
+    {
+      "name": "Bag cement demand",
+      "score": 86,
+      "verdict": "Watch housing cycle",
+      "rationale": "Construction linked"
+    },
+    {
+      "name": "Export / clinker",
+      "score": 72,
+      "verdict": "Secondary",
+      "rationale": "FX + freight sensitive"
+    },
+    {
+      "name": "Retail bagged cement",
+      "score": 80,
+      "verdict": "Steady",
+      "rationale": "Domestic distribution"
+    }
+  ],
+  "smart_gaps": [
+    {
+      "gap": "Planner-grade demand forecast pack",
+      "why_missed": "News apps lack structured volume forecasts",
+      "idea": "Monthly demand brief with PSX supplier prices",
+      "opportunity_score": 84,
+      "who_pays": "Demand planners / ops"
+    },
+    {
+      "gap": "Cited market-size dashboard",
+      "why_missed": "Scatter of PDFs and paywalled reports",
+      "idea": "Living HTML pack with year+URL chips",
+      "opportunity_score": 88,
+      "who_pays": "Market researchers"
+    },
+    {
+      "gap": "Listed-supplier risk watch",
+      "why_missed": "Sector notes rarely join live tickers",
+      "idea": "Auto stock join for peers",
+      "opportunity_score": 82,
+      "who_pays": "Analysts / procurement"
+    }
+  ],
+  "stocks": {
+    "symbols_requested": [
+      "LUCK",
+      "MLCF",
+      "DGKC"
+    ],
+    "resolved": [
+      {
+        "symbol": "LUCK",
+        "name": "LUCK",
+        "sector": "",
+        "price": 416.68,
+        "change_pct": 2.12,
+        "as_of": "2026-09-11",
+        "dividend_yield": null
+      },
+      {
+        "symbol": "MLCF",
+        "name": "MLCF",
+        "sector": "",
+        "price": 95.4,
+        "change_pct": 1.39,
+        "as_of": "2026-09-11",
+        "dividend_yield": null
+      },
+      {
+        "symbol": "DGKC",
+        "name": "DGKC",
+        "sector": "",
+        "price": 193.86,
+        "change_pct": 1.99,
+        "as_of": "2026-09-11",
+        "dividend_yield": null
+      }
+    ],
+    "note": "Joined 3 PSX symbol(s) from DividendFlow price/dividend store."
+  },
+  "sources": [
+    {
+      "title": "U.S. Trade.gov — Pakistan Franchising",
+      "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+      "year": "2019",
+      "excerpt": "Pakistan - Franchising Skip to main content An official website of the United States government&nbsp;&nbsp; Here&#8217;s how you know&nbsp;&nbsp;&nbsp; Official websites use .gov A .gov website belongs to an official government organization in the United States. Secure .gov websi"
+    },
+    {
+      "title": "BOI — Food Processing",
+      "url": "https://invest.gov.pk/food-processing",
+      "year": "2020",
+      "excerpt": "Food Processing | Board Of Investment Skip to main content Temperature Weather Location English Toggle Dropdown English Arabic -A A +A Search Home About Us About Us BOI Board Executive Committee Message Executive Profiles PMU CPEC-ICDP BOI ACT CPEC Business Council Honorary Inves"
+    },
+    {
+      "title": "BOI — Food Processing incentives",
+      "url": "https://invest.gov.pk/node/1312",
+      "year": "2020",
+      "excerpt": "INCENTIVES FOR FOOD PROCESSING AND BEVERAGE SECTOR | Board Of Investment Skip to main content Temperature Weather Location Select Language English Français Português Русский язык العربية اُردُو 中文 日本語 한국어 -A A +A Search Home About Us About Us BOI Board Executive Committee Message"
+    },
+    {
+      "title": "BOI — SEZ incentives",
+      "url": "http://www.invest.gov.pk/node/1263",
+      "year": "2020",
+      "excerpt": "Incentives of Special Economic Zones | Board Of Investment Skip to main content Temperature Weather Location Select Language English Français Português Русский язык العربية اُردُو 中文 日本語 한국어 -A A +A Search Home About Us About Us BOI Board Executive Committee Message Executive Pro"
+    },
+    {
+      "title": "PIDE — Hotel & Restaurant Industries",
+      "url": "https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/",
+      "year": "2022",
+      "excerpt": "(fetch failed: Request failed with status code 403)"
+    },
+    {
+      "title": "Dawn Business RSS",
+      "url": "https://www.dawn.com/feeds/business",
+      "year": "2026",
+      "excerpt": "Dawn - Business https://www.dawn.com/ Dawn en-Us Copyright 2026 Sat, 12 Sep 2026 02:02:27 +0500 Sat, 12 Sep 2026 02:02:27 +0500 60 Govt raises petrol price by Rs5.02 per litre, HSD by Rs5.28 amid rising global oil prices https://www.dawn.com/news/2029153/govt-raises-petrol-price-"
+    }
+  ],
+  "charts": {
+    "layers": [
+      {
+        "label": "Topic focus",
+        "value": 4
+      },
+      {
+        "label": "Policy / investment context",
+        "value": 5
+      },
+      {
+        "label": "Listed peer coverage",
+        "value": 6
+      }
+    ],
+    "product_scores": [
+      {
+        "label": "Bag cement demand",
+        "value": 86
+      },
+      {
+        "label": "Export / clinker",
+        "value": 72
+      },
+      {
+        "label": "Retail bagged cement",
+        "value": 80
+      }
+    ],
+    "gap_scores": [
+      {
+        "label": "Planner-grade demand forecast pa",
+        "value": 84
+      },
+      {
+        "label": "Cited market-size dashboard",
+        "value": 88
+      },
+      {
+        "label": "Listed-supplier risk watch",
+        "value": 82
+      }
+    ]
+  },
+  "ml_notes": "Scores are transparent heuristics (content-fit style). Replace with survey + sales data for production forecasting.",
+  "crawl_meta": {
+    "evidence_count": 6,
+    "mode": "offline",
+    "symbols": [
+      "LUCK",
+      "MLCF",
+      "DGKC"
+    ]
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dividendflow.pk/schemas/market-research-report.json",
+  "title": "DividendFlow Market Research Report",
+  "type": "object",
+  "required": [
+    "slug",
+    "topic",
+    "geo",
+    "audience",
+    "generated_at",
+    "executive_snapshot",
+    "market_layers",
+    "economics",
+    "barriers",
+    "incentives",
+    "menu_or_product_scores",
+    "smart_gaps",
+    "stocks",
+    "sources",
+    "charts"
+  ],
+  "properties": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "topic": { "type": "string", "minLength": 3 },
+    "geo": { "type": "string", "default": "Pakistan" },
+    "audience": {
+      "type": "string",
+      "enum": ["analyst", "market_researcher", "demand_planner"]
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "executive_snapshot": { "type": "string", "minLength": 40 },
+    "market_layers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/citedStat" }
+    },
+    "economics": {
+      "type": "object",
+      "properties": {
+        "drivers": { "type": "array", "items": { "$ref": "#/$defs/citedClaim" } },
+        "restraints": { "type": "array", "items": { "$ref": "#/$defs/citedClaim" } },
+        "cost_split_pct": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "barriers": { "type": "array", "items": { "$ref": "#/$defs/citedClaim" } },
+    "incentives": { "type": "array", "items": { "$ref": "#/$defs/citedClaim" } },
+    "menu_or_product_scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "score", "verdict"],
+        "properties": {
+          "name": { "type": "string" },
+          "score": { "type": "number", "minimum": 0, "maximum": 100 },
+          "verdict": { "type": "string" },
+          "rationale": { "type": "string" }
+        }
+      }
+    },
+    "smart_gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gap", "opportunity_score", "who_pays"],
+        "properties": {
+          "gap": { "type": "string" },
+          "why_missed": { "type": "string" },
+          "idea": { "type": "string" },
+          "opportunity_score": { "type": "number", "minimum": 0, "maximum": 100 },
+          "who_pays": { "type": "string" }
+        }
+      }
+    },
+    "stocks": {
+      "type": "object",
+      "required": ["symbols_requested", "resolved", "note"],
+      "properties": {
+        "symbols_requested": { "type": "array", "items": { "type": "string" } },
+        "resolved": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["symbol"],
+            "properties": {
+              "symbol": { "type": "string" },
+              "name": { "type": "string" },
+              "sector": { "type": "string" },
+              "price": { "type": ["number", "null"] },
+              "change_pct": { "type": ["number", "null"] },
+              "as_of": { "type": ["string", "null"] },
+              "dividend_yield": { "type": ["number", "null"] }
+            }
+          }
+        },
+        "note": { "type": "string" }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["title", "url", "year"],
+        "properties": {
+          "title": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "year": { "type": ["string", "number"] },
+          "excerpt": { "type": "string" }
+        }
+      }
+    },
+    "charts": {
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": "number" }
+            }
+          }
+        },
+        "product_scores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": "number" }
+            }
+          }
+        },
+        "gap_scores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "properties": {
+              "label": { "type": "string" },
+              "value": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "ml_notes": { "type": "string" },
+    "crawl_meta": { "type": "object" }
+  },
+  "$defs": {
+    "citedStat": {
+      "type": "object",
+      "required": ["label", "value", "year", "url"],
+      "properties": {
+        "label": { "type": "string" },
+        "value": { "type": "string" },
+        "year": { "type": ["string", "number"] },
+        "url": { "type": "string", "format": "uri" },
+        "source_title": { "type": "string" }
+      }
+    },
+    "citedClaim": {
+      "type": "object",
+      "required": ["text", "year", "url"],
+      "properties": {
+        "text": { "type": "string" },
+        "year": { "type": ["string", "number"] },
+        "url": { "type": "string", "format": "uri" },
+        "source_title": { "type": "string" }
+      }
+    }
+  }
+}

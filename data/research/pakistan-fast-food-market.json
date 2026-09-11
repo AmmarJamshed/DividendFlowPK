@@ -1,0 +1,296 @@
+{
+  "slug": "pakistan-fast-food-market",
+  "topic": "Pakistan fast food market",
+  "geo": "Pakistan",
+  "audience": "market_researcher",
+  "generated_at": "2026-09-11T21:03:11.805Z",
+  "executive_snapshot": "Simple Word answer: Pakistan already has a large eating-out market (about $6–9 bn/year in public Trade.gov citations). Local + international brands share demand. Hard doors are licenses, rent, and delivery fees. Factory/SEZ incentives help processors more than single shops. Best familiar foods score high; smart gaps sit in planned nutrition and trust meals.",
+  "market_layers": [
+    {
+      "label": "Eating out (PFA via Trade.gov)",
+      "value": "$6–9 bn / year",
+      "year": "2019",
+      "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+      "source_title": "U.S. Trade.gov"
+    },
+    {
+      "label": "Registered restaurants",
+      "value": "256,926+",
+      "year": "2025",
+      "url": "https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/",
+      "source_title": "ProPakistani"
+    },
+    {
+      "label": "Pakistan Food market",
+      "value": "$115.4 bn",
+      "year": "2024",
+      "url": "https://www.statista.com/outlook/cmo/food/pakistan",
+      "source_title": "Statista"
+    }
+  ],
+  "economics": {
+    "drivers": [
+      {
+        "text": "Urban demand and convenience channels keep expanding in Pakistan consumer markets.",
+        "year": "2019",
+        "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+        "source_title": "U.S. Trade.gov — Pakistan Franchising"
+      },
+      {
+        "text": "Public investment / industry pages highlight food and related processing as a priority developmental area.",
+        "year": "2020",
+        "url": "https://invest.gov.pk/food-processing",
+        "source_title": "BOI Food Processing"
+      }
+    ],
+    "restraints": [
+      {
+        "text": "Documentation and operating frictions raise barriers for hospitality and restaurant-like businesses.",
+        "year": "2022",
+        "url": "https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/",
+        "source_title": "PIDE KB 76"
+      },
+      {
+        "text": "Price sensitivity and thin margins compress growth when input costs or platform fees rise.",
+        "year": "2019",
+        "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+        "source_title": "U.S. Trade.gov — Pakistan Franchising"
+      }
+    ],
+    "cost_split_pct": [
+      {
+        "label": "COGS / inputs",
+        "value": 34
+      },
+      {
+        "label": "Rent / utilities",
+        "value": 16
+      },
+      {
+        "label": "Staff",
+        "value": 18
+      },
+      {
+        "label": "Distribution / marketing",
+        "value": 14
+      },
+      {
+        "label": "Tax / other",
+        "value": 10
+      },
+      {
+        "label": "Profit",
+        "value": 8
+      }
+    ]
+  },
+  "barriers": [
+    {
+      "text": "Licenses, food-authority / municipal paperwork, and slow responses deter new operators.",
+      "year": "2022",
+      "url": "https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/",
+      "source_title": "PIDE"
+    },
+    {
+      "text": "Skilled labor often needs in-house training.",
+      "year": "2022",
+      "url": "https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/",
+      "source_title": "PIDE"
+    }
+  ],
+  "incentives": [
+    {
+      "text": "BOI lists customs and related concessions for food processing capital goods and some value-added chicken inputs.",
+      "year": "2020",
+      "url": "https://invest.gov.pk/node/1312",
+      "source_title": "BOI incentives"
+    },
+    {
+      "text": "SEZ framework offers capital-goods duty relief and multi-year income tax holidays for qualifying enterprises.",
+      "year": "2020",
+      "url": "http://www.invest.gov.pk/node/1263",
+      "source_title": "BOI SEZ"
+    }
+  ],
+  "menu_or_product_scores": [
+    {
+      "name": "Fried chicken / broast",
+      "score": 92,
+      "verdict": "Core demand",
+      "rationale": "High cultural fit"
+    },
+    {
+      "name": "Burgers",
+      "score": 90,
+      "verdict": "Strong",
+      "rationale": "Global + local love"
+    },
+    {
+      "name": "Pizza",
+      "score": 88,
+      "verdict": "Strong",
+      "rationale": "Family occasions"
+    },
+    {
+      "name": "Shawarma wraps",
+      "score": 87,
+      "verdict": "High volume",
+      "rationale": "Close to local rolls"
+    },
+    {
+      "name": "Plant burgers",
+      "score": 58,
+      "verdict": "Niche",
+      "rationale": "Urban only for now"
+    }
+  ],
+  "smart_gaps": [
+    {
+      "gap": "Planner-grade demand forecast pack",
+      "why_missed": "News apps lack structured volume forecasts",
+      "idea": "Monthly demand brief with PSX supplier prices",
+      "opportunity_score": 84,
+      "who_pays": "Demand planners / ops"
+    },
+    {
+      "gap": "Cited market-size dashboard",
+      "why_missed": "Scatter of PDFs and paywalled reports",
+      "idea": "Living HTML pack with year+URL chips",
+      "opportunity_score": 88,
+      "who_pays": "Market researchers"
+    },
+    {
+      "gap": "Listed-supplier risk watch",
+      "why_missed": "Sector notes rarely join live tickers",
+      "idea": "Auto stock join for peers",
+      "opportunity_score": 82,
+      "who_pays": "Analysts / procurement"
+    }
+  ],
+  "stocks": {
+    "symbols_requested": [
+      "NESTLE",
+      "UNITY"
+    ],
+    "resolved": [
+      {
+        "symbol": "NESTLE",
+        "name": "NESTLE",
+        "sector": "FOOD & PERSONAL CARE PRODUCTS",
+        "price": 7424.22,
+        "change_pct": -0.03,
+        "as_of": "2026-09-11",
+        "dividend_yield": 2.87
+      },
+      {
+        "symbol": "UNITY",
+        "name": "UNITY",
+        "sector": "",
+        "price": 8.19,
+        "change_pct": 1.11,
+        "as_of": "2026-09-11",
+        "dividend_yield": null
+      }
+    ],
+    "note": "Joined 2 PSX symbol(s) from DividendFlow price/dividend store."
+  },
+  "sources": [
+    {
+      "title": "U.S. Trade.gov — Pakistan Franchising",
+      "url": "https://www.trade.gov/country-commercial-guides/pakistan-franchising",
+      "year": "2019",
+      "excerpt": "Pakistan - Franchising Skip to main content An official website of the United States government&nbsp;&nbsp; Here&#8217;s how you know&nbsp;&nbsp;&nbsp; Official websites use .gov A .gov website belongs to an official government organization in the United States. Secure .gov websi"
+    },
+    {
+      "title": "BOI — Food Processing",
+      "url": "https://invest.gov.pk/food-processing",
+      "year": "2020",
+      "excerpt": "Food Processing | Board Of Investment Skip to main content Temperature Weather Location English Toggle Dropdown English Arabic -A A +A Search Home About Us About Us BOI Board Executive Committee Message Executive Profiles PMU CPEC-ICDP BOI ACT CPEC Business Council Honorary Inves"
+    },
+    {
+      "title": "BOI — Food Processing incentives",
+      "url": "https://invest.gov.pk/node/1312",
+      "year": "2020",
+      "excerpt": "INCENTIVES FOR FOOD PROCESSING AND BEVERAGE SECTOR | Board Of Investment Skip to main content Temperature Weather Location Select Language English Français Português Русский язык العربية اُردُو 中文 日本語 한국어 -A A +A Search Home About Us About Us BOI Board Executive Committee Message"
+    },
+    {
+      "title": "BOI — SEZ incentives",
+      "url": "http://www.invest.gov.pk/node/1263",
+      "year": "2020",
+      "excerpt": "Incentives of Special Economic Zones | Board Of Investment Skip to main content Temperature Weather Location Select Language English Français Português Русский язык العربية اُردُو 中文 日本語 한국어 -A A +A Search Home About Us About Us BOI Board Executive Committee Message Executive Pro"
+    },
+    {
+      "title": "PIDE — Hotel & Restaurant Industries",
+      "url": "https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/",
+      "year": "2022",
+      "excerpt": "(fetch failed: Request failed with status code 403)"
+    },
+    {
+      "title": "ProPakistani — Gastronomy & Growth",
+      "url": "https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/",
+      "year": "2025",
+      "excerpt": "Gastronomy &amp; Growth: Pakistan&#039;s Emerging Food Economy - Perspective Skip to content Submit Home Tech, Telecom &amp; IT Culture Sports About Us Contact Us Contribute --> Written by Muhammad Azfar Ahsan He is a public policy advocate, business strategist, and Pakistan’s fo"
+    }
+  ],
+  "charts": {
+    "layers": [
+      {
+        "label": "Eating out (PFA via Trade.go",
+        "value": 7.5
+      },
+      {
+        "label": "Registered restaurants",
+        "value": 2.5
+      },
+      {
+        "label": "Pakistan Food market",
+        "value": 115.4
+      }
+    ],
+    "product_scores": [
+      {
+        "label": "Fried chicken / broast",
+        "value": 92
+      },
+      {
+        "label": "Burgers",
+        "value": 90
+      },
+      {
+        "label": "Pizza",
+        "value": 88
+      },
+      {
+        "label": "Shawarma wraps",
+        "value": 87
+      },
+      {
+        "label": "Plant burgers",
+        "value": 58
+      }
+    ],
+    "gap_scores": [
+      {
+        "label": "Planner-grade demand forecast pa",
+        "value": 84
+      },
+      {
+        "label": "Cited market-size dashboard",
+        "value": 88
+      },
+      {
+        "label": "Listed-supplier risk watch",
+        "value": 82
+      }
+    ]
+  },
+  "ml_notes": "Scores are transparent heuristics (content-fit style). Replace with survey + sales data for production forecasting.",
+  "crawl_meta": {
+    "evidence_count": 6,
+    "mode": "offline",
+    "symbols": [
+      "NESTLE",
+      "UNITY"
+    ]
+  }
+}

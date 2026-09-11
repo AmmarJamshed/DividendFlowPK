@@ -13,6 +13,12 @@ export const api = {
   getMonthCoverage: () => axios.get(`${API_BASE}/month-coverage`),
   getRiskScore: (companyName) => axios.post(`${API_BASE}/risk-score`, { companyName }),
   getForecast: (company, asOf) => axios.get(`${API_BASE}/forecast`, { params: { company, asOf } }),
+  createResearchJob: (body) => axios.post(`${API_BASE}/v1/research/jobs`, body, { timeout: 30000 }),
+  getResearchJob: (id) => axios.get(`${API_BASE}/v1/research/jobs/${id}`),
+  getResearchReports: () => axios.get(`${API_BASE}/v1/research/reports`),
+  getResearchReport: (slug) => axios.get(`${API_BASE}/v1/research/reports/${slug}`),
+  getResearchReportStocks: (slug) => axios.get(`${API_BASE}/v1/research/reports/${slug}/stocks`),
+  researchReportHtmlUrl: (slug) => `${API_BASE}/v1/research/reports/${slug}/html`,
   getSalarySimulator: (targetMonthlyIncome, expectedDividendYield) =>
     axios.post(`${API_BASE}/salary-simulator`, { targetMonthlyIncome, expectedDividendYield }),
   postSalaryAiRecommendations: (body) =>

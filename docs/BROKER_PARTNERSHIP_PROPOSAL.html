@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DividendFlow.pk × Partner Broker — Business Proposal</title>
+  <style>
+    :root {
+      --navy: #1E3A8A;
+      --navy-deep: #0B1A3D;
+      --orange: #F97316;
+      --orange-hot: #EA580C;
+      --green: #16A34A;
+      --bg: #F5F7FA;
+      --ink: #0F172A;
+      --muted: #64748B;
+      --line: #E2E8F0;
+      --card: #fff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1000px 420px at 0% -8%, rgba(249,115,22,.15), transparent 55%),
+        radial-gradient(900px 380px at 100% 0%, rgba(30,58,138,.16), transparent 52%),
+        var(--bg);
+      line-height: 1.55;
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      padding: .85rem 1.25rem;
+      background: linear-gradient(135deg, var(--navy), #1e40af 55%, var(--navy-deep));
+      color: #fff; box-shadow: 0 10px 28px rgba(11,26,61,.28);
+    }
+    .brand { display: flex; gap: .8rem; align-items: center; font-weight: 800; }
+    .brand img {
+      width: 46px; height: 46px; border-radius: 12px; object-fit: cover;
+      border: 2px solid var(--orange); animation: pulse 2.5s ease-in-out infinite;
+    }
+    .pill {
+      border-radius: 999px; padding: .35rem .85rem; font-size: .78rem; font-weight: 700;
+      background: rgba(249,115,22,.95); color: #fff;
+    }
+    .stripe {
+      height: 6px;
+      background: linear-gradient(90deg, var(--orange), #FDBA74, var(--orange));
+      background-size: 200% 100%; animation: shimmer 3s linear infinite;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 1.25rem 1.15rem 3rem; }
+
+    .hero {
+      border-radius: 24px; overflow: hidden; margin-bottom: 1rem;
+      border: 1px solid var(--line); box-shadow: 0 18px 42px rgba(30,58,138,.14);
+      animation: rise .7s ease both; background: #fff;
+    }
+    .hero-art-wrap {
+      position: relative; overflow: hidden; background: var(--navy-deep);
+      max-height: 340px;
+    }
+    .hero img.hero-art {
+      display: block; width: 100%; height: 340px; object-fit: cover; object-position: center 22%;
+      animation: ken 16s ease-in-out infinite alternate;
+    }
+    .hero-copy {
+      padding: 1.25rem 1.35rem 1.35rem;
+      background: linear-gradient(135deg, var(--navy), #1e40af 55%, var(--navy-deep));
+      color: #fff;
+    }
+    .eyebrow {
+      display: inline-flex; font-size: .72rem; font-weight: 800; letter-spacing: .08em;
+      text-transform: uppercase; color: #FDBA74;
+      background: rgba(249,115,22,.2); border: 1px solid rgba(249,115,22,.4);
+      border-radius: 999px; padding: .32rem .75rem;
+    }
+    .hero h1 {
+      margin: .7rem 0 .4rem; font-size: clamp(1.5rem, 3.4vw, 2.25rem); line-height: 1.18;
+    }
+    .hero p { margin: 0; max-width: 62ch; color: rgba(255,255,255,.92); }
+
+    .hook {
+      display: grid; grid-template-columns: 1.05fr .95fr; gap: .9rem; margin-bottom: 1rem;
+    }
+    .hook-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+      padding: 1.15rem 1.2rem; opacity: 0; transform: translateY(14px);
+      transition: .5s ease;
+    }
+    .hook-card.in-view { opacity: 1; transform: none; }
+    .hook-card.broker {
+      background: linear-gradient(145deg, #ECFDF5, #fff 45%);
+      border-color: rgba(22,163,74,.35);
+    }
+    .hook-card.df {
+      background: linear-gradient(145deg, #FFF7ED, #fff 45%);
+      border-color: rgba(249,115,22,.4);
+    }
+    .hook-card h2 {
+      margin: 0 0 .55rem; font-size: 1.05rem;
+    }
+    .broker h2 { color: var(--green); }
+    .df h2 { color: var(--orange-hot); }
+    .hook-card ul { margin: 0; padding-left: 1.1rem; }
+    .hook-card li { margin: .35rem 0; }
+    .big-num {
+      font-size: 1.65rem; font-weight: 900; letter-spacing: -.02em; margin: .15rem 0 .35rem;
+    }
+    .broker .big-num { color: var(--green); }
+    .df .big-num { color: var(--orange-hot); }
+
+    .section {
+      background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+      overflow: hidden; margin-bottom: .95rem;
+      opacity: 0; transform: translateY(16px); transition: .55s ease;
+    }
+    .section.in-view { opacity: 1; transform: none; }
+    .section:hover { border-color: rgba(249,115,22,.45); }
+    .art {
+      position: relative; overflow: hidden; background: var(--navy-deep); max-height: 250px;
+    }
+    .art img {
+      display: block; width: 100%; height: 250px; object-fit: cover; object-position: center 30%;
+      animation: float 7s ease-in-out infinite;
+    }
+    .badge {
+      position: absolute; left: .85rem; bottom: .8rem;
+      background: rgba(11,26,61,.85); color: #fff; border: 1px solid rgba(249,115,22,.55);
+      border-radius: 999px; padding: .32rem .75rem; font-size: .74rem; font-weight: 700;
+    }
+    .body { padding: 1.15rem 1.2rem 1.3rem; }
+    .body h2 { margin: 0; color: var(--navy); font-size: 1.12rem; }
+    .tag { margin: .25rem 0 .75rem; color: var(--muted); font-size: .9rem; }
+    table {
+      width: 100%; border-collapse: separate; border-spacing: 0; font-size: .92rem;
+      border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: .4rem 0;
+    }
+    th, td { padding: .62rem .72rem; text-align: left; border-bottom: 1px solid var(--line); }
+    th { background: var(--navy); color: #fff; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #F8FAFC; }
+    ul, ol { margin: .25rem 0; padding-left: 1.15rem; }
+    li { margin: .28rem 0; }
+    .callout {
+      margin-top: .85rem; padding: .85rem 1rem; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(30,58,138,.06), rgba(249,115,22,.1));
+      border-left: 4px solid var(--orange); font-size: .95rem;
+    }
+    .deal {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin-top: .7rem;
+    }
+    .deal > div {
+      border-radius: 14px; padding: .9rem .85rem; text-align: center;
+      border: 1px solid var(--line); background: #F8FAFC;
+    }
+    .deal strong { display: block; font-size: 1.2rem; color: var(--navy); margin-bottom: .2rem; }
+    .deal span { font-size: .82rem; color: var(--muted); }
+    .cta {
+      margin-top: 1rem;
+      background: linear-gradient(135deg, var(--navy), #1e40af 55%, var(--navy-deep));
+      color: #fff; border-radius: 20px; overflow: hidden; border: none;
+    }
+    .cta .body { color: #fff; }
+    .cta h2 { color: #fff; }
+    .cta .tag { color: #FDBA74; }
+    .cta-actions {
+      display: flex; flex-wrap: wrap; gap: .65rem; margin-top: .9rem;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: .7rem 1.1rem; border-radius: 12px; font-weight: 800; text-decoration: none;
+      border: none; cursor: pointer;
+    }
+    .btn-orange { background: var(--orange); color: #fff; }
+    .btn-ghost { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+    footer { text-align: center; color: var(--muted); font-size: .82rem; margin-top: .8rem; }
+
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+    @keyframes shimmer { to { background-position: 200% 50%; } }
+    @keyframes rise { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+    @keyframes ken { from{transform:scale(1)} to{transform:scale(1.05) translateY(-1%)} }
+    @keyframes float { 0%,100%{transform:translateY(0) scale(1.02)} 50%{transform:translateY(-5px) scale(1.04)} }
+
+    @media (max-width: 760px) {
+      .hook, .deal { grid-template-columns: 1fr; }
+      .art, .art img { max-height: 190px; height: 190px; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+    }
+    @media print {
+      .topbar { position: static; }
+      .section, .hook-card { opacity: 1 !important; transform: none !important; break-inside: avoid; }
+      .hero-art, .art img, .brand img { animation: none !important; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <img src="theme/dfpk-theme-02-race.png" alt="Dividend Challengers" />
+      <div>
+        <div>DividendFlow.pk × Partner Broker</div>
+        <div style="font-size:.75rem;font-weight:500;opacity:.85">Confidential business proposal · Digital introducer partnership</div>
+      </div>
+    </div>
+    <div class="pill">You pay almost nothing · You keep the clients</div>
+  </div>
+  <div class="stripe"></div>
+
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-art-wrap">
+        <img class="hero-art" src="theme/dfpk-theme-01-title.png" alt="DividendFlow cast at PSX" />
+      </div>
+      <div class="hero-copy">
+        <span class="eyebrow">Partnership proposal</span>
+        <h1>We bring the dividend audience.<br />You keep the brokerage franchise.</h1>
+        <p>
+          A zero-desk, performance-aligned introducer deal: DividendFlow.pk sends warm PSX retail
+          through your licensed account-opening flow. You earn on every trade. We only earn when you do.
+        </p>
+      </div>
+    </header>
+
+    <!-- Dual gain hook -->
+    <div class="hook">
+      <article class="hook-card broker reveal">
+        <h2>For your brokerage</h2>
+        <div class="big-num">Near-zero cost</div>
+        <ul>
+          <li><strong>No desk / branch</strong> to open for DividendFlow</li>
+          <li><strong>No upfront licence fee</strong> paid by you for this channel</li>
+          <li><strong>No fixed monthly retainer</strong> required to start</li>
+          <li><strong>You keep the client</strong>, platform, custody, and majority of brokerage</li>
+          <li>Pay introducer share <strong>only on attributed referred activity</strong></li>
+          <li>Extra retail flow with <strong>almost no incremental overhead</strong></li>
+        </ul>
+      </article>
+      <article class="hook-card df reveal">
+        <h2>For DividendFlow.pk</h2>
+        <div class="big-num">Skin in the game</div>
+        <ul>
+          <li>We invest in <strong>content, SEO, product, and ads</strong></li>
+          <li>Our revenue is tied to <strong>your trading activity</strong></li>
+          <li>We are motivated to send <strong>active, educated investors</strong> — not dead leads</li>
+          <li>Brand cast + dividend tools already built to convert</li>
+          <li>We succeed only if your book grows — <strong>aligned incentives</strong></li>
+        </ul>
+      </article>
+    </div>
+
+    <section class="section reveal">
+      <div class="art">
+        <img src="theme/dfpk-theme-02-race.png" alt="Ride Catch Grow" />
+        <span class="badge">Why this is easy to say yes to</span>
+      </div>
+      <div class="body">
+        <h2>1 · The offer in one glance</h2>
+        <p class="tag">Low commitment for you. High motivation from us.</p>
+        <div class="deal">
+          <div>
+            <strong>Rs 0</strong>
+            <span>desk / branch cost for this channel</span>
+          </div>
+          <div>
+            <strong>Pay on results</strong>
+            <span>introducer share only when referred clients trade</span>
+          </div>
+          <div>
+            <strong>You own clients</strong>
+            <span>accounts stay on your licence &amp; platform</span>
+          </div>
+        </div>
+        <div class="callout">
+          <strong>Broker-friendly framing:</strong> you are not buying marketing. You are opening a
+          performance channel where DividendFlow does the hunting — and only gets paid when your book earns.
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="art">
+        <img src="theme/dfpk-theme-04-dividends.png" alt="Dividend calendar and AI buddy" />
+        <span class="badge">What we bring</span>
+      </div>
+      <div class="body">
+        <h2>2 · What DividendFlow brings to your desk</h2>
+        <p class="tag">Warm dividend retail — already in a buying mindset.</p>
+        <ul>
+          <li><strong>dividendflow.pk</strong> — dividend calendar, education, AI market buddy, PSX-focused content</li>
+          <li><strong>Dividend Challengers brand</strong> — recognisable cast that converts younger &amp; retail Pakistan investors</li>
+          <li><strong>Tracked deep links</strong> into your online / Sahulat / CRF account opening</li>
+          <li><strong>Ongoing nurture</strong> — content that keeps users thinking about PSX and dividends</li>
+          <li><strong>Compliance posture</strong> — we do not take client funds, do not execute trades, do not claim to be a broker</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="art">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="IPO launch energy" />
+        <span class="badge">How it works</span>
+      </div>
+      <div class="body">
+        <h2>3 · Simple operating model</h2>
+        <p class="tag">Your systems. Your licence. Our funnel.</p>
+        <ol>
+          <li>We place a tracked “Open account with [Your Broker]” CTA on DividendFlow.</li>
+          <li>Prospect completes KYC on <strong>your</strong> platform.</li>
+          <li>Client trades PSX through <strong>you</strong>.</li>
+          <li>You remit an agreed introducer share on attributed brokerage — typically monthly.</li>
+          <li>We reinvest our share into more content and acquisition for the same channel.</li>
+        </ol>
+        <table>
+          <tr><th>You do</th><th>We do</th></tr>
+          <tr><td>Licence, KYC, custody, trading, compliance</td><td>Audience, education, conversion, tracking</td></tr>
+          <tr><td>Set retail commission &amp; product access</td><td>Drive attributed opens + first trades</td></tr>
+          <tr><td>Pay share only on referred activity</td><td>Fund content / SEO / product to grow the pipe</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="art">
+        <img src="theme/dfpk-theme-05-finale.png" alt="Horizon over PSX" />
+        <span class="badge">Commercial terms (proposed)</span>
+      </div>
+      <div class="body">
+        <h2>4 · Proposed commercial terms</h2>
+        <p class="tag">Designed so saying yes is cheap — and upside is yours.</p>
+        <table>
+          <tr><th>Term</th><th>Proposal</th></tr>
+          <tr><td>Setup fee to broker</td><td><strong>None</strong></td></tr>
+          <tr><td>Monthly retainer</td><td><strong>None</strong> (unless you want paid campaigns later)</td></tr>
+          <tr><td>Desk / CFC requirement</td><td><strong>None</strong> — fully digital introducer</td></tr>
+          <tr><td>Client ownership</td><td><strong>100% your clients</strong> on your TREC / platform</td></tr>
+          <tr><td>Introducer share</td><td>Negotiated % of brokerage on attributed referred trades (we propose a fair split that leaves you majority economics)</td></tr>
+          <tr><td>Payment</td><td>Monthly, against referral report / UIN code</td></tr>
+          <tr><td>Exclusivity</td><td>Open to discuss exclusive category or city for stronger push</td></tr>
+          <tr><td>Term</td><td>90-day pilot → renew if KPIs hit</td></tr>
+        </table>
+        <div class="callout">
+          <strong>Why you’ll like the split:</strong> industry brokerage is already competitive.
+          We are not asking you to cut client rates for us — only to share a portion of
+          <em>new attributed</em> brokerage that would not exist without this channel.
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="art">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="Regulatory clarity" />
+        <span class="badge">SECP · PSX guidelines</span>
+      </div>
+      <div class="body">
+        <h2>5 · SECP &amp; PSX guidelines for this setup</h2>
+        <p class="tag">There is no separate “affiliate broker” licence — we operate under <em>your</em> licence, the clean way.</p>
+
+        <table>
+          <tr><th>Framework</th><th>What it means for this partnership</th></tr>
+          <tr>
+            <td><strong>SECP — Securities Brokers licensing</strong></td>
+            <td>
+              Only a <strong>PSX TREC holder licensed by SECP</strong> may offer brokerage to the public under the Securities Act, 2015 and the
+              <em>Securities Brokers (Licensing and Operations) Regulations, 2016</em>.
+              DividendFlow does <strong>not</strong> apply for its own broker licence in this model —
+              clients open and trade under <strong>your</strong> SECP licence.
+              <br /><a href="https://www.secp.gov.pk/licensing/capital-markets/agents-and-brokers/" target="_blank" rel="noopener">SECP Brokers &amp; Agents</a>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Old “agent” regime</strong></td>
+            <td>
+              Standalone agent registration under the former <em>Brokers and Agents Registration Rules, 2001</em> was
+              <strong>repealed</strong> (referenced in the PSX Rule Book). There is no modern SECP form titled “affiliate broker.”
+              Affiliates / introducers work <strong>commercially under a licensed securities broker</strong>.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Path we propose — digital introducer (no desk)</strong></td>
+            <td>
+              Marketing / education / referral into your online account-opening flow.
+              <strong>No trading by DividendFlow</strong>; account opening only with your check, control, and approval.
+              Aligns with PSX practice that sales/marketing activity may occur without opening a Center,
+              subject to broker training and control (see Ch. 22A context in the PSX Rule Book).
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Optional Path B — PSX Chapter 22A Center</strong></td>
+            <td>
+              If a physical Account Facilitation / Customer Help Center is ever needed, the <strong>securities broker</strong>
+              intimates PSX under <strong>Chapter 22A</strong>: undertaking (Annexure-A), staff list, and agreement with any
+              Designated Entity spelling out roles and <strong>non-permissible activities</strong>.
+              <br /><a href="https://www.psx.com.pk/psx/resources-and-tools/brokerage-firms/account-facilitation-customer-help-center" target="_blank" rel="noopener">PSX CFC process</a>
+              · <a href="https://www.psx.com.pk/psx/themes/psx/uploads/PSX-Rulebook-July-14-2025.pdf" target="_blank" rel="noopener">PSX Rule Book (Ch. 22A)</a>
+            </td>
+          </tr>
+        </table>
+
+        <h3 style="margin:1rem 0 .4rem;color:var(--navy);font-size:1rem;">Chapter 22A red lines (if a Center is used later)</h3>
+        <ul>
+          <li>Center used <strong>only</strong> as Account Facilitation / Help Center</li>
+          <li><strong>No</strong> trading or investment recommendation / advisory at the Center</li>
+          <li><strong>No</strong> trading terminal at the Center</li>
+          <li><strong>No cash dealing</strong> with customers at the Center</li>
+          <li>Broker displays Center details on its website; trains Designated Employees; remains
+              <strong>liable</strong> for acts of employees / Designated Employees</li>
+          <li>CRF / Sahulat forms, Risk Disclosure, tariff, and investor awareness materials only via broker process</li>
+        </ul>
+
+        <h3 style="margin:1rem 0 .4rem;color:var(--navy);font-size:1rem;">Setup checklist under your licence (our Path A)</h3>
+        <table>
+          <tr><th>Step</th><th>Owner</th></tr>
+          <tr><td>Valid SECP securities broker licence + PSX TREC (you)</td><td>Partner broker</td></tr>
+          <tr><td>Written introducer / referral agreement (roles, split, prohibited acts)</td><td>Both</td></tr>
+          <tr><td>Referral / UIN attribution + account-opening deep link</td><td>Partner broker</td></tr>
+          <tr><td>Product / KYC–AML briefing for DividendFlow marketers</td><td>Partner broker</td></tr>
+          <tr><td>Site disclaimer: DividendFlow is <strong>not</strong> a licensed broker</td><td>DividendFlow</td></tr>
+          <tr><td>All KYC, funds, custody, execution on broker systems only</td><td>Partner broker</td></tr>
+          <tr><td>Compliance review of marketing claims before go-live</td><td>Both</td></tr>
+          <tr><td><em>Optional:</em> Ch. 22A CFC filing with PSX — <strong>not required</strong> for no-desk digital model</td><td>Partner broker</td></tr>
+        </table>
+
+        <div class="callout">
+          <strong>Bottom line for your compliance team:</strong> you stay the only licensed broker in the relationship.
+          DividendFlow is a digital introducer / education channel under your commercial control —
+          not a second broker, not a Ch. 22A Center (unless you later choose that route), and not a cash/custody touchpoint.
+          Separate SECP <em>Securities Advisor</em> licensing applies only if someone gives paid investment advice as a business;
+          our default is education + referral, not advisory.
+          <a href="https://www.secp.gov.pk/licensing/capital-markets/securities-advisors-and-futures-advisor/" target="_blank" rel="noopener">SECP Advisors</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="art">
+        <img src="theme/dfpk-theme-01-title.png" alt="Cast and brand trust" />
+        <span class="badge">Risk &amp; compliance</span>
+      </div>
+      <div class="body">
+        <h2>6 · Low risk for your compliance team</h2>
+        <p class="tag">Clear boundaries protect your licence.</p>
+        <ul>
+          <li>DividendFlow will <strong>not</strong> collect client funds or hold securities</li>
+          <li>DividendFlow will <strong>not</strong> execute or clear trades</li>
+          <li>All account opening happens under <strong>your</strong> SECP / PSX processes</li>
+          <li>Site disclaimer states we are an education / tools brand, not a broker</li>
+          <li>Marketing claims reviewed with your BD / compliance before go-live</li>
+          <li>No Chapter 22A Center unless you expressly request one later</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <div class="art">
+        <img src="theme/dfpk-theme-02-race.png" alt="Pilot race plan" />
+        <span class="badge">90-day pilot</span>
+      </div>
+      <div class="body">
+        <h2>7 · 90-day pilot plan</h2>
+        <p class="tag">Prove flow before any long commitment.</p>
+        <table>
+          <tr><th>Phase</th><th>What happens</th></tr>
+          <tr><td><strong>Days 1–14</strong></td><td>Agreement, referral code, deep link, disclaimer, compliance brief, SECP/PSX boundary memo</td></tr>
+          <tr><td><strong>Days 15–45</strong></td><td>CTA live on DividendFlow + content push featuring your brand</td></tr>
+          <tr><td><strong>Days 46–90</strong></td><td>Optimize conversion; monthly report; decide renew / expand</td></tr>
+        </table>
+        <div class="callout">
+          <strong>Pilot success signals:</strong> attributed account opens, first trades, clean monthly reconciliation —
+          grow the channel together if numbers work for both sides.
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta reveal">
+      <div class="art">
+        <img src="theme/dfpk-theme-05-finale.png" alt="This is our time" />
+        <span class="badge">Ask</span>
+      </div>
+      <div class="body">
+        <h2>8 · The ask</h2>
+        <p class="tag">A yes that costs you almost nothing to test.</p>
+        <ol>
+          <li>Approve DividendFlow as a <strong>digital introducer / affiliate</strong> (no desk).</li>
+          <li>Issue a <strong>referral / UIN tracking code</strong> and account-opening deep link.</li>
+          <li>Agree a <strong>fair introducer share</strong> on attributed brokerage only.</li>
+          <li>Run a <strong>90-day pilot</strong> with monthly reporting.</li>
+        </ol>
+        <p style="margin-top:.85rem">
+          You gain incremental clients and brokerage with near-zero fixed cost.
+          We gain a serious partner to monetise the Dividend Challengers audience —
+          so we will work harder than a passive lead seller.
+        </p>
+        <div class="cta-actions">
+          <a class="btn btn-orange" href="mailto:hello@dividendflow.pk?subject=DividendFlow%20Introducer%20Partnership">Accept pilot discussion</a>
+          <a class="btn btn-ghost" href="https://dividendflow.pk" target="_blank" rel="noopener">Visit dividendflow.pk</a>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      DividendFlow.pk · Confidential partner proposal · Dividend Challengers theme · Not a securities broker · Sep 2026
+    </footer>
+  </div>
+
+  <script>
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('in-view'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal, .section').forEach((el) => io.observe(el));
+  </script>
+</body>
+</html>
