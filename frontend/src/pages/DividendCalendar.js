@@ -195,6 +195,7 @@ export default function DividendCalendar() {
               <button
                 type="button"
                 key={m}
+                data-guide-hint={`${m} payouts ${weak ? 'Weak month' : 'Stronger coverage'}`}
                 onClick={() => setSelectedMonth(monthNum)}
                 className={`p-4 rounded-2xl text-left transition-all duration-200 hover:scale-[1.03] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ice-400 focus-visible:ring-offset-2 ${
                   weak

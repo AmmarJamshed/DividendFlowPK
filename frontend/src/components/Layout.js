@@ -4,6 +4,7 @@ import { api } from '../api';
 import RobotCursor from './RobotCursor';
 import AIGuidance from './AIGuidance';
 import AmmarCursorGuide from './AmmarCursorGuide';
+import ChallengersSideGuides from './ChallengersSideGuides';
 import { useAIAssistance } from '../context/AIAssistanceContext';
 import { useMarketBuddy } from '../context/MarketBuddyContext';
 import { useExchange } from '../context/ExchangeContext';
@@ -101,6 +102,7 @@ export default function Layout({ children }) {
       aria-pressed={buddyOpen}
       aria-expanded={buddyOpen}
       aria-label={buddyOpen ? 'Close Market Buddy chat' : 'Open Market Buddy chat'}
+      data-guide-hint="Market Buddy"
       className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 sm:px-3 py-2 rounded-xl border transition-colors shrink-0 ${
         buddyOpen
           ? 'text-[#1E3A8A] border-white bg-white shadow-sm'
@@ -132,6 +134,7 @@ export default function Layout({ children }) {
       aria-pressed={aiAssistanceOn}
       aria-label={aiAssistanceOn ? 'Turn off ASI assistant' : 'Turn on ASI assistant'}
       aria-busy={aiToggleLoading}
+      data-guide-hint="ASI assistant"
       disabled={aiToggleLoading}
       className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide px-2.5 sm:px-3 py-2 rounded-xl border transition-colors shrink-0 ${
         aiAssistanceOn
@@ -250,13 +253,20 @@ export default function Layout({ children }) {
                   rel="noopener noreferrer"
                   className={className}
                   title={`${item.vibe} · DividendFlow's New Service`}
+                  data-guide-hint={item.label}
                 >
                   {inner}
                 </a>
               );
             }
             return (
-              <Link key={item.path} to={item.path} className={className} title={item.vibe}>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={className}
+                title={item.vibe}
+                data-guide-hint={item.label}
+              >
                 {inner}
               </Link>
             );
@@ -359,6 +369,7 @@ export default function Layout({ children }) {
         </main>
       </div>
 
+      <ChallengersSideGuides />
       <RobotCursor />
       <AmmarCursorGuide />
       <AIGuidance />

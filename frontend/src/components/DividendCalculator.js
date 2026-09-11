@@ -373,6 +373,7 @@ export default function DividendCalculator({ symbolList = [] }) {
         <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/80">
           <button
             type="button"
+            data-guide-hint="Manual entry"
             onClick={() => setMode('manual')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               mode === 'manual' ? 'bg-white text-ice-600 shadow-sm ring-1 ring-violet-400/40' : 'text-slate-600 hover:text-slate-800'
@@ -382,6 +383,7 @@ export default function DividendCalculator({ symbolList = [] }) {
           </button>
           <button
             type="button"
+            data-guide-hint="Upload PDF"
             onClick={() => setMode('pdf')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
               mode === 'pdf' ? 'bg-white text-ice-600 shadow-sm ring-1 ring-violet-400/40' : 'text-slate-600 hover:text-slate-800'
@@ -475,6 +477,7 @@ export default function DividendCalculator({ symbolList = [] }) {
             <div className="px-4 sm:px-5 py-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center gap-3">
               <button
                 type="button"
+                data-guide-hint="Add row"
                 onClick={addRow}
                 className="text-sm font-semibold text-ice-600 hover:underline px-3 py-2"
               >
@@ -482,6 +485,7 @@ export default function DividendCalculator({ symbolList = [] }) {
               </button>
               <button
                 type="button"
+                data-guide-hint="Calculate dividends"
                 onClick={runManual}
                 disabled={loading || filledRows === 0}
                 className="btn-primary ml-auto px-8 py-2.5 disabled:opacity-50"

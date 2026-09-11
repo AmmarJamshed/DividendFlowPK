@@ -495,3 +495,190 @@ html.df-robot-cursor label[for] {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* —— Dividend Challengers side guides (gamification) —— */
+.df-challengers-rail {
+  display: none;
+}
+/* Only show when side margins are wide enough to avoid overlapping content */
+@media (min-width: 1440px) {
+  .df-challengers-rail {
+    display: block;
+    pointer-events: none;
+  }
+  .df-challengers-rail__inner {
+    position: fixed;
+    inset: 7.5rem 0 1.25rem;
+    z-index: 35;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 max(0.25rem, calc((100vw - 1200px) / 2 - 150px));
+    pointer-events: none;
+  }
+}
+.df-challenger-figure {
+  width: min(152px, 11vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  pointer-events: none;
+  animation: df-challenger-bob 3.4s ease-in-out infinite;
+}
+.df-challenger-figure--left {
+  margin-left: 0.15rem;
+  transform-origin: bottom left;
+}
+.df-challenger-figure--right {
+  margin-right: 0.15rem;
+  transform-origin: bottom right;
+}
+.df-challenger-figure--celebrate {
+  animation: df-challenger-pop 0.7s ease;
+}
+.df-challenger-figure--cheer .df-challenger-avatar {
+  animation: df-challenger-wiggle 0.55s ease;
+}
+.df-challenger-figure--think .df-challenger-avatar {
+  filter: saturate(1.1);
+}
+.df-challenger-figure--point .df-challenger-pointer__arm {
+  animation: df-challenger-point 0.9s ease infinite;
+}
+.df-challenger-avatar-wrap {
+  position: relative;
+  width: 118px;
+  height: 118px;
+  border-radius: 28px;
+  overflow: hidden;
+  border: 3px solid #fff;
+  box-shadow: 0 12px 28px rgba(30, 58, 138, 0.28);
+  background: linear-gradient(160deg, #1e3a8a, #f97316);
+}
+.df-challenger-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+.df-challenger-figure--right .df-challenger-avatar {
+  transform: scaleX(-1);
+}
+.df-challenger-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(180deg, transparent, rgba(11, 26, 61, 0.92));
+}
+.df-challenger-bubble {
+  max-width: 148px;
+  padding: 0.55rem 0.65rem;
+  border-radius: 14px;
+  background: #fff;
+  border: 2px solid #1e3a8a;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  position: relative;
+}
+.df-challenger-bubble p {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  font-weight: 650;
+  color: #0f172a;
+}
+.df-challenger-bubble--left::after,
+.df-challenger-bubble--right::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-right: 2px solid #1e3a8a;
+  border-bottom: 2px solid #1e3a8a;
+  transform: rotate(45deg);
+}
+.df-challenger-bubble--left::after { left: 22px; }
+.df-challenger-bubble--right::after { right: 22px; }
+.df-challenger-bubble--celebrate {
+  border-color: #f97316;
+  background: #fff7ed;
+}
+.df-challenger-bubble--cheer {
+  border-color: #16a34a;
+  background: #ecfdf5;
+}
+.df-challenger-pointer {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 18px;
+  margin-top: -0.15rem;
+}
+.df-challenger-pointer--left {
+  justify-content: flex-end;
+  padding-right: 0.2rem;
+}
+.df-challenger-pointer--right {
+  justify-content: flex-start;
+  padding-left: 0.2rem;
+  flex-direction: row-reverse;
+}
+.df-challenger-pointer__arm {
+  height: 4px;
+  width: 42px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f97316, #1e3a8a);
+}
+.df-challenger-pointer--right .df-challenger-pointer__arm {
+  background: linear-gradient(270deg, #f97316, #1e3a8a);
+}
+.df-challenger-pointer__tip {
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+.df-challenger-pointer--left .df-challenger-pointer__tip {
+  border-left: 10px solid #1e3a8a;
+}
+.df-challenger-pointer--right .df-challenger-pointer__tip {
+  border-right: 10px solid #1e3a8a;
+}
+
+@keyframes df-challenger-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes df-challenger-pop {
+  0% { transform: scale(0.92) translateY(8px); }
+  40% { transform: scale(1.06) translateY(-6px); }
+  100% { transform: scale(1) translateY(0); }
+}
+@keyframes df-challenger-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}
+@keyframes df-challenger-point {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .df-challenger-figure,
+  .df-challenger-figure--cheer .df-challenger-avatar,
+  .df-challenger-figure--point .df-challenger-pointer__arm {
+    animation: none !important;
+  }
+}
+
