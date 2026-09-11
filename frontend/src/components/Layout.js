@@ -13,104 +13,51 @@ import CookieConsent from './CookieConsent';
 import PwaInstallBanner from './PwaInstallBanner';
 
 const LOGO = `${process.env.PUBLIC_URL || ''}/dividendflow-logo.png`;
+const THEME = `${process.env.PUBLIC_URL || ''}/theme/avatars`;
 
 const NASDAQ_NEWSLETTER_URL = 'https://psxbluechips.com/nasdaq.html';
 
 const navItems = [
-  { path: '/', label: 'Overview', icon: 'home' },
-  { path: '/dividend-calendar', label: 'Dividend calendar', icon: 'calendar' },
-  { path: '/market-closing-prices', label: 'Market data', icon: 'chart' },
-  { path: '/ipo-calendar', label: 'IPO calendar', icon: 'ipo' },
-  { path: '/forecast-engine', label: 'Forecast', icon: 'trend' },
-  { path: '/salary-simulator', label: 'Income planner', icon: 'wallet' },
-  { path: '/reporting-cycles', label: 'Reporting cycles', icon: 'document' },
-  { path: '/market-brokers', label: 'Market brokers', icon: 'broker' },
+  { path: '/', label: 'Overview', icon: 'home', character: 'nav-overview.png', vibe: 'Captain Flow' },
+  { path: '/dividend-calendar', label: 'Dividend calendar', icon: 'calendar', character: 'nav-dividends.png', vibe: 'Coin Catcher' },
+  { path: '/market-closing-prices', label: 'Market data', icon: 'chart', character: 'nav-market.png', vibe: 'Chart Rider' },
+  { path: '/ipo-calendar', label: 'IPO calendar', icon: 'ipo', character: 'nav-ipo.png', vibe: 'Launch Ace' },
+  { path: '/forecast-engine', label: 'Forecast', icon: 'trend', character: 'nav-forecast.png', vibe: 'Signal Scout' },
+  { path: '/salary-simulator', label: 'Income planner', icon: 'wallet', character: 'nav-income.png', vibe: 'AI Buddy' },
+  { path: '/reporting-cycles', label: 'Reporting cycles', icon: 'document', character: 'nav-reporting.png', vibe: 'Study Star' },
+  { path: '/market-brokers', label: 'Market brokers', icon: 'broker', character: 'nav-brokers.png', vibe: 'Flag Flyer' },
   {
     path: NASDAQ_NEWSLETTER_URL,
     label: 'US stock enthusiasts',
     icon: 'external',
     external: true,
+    character: 'nav-us.png',
+    vibe: 'Challenger',
   },
 ];
 
-function NavIcon({ name, className = 'w-4 h-4', active = false, onDark = false }) {
-  const cls = className;
-  const inactiveCls = active
-    ? cls
-    : onDark
-      ? `${cls} text-blue-300`
-      : `${cls} text-slate-400`;
-  switch (name) {
-    case 'home':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <path d="M3 10.5 12 3l9 7.5" />
-          <path d="M6 10v10h12V10" />
-        </svg>
-      );
-    case 'calendar':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <rect x="3" y="4" width="18" height="18" rx="2" />
-          <path d="M16 2v4M8 2v4M3 10h18" />
-        </svg>
-      );
-    case 'chart':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <path d="M4 19.5h16" />
-          <path d="M6 16v-4M12 16V8M18 16v-6" />
-        </svg>
-      );
-    case 'ipo':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <rect x="4" y="3" width="16" height="18" rx="2" />
-          <path d="M8 7h8M8 11h8M8 15h6" />
-        </svg>
-      );
-    case 'trend':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <path d="M4 16.5 9.5 11l4 4 6.5-7" />
-          <path d="M14 8h6v6" />
-        </svg>
-      );
-    case 'wallet':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <rect x="3" y="6" width="18" height="12" rx="2" />
-          <path d="M16 12h4" />
-        </svg>
-      );
-    case 'document':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <path d="M7 3h7l4 4v14H7z" />
-          <path d="M14 3v4h4" />
-        </svg>
-      );
-    case 'broker':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <path d="M3 21h18" />
-          <path d="M5 21V7l7-4 7 4v14" />
-          <path d="M9 21v-6h6v6" />
-        </svg>
-      );
-    case 'external':
-      return (
-        <svg className={inactiveCls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-          <path d="M14 3h7v7" />
-          <path d="M10 14 21 3" />
-          <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
-        </svg>
-      );
-    default:
-      return null;
-  }
+function NavCharacter({ src, label, active = false, size = 'sm' }) {
+  const dim = size === 'md' ? 'w-8 h-8' : 'w-6 h-6';
+  return (
+    <span
+      className={`relative inline-flex ${dim} shrink-0 rounded-full overflow-hidden border-2 shadow-sm transition-transform ${
+        active
+          ? 'border-[#1E3A8A] scale-110 ring-2 ring-white/80'
+          : 'border-white/80 group-hover:scale-105'
+      }`}
+      aria-hidden
+    >
+      <img
+        src={`${THEME}/${src}`}
+        alt=""
+        className="w-full h-full object-cover object-top"
+        loading="lazy"
+        decoding="async"
+      />
+      <span className="sr-only">{label}</span>
+    </span>
+  );
 }
-
 function AiToggleSpinner({ className }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden>
@@ -282,13 +229,18 @@ export default function Layout({ children }) {
           </div>
         </div>
 
-        <nav className="hidden lg:flex h-11 bg-[#F97316] px-4 lg:px-8 items-center gap-1 overflow-x-auto text-white text-[13px] whitespace-nowrap">
+        <nav className="hidden lg:flex h-12 bg-[#F97316] px-4 lg:px-8 items-center gap-1 overflow-x-auto text-white text-[13px] whitespace-nowrap">
           {navItems.map((item) => {
             const active = isNavActive(item.path, item.external);
-            const isHome = item.path === '/';
-            const className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-colors shrink-0 ${
+            const className = `group inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full font-semibold transition-all shrink-0 ${
               active ? 'bg-white text-[#F97316] shadow-sm' : 'hover:bg-white/15'
             }`;
+            const inner = (
+              <>
+                <NavCharacter src={item.character} label={item.vibe} active={active} />
+                <span>{item.label}</span>
+              </>
+            );
             if (item.external) {
               return (
                 <a
@@ -297,17 +249,15 @@ export default function Layout({ children }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={className}
-                  title="DividendFlow's New Service"
+                  title={`${item.vibe} · DividendFlow's New Service`}
                 >
-                  {item.label}
+                  {inner}
                 </a>
               );
             }
             return (
-              <Link key={item.path} to={item.path} className={className}>
-                {isHome && <NavIcon name="home" className="w-3.5 h-3.5" active={active} />}
-                {!isHome && item.label}
-                {isHome && <span>Overview</span>}
+              <Link key={item.path} to={item.path} className={className} title={item.vibe}>
+                {inner}
               </Link>
             );
           })}
@@ -335,11 +285,22 @@ export default function Layout({ children }) {
             </div>
             {navItems.map((item) => {
               const active = isNavActive(item.path, item.external);
-              const className = `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+              const className = `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
                 active
                   ? 'bg-[#3B82F6] text-white shadow-md'
                   : 'text-blue-100 hover:bg-white/10'
               }`;
+              const inner = (
+                <>
+                  <NavCharacter src={item.character} label={item.vibe} active={active} size="md" />
+                  <span className="leading-tight">
+                    {item.label}
+                    <span className={`block text-[10px] font-bold uppercase tracking-wide ${active ? 'text-orange-200' : 'text-blue-300'}`}>
+                      {item.vibe}
+                    </span>
+                  </span>
+                </>
+              );
               if (item.external) {
                 return (
                   <a
@@ -348,11 +309,10 @@ export default function Layout({ children }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={className}
-                    title="DividendFlow's New Service"
+                    title={`${item.vibe} · DividendFlow's New Service`}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    <NavIcon name={item.icon} className="w-4 h-4" active={active} onDark />
-                    {item.label}
+                    {inner}
                   </a>
                 );
               }
@@ -363,8 +323,7 @@ export default function Layout({ children }) {
                   className={className}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <NavIcon name={item.icon} className="w-4 h-4" active={active} onDark />
-                  {item.label}
+                  {inner}
                 </Link>
               );
             })}
