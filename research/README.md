@@ -33,13 +33,12 @@ node market-research-agent.js --topic "Pakistan cement demand" --audience demand
 - `data/research/<slug>.json` — machine-readable report
 - `data/research/jobs/<id>.json` — job status (when started via API)
 
-## API
+## Email delivery
 
-- `POST /api/v1/research/jobs` `{ topic, audience, symbols[], geo }`
-- `GET /api/v1/research/jobs/:id`
-- `GET /api/v1/research/reports`
-- `GET /api/v1/research/reports/:slug`
-- `GET /api/v1/research/reports/:slug/stocks`
+Pass `email` in `POST /api/v1/research/jobs` (or use Research Lab form). When the job completes, the backend emails a branded link to the HTML report via Resend/SMTP.
+
+Also: `POST /api/v1/research/reports/:slug/email` `{ "email": "you@company.com" }` to re-send an existing report.
+
 
 ## Citation rules
 

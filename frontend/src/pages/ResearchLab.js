@@ -15,6 +15,8 @@ export default function ResearchLab() {
   const [symbols, setSymbols] = useState('NESTLE,UNITY');
   const [geo, setGeo] = useState('Pakistan');
   const [offline, setOffline] = useState(true);
+  const [email, setEmail] = useState('');
+  const [emailNote, setEmailNote] = useState('');
   const [jobId, setJobId] = useState(null);
   const [job, setJob] = useState(null);
   const [reports, setReports] = useState([]);
@@ -48,6 +50,13 @@ export default function ResearchLab() {
           setActiveSlug(data.slug);
           setBusy(false);
           refreshReports();
+          if (data.email_sent) {
+            setEmailNote(`Report emailed to ${data.email}.`);
+          } else if (data.email && data.email_error) {
+            setEmailNote(`Report ready, but email failed: ${data.email_error}`);
+          } else if (data.email) {
+            setEmailNote('Report ready — email delivery pending or not configured on server.');
+          }
           try {
             const stockRes = await api.getResearchReportStocks(data.slug);
             setStocks(stockRes.data);
@@ -73,23 +82,50 @@ export default function ResearchLab() {
   async function startJob(e) {
     e.preventDefault();
     setError('');
+    setEmailNote('');
     setBusy(true);
     setJob(null);
     setActiveSlug(null);
     setStocks(null);
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setBusy(false);
+      setError('Enter your email to receive the generated report.');
+      return;
+    }
     try {
       const { data } = await api.createResearchJob({
         topic,
         audience,
         geo,
+        email: trimmedEmail,
         symbols: symbols.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean),
         offline,
       });
       setJobId(data.id);
       setJob(data);
+      if (data.email_delivery === 'queued_but_server_email_not_configured') {
+        setEmailNote('Job started. Server email is not configured yet — you can still open the report here and use “Email me this report” after deploy.');
+      } else {
+        setEmailNote('Job started. We will email the report when it is ready.');
+      }
     } catch (err) {
       setBusy(false);
       setError(err.response?.data?.error || err.message || 'Could not start job');
+    }
+  }
+
+  async function emailActiveReport() {
+    if (!activeSlug || !email.trim()) {
+      setError('Select a report and enter your email first.');
+      return;
+    }
+    setError('');
+    try {
+      const { data } = await api.emailResearchReport(activeSlug, email.trim());
+      setEmailNote(`Report emailed to ${email.trim()} (${data.channel}).`);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Could not email report');
     }
   }
 
@@ -148,6 +184,17 @@ export default function ResearchLab() {
             />
           </label>
           <label className="block md:col-span-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email (required — we send the report here)</span>
+            <input
+              type="email"
+              required
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+            />
+          </label>
+          <label className="block md:col-span-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">PSX symbols (optional)</span>
             <input
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
@@ -160,21 +207,31 @@ export default function ResearchLab() {
             <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} />
             Offline / deterministic mode (no Groq — recommended for demos)
           </label>
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 flex flex-wrap gap-2">
             <button
               type="submit"
               disabled={busy || !topic.trim()}
               className="rounded-lg bg-[#1E3A8A] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {busy ? 'Running…' : 'Start research job'}
+              {busy ? 'Running…' : 'Generate & email report'}
+            </button>
+            <button
+              type="button"
+              onClick={emailActiveReport}
+              disabled={!activeSlug || !email.trim()}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 disabled:opacity-50"
+            >
+              Email me this report
             </button>
           </div>
         </form>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {emailNote && <p className="mt-2 text-sm text-emerald-700">{emailNote}</p>}
         {job && (
           <p className="mt-3 text-xs text-slate-500">
             Job <code>{job.id || jobId}</code> · status <strong>{job.status}</strong>
             {job.slug ? ` · slug ${job.slug}` : ''}
+            {job.email_sent ? ' · emailed' : ''}
           </p>
         )}
       </div>

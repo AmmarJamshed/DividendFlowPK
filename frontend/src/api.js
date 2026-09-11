@@ -18,6 +18,8 @@ export const api = {
   getResearchReports: () => axios.get(`${API_BASE}/v1/research/reports`),
   getResearchReport: (slug) => axios.get(`${API_BASE}/v1/research/reports/${slug}`),
   getResearchReportStocks: (slug) => axios.get(`${API_BASE}/v1/research/reports/${slug}/stocks`),
+  emailResearchReport: (slug, email) =>
+    axios.post(`${API_BASE}/v1/research/reports/${slug}/email`, { email }, { timeout: 30000 }),
   researchReportHtmlUrl: (slug) => `${API_BASE}/v1/research/reports/${slug}/html`,
   getSalarySimulator: (targetMonthlyIncome, expectedDividendYield) =>
     axios.post(`${API_BASE}/salary-simulator`, { targetMonthlyIncome, expectedDividendYield }),

@@ -9,12 +9,16 @@ services:
     plan: starter
     region: oregon
     rootDir: .
-    buildCommand: cd backend && npm install
+    buildCommand: cd backend && npm install && cd ../scripts && npm install
     startCommand: cd backend && node server.js
     healthCheckPath: /api/health
     envVars:
       - key: GROQ_API_KEY
         sync: false
+      - key: PUBLIC_SITE_URL
+        value: https://dividendflow.pk
+      - key: PUBLIC_API_URL
+        value: https://dividendflow-backend.onrender.com/api
       - key: SUPABASE_URL
         value: https://dbkytlsejpxmclpznudk.supabase.co
       - key: SUPABASE_ANON_KEY
