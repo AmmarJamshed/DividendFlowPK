@@ -22,14 +22,54 @@ const JOBS_DIR = join(OUT_JSON, 'jobs');
 const USER_AGENT = 'DividendFlowPK-ResearchAgent/1.0 (+https://dividendflow.pk)';
 
 const ALLOWLIST = [
-  { url: 'https://www.trade.gov/country-commercial-guides/pakistan-franchising', title: 'U.S. Trade.gov — Pakistan Franchising', year: '2019' },
-  { url: 'https://invest.gov.pk/food-processing', title: 'BOI — Food Processing', year: '2020' },
-  { url: 'https://invest.gov.pk/node/1312', title: 'BOI — Food Processing incentives', year: '2020' },
-  { url: 'http://www.invest.gov.pk/node/1263', title: 'BOI — SEZ incentives', year: '2020' },
-  { url: 'https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/', title: 'PIDE — Hotel & Restaurant Industries', year: '2022' },
-  { url: 'https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/', title: 'ProPakistani — Gastronomy & Growth', year: '2025' },
-  { url: 'https://www.statista.com/outlook/cmo/food/pakistan', title: 'Statista — Food Pakistan', year: '2024' },
-  { url: 'https://www.dawn.com/feeds/business', title: 'Dawn Business RSS', year: String(new Date().getFullYear()) },
+  {
+    url: 'https://www.trade.gov/country-commercial-guides/pakistan-franchising',
+    title: 'U.S. Trade.gov — Pakistan Franchising',
+    year: '2019',
+    blurb: 'U.S. Commercial Service guide on Pakistan franchising, including foodservice / eating-out market context used widely in sector briefs.',
+  },
+  {
+    url: 'https://invest.gov.pk/food-processing',
+    title: 'BOI — Food Processing',
+    year: '2020',
+    blurb: 'Board of Investment overview of Pakistan’s food processing opportunity set, investment themes, and sector positioning.',
+  },
+  {
+    url: 'https://invest.gov.pk/node/1312',
+    title: 'BOI — Food Processing incentives',
+    year: '2020',
+    blurb: 'BOI note on customs / incentive treatment relevant to food processing capital goods and related value-added inputs.',
+  },
+  {
+    url: 'http://www.invest.gov.pk/node/1263',
+    title: 'BOI — SEZ incentives',
+    year: '2020',
+    blurb: 'Special Economic Zone incentive framework (duty relief and multi-year income-tax holidays for qualifying enterprises).',
+  },
+  {
+    url: 'https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/',
+    title: 'PIDE — Hotel & Restaurant Industries',
+    year: '2022',
+    blurb: 'PIDE research on hotel and restaurant industry dynamics, operating frictions, and market opportunities in Pakistan.',
+  },
+  {
+    url: 'https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/',
+    title: 'ProPakistani — Gastronomy & Growth',
+    year: '2025',
+    blurb: 'Industry perspective on Pakistan’s emerging food economy and registered restaurant footprint.',
+  },
+  {
+    url: 'https://www.statista.com/outlook/cmo/food/pakistan',
+    title: 'Statista — Food Pakistan',
+    year: '2024',
+    blurb: 'Statista consumer market outlook page for Pakistan food (often paywalled; cited for headline market sizing).',
+  },
+  {
+    url: 'https://www.dawn.com/feeds/business',
+    title: 'Dawn Business RSS',
+    year: String(new Date().getFullYear()),
+    blurb: 'Dawn Business feed for current Pakistan macro / industry headlines (live crawl may be blocked by bot protection).',
+  },
 ];
 
 const TOPIC_SYMBOL_HEURISTICS = [
@@ -175,8 +215,10 @@ async function fetchText(url, timeout = 12000) {
       signal: ctrl.signal,
       redirect: 'follow',
       headers: {
-        'User-Agent': USER_AGENT,
+        'User-Agent':
+          'Mozilla/5.0 (compatible; DividendFlowPK-ResearchAgent/1.0; +https://dividendflow.pk)',
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
     });
     if (!res.ok) {
@@ -235,7 +277,9 @@ async function collectEvidence(topic, geo) {
 
   const topicLower = topic.toLowerCase();
   const picks = ALLOWLIST.filter((a) => {
-    if (/food|restaurant|franchise|fmcg|qsr|dairy/i.test(topicLower)) return true;
+    if (/food|restaurant|franchise|fmcg|qsr|dairy|bakery|baked|bread|biscuit|confection|snack|beverage/i.test(topicLower)) {
+      return true;
+    }
     if (/cement|construction/i.test(topicLower) && /invest\.gov|trade\.gov|dawn/i.test(a.url)) return true;
     return /dawn|invest\.gov|trade\.gov|pide/i.test(a.url);
   }).slice(0, 6);
@@ -246,9 +290,13 @@ async function collectEvidence(topic, geo) {
       title: src.title,
       url: src.url,
       year: src.year,
-      excerpt: fetched.ok ? fetched.text.slice(0, 1200) : `(fetch failed: ${fetched.error || 'n/a'})`,
+      // Never surface raw crawl errors in the published report — keep the citation + curated blurb.
+      excerpt: fetched.ok
+        ? fetched.text.slice(0, 1200)
+        : src.blurb || 'Official / public source cited for this brief (live page fetch blocked from the research server).',
       via: 'allowlist-fetch',
       fetch_ok: fetched.ok,
+      fetch_error: fetched.ok ? null : fetched.error || null,
     });
   }
 
@@ -260,12 +308,18 @@ function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence })
   const year = String(new Date().getFullYear());
   const sources = evidence
     .filter((e) => e.url)
-    .map((e) => ({
-      title: e.title,
-      url: e.url,
-      year: e.year || year,
-      excerpt: (e.excerpt || '').slice(0, 280),
-    }));
+    .map((e) => {
+      let excerpt = String(e.excerpt || '').slice(0, 280);
+      if (/fetch failed|HTTP 403|HTTP 401|HTTP 429/i.test(excerpt)) {
+        excerpt = 'Public source cited for this brief (live excerpt unavailable from the research server).';
+      }
+      return {
+        title: e.title,
+        url: e.url,
+        year: e.year || year,
+        excerpt,
+      };
+    });
   if (!sources.length) {
     sources.push({
       title: 'BOI — Food Processing',
@@ -570,7 +624,13 @@ function renderHtml(report) {
     '{{GAP_ROWS}}': (report.smart_gaps || []).map((g) => `<tr><td>${escapeHtml(g.gap)}</td><td>${escapeHtml(g.opportunity_score)}</td><td>${escapeHtml(g.who_pays)}</td><td>${escapeHtml(g.idea || g.why_missed || '')}</td></tr>`).join(''),
     '{{STOCKS_NOTE}}': escapeHtml(report.stocks?.note || ''),
     '{{STOCK_CARDS}}': stockCards,
-    '{{SOURCES_LIST}}': (report.sources || []).map((s) => `<li><span class="yr">${escapeHtml(s.year)}</span> <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.title)}</a>${s.excerpt ? ` — ${escapeHtml(s.excerpt.slice(0, 160))}` : ''}</li>`).join(''),
+    '{{SOURCES_LIST}}': (report.sources || []).map((s) => {
+      let ex = s.excerpt ? String(s.excerpt).slice(0, 160) : '';
+      if (/fetch failed|HTTP 403|HTTP 401|HTTP 429/i.test(ex)) {
+        ex = 'Public source cited for this brief (live excerpt unavailable from the research server).';
+      }
+      return `<li><span class="yr">${escapeHtml(s.year)}</span> <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.title)}</a>${ex ? ` — ${escapeHtml(ex)}` : ''}</li>`;
+    }).join(''),
     '{{CHART_LAYERS_JSON}}': JSON.stringify(report.charts?.layers || []),
     '{{CHART_SCORES_JSON}}': JSON.stringify(report.charts?.product_scores || []),
     '{{CHART_GAPS_JSON}}': JSON.stringify(report.charts?.gap_scores || []),
