@@ -14,7 +14,6 @@ export default function ResearchLab() {
   const [audience, setAudience] = useState('market_researcher');
   const [symbols, setSymbols] = useState('NESTLE,UNITY');
   const [geo, setGeo] = useState('Pakistan');
-  const [offline, setOffline] = useState(true);
   const [email, setEmail] = useState('');
   const [emailNote, setEmailNote] = useState('');
   const [serverEmailOk, setServerEmailOk] = useState(null);
@@ -105,7 +104,6 @@ export default function ResearchLab() {
         geo,
         email: trimmedEmail,
         symbols: symbols.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean),
-        offline,
       });
       setJobId(data.id);
       setJob(data);
@@ -223,10 +221,6 @@ export default function ResearchLab() {
               onChange={(e) => setSymbols(e.target.value)}
               placeholder="LUCK,MLCF,DGKC"
             />
-          </label>
-          <label className="flex items-center gap-2 text-sm text-slate-700 md:col-span-2">
-            <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} />
-            Offline / deterministic mode (no Groq — recommended for demos)
           </label>
           <div className="md:col-span-2 flex flex-wrap gap-2">
             <button
