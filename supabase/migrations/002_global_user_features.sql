@@ -40,7 +40,7 @@ ALTER TABLE watchlists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE watchlist_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE forecast_history ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY watchlists_service ON watchlists FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY watchlist_items_service ON watchlist_items FOR ALL USING (true) WITH CHECK (true);
+-- Watchlists are accessed via backend service_role (bypasses RLS).
+-- No open anon policies — see 005_watchlist_rls_lockdown.sql for authenticated own-row policies.
 CREATE POLICY forecast_history_read ON forecast_history FOR SELECT USING (true);
 CREATE POLICY forecast_history_service ON forecast_history FOR ALL USING (true) WITH CHECK (true);

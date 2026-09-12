@@ -8,7 +8,7 @@
  *   node market-research-agent.js --topic "Pakistan cement demand" --audience demand_planner --symbols LUCK,MLCF,DGKC --offline
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
-import { dirname, join } from 'path';
+import { dirname, join, resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 
@@ -132,15 +132,18 @@ function ensureDirs() {
 }
 
 function writeJob(jobId, patch) {
-  if (!jobId) return;
+  if (!jobId || !/^[a-f0-9]{16}$/.test(String(jobId))) return;
   ensureDirs();
-  const path = join(JOBS_DIR, `${jobId}.json`);
+  const jobPath = join(JOBS_DIR, `${jobId}.json`);
+  const resolvedJobs = resolve(JOBS_DIR);
+  const resolvedFile = resolve(jobPath);
+  if (!resolvedFile.startsWith(resolvedJobs + sep) && resolvedFile !== resolvedJobs) return;
   let cur = {};
-  if (existsSync(path)) {
-    try { cur = JSON.parse(readFileSync(path, 'utf8')); } catch { /* ignore */ }
+  if (existsSync(jobPath)) {
+    try { cur = JSON.parse(readFileSync(jobPath, 'utf8')); } catch { /* ignore */ }
   }
   const next = { ...cur, ...patch, updated_at: new Date().toISOString() };
-  writeFileSync(path, JSON.stringify(next, null, 2));
+  writeFileSync(jobPath, JSON.stringify(next, null, 2));
 }
 
 function readCsv(relativePath) {

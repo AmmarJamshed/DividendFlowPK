@@ -20,6 +20,12 @@ const {
   loadReportPdf,
   localHtmlPath,
 } = require('../../services/researchStore');
+const {
+  isSafeResearchSlug,
+  isSafeResearchJobId,
+  assertSafeResearchJobId,
+  containedJoin,
+} = require('../../utils/researchPaths');
 
 const router = express.Router();
 
@@ -56,7 +62,8 @@ function readJsonSafe(filePath) {
 }
 
 function writeJobPatch(jobId, patch) {
-  const jobPath = path.join(JOBS_DIR, `${jobId}.json`);
+  assertSafeResearchJobId(jobId);
+  const jobPath = containedJoin(JOBS_DIR, `${jobId}.json`);
   const cur = readJsonSafe(jobPath) || {};
   const next = { ...cur, ...patch, updated_at: new Date().toISOString() };
   fs.writeFileSync(jobPath, JSON.stringify(next, null, 2));
@@ -68,9 +75,10 @@ async function loadAgent() {
 }
 
 async function executeResearchJob(jobId) {
+  if (!isSafeResearchJobId(jobId)) return;
   if (runningJobs.has(jobId)) return;
   runningJobs.add(jobId);
-  const jobPath = path.join(JOBS_DIR, `${jobId}.json`);
+  const jobPath = containedJoin(JOBS_DIR, `${jobId}.json`);
   const job = readJsonSafe(jobPath);
   if (!job) {
     runningJobs.delete(jobId);
@@ -149,7 +157,8 @@ async function executeResearchJob(jobId) {
 function enqueueResearchJob(payload) {
   ensureDirs();
   const jobId = payload.jobId || crypto.randomBytes(8).toString('hex');
-  const jobPath = path.join(JOBS_DIR, `${jobId}.json`);
+  assertSafeResearchJobId(jobId);
+  const jobPath = containedJoin(JOBS_DIR, `${jobId}.json`);
   fs.writeFileSync(
     jobPath,
     JSON.stringify(
@@ -252,6 +261,7 @@ router.post('/jobs', async (req, res) => {
 router.post('/reports/:slug/email', async (req, res) => {
   try {
     const slug = req.params.slug;
+    if (!isSafeResearchSlug(slug)) return res.status(400).json({ error: 'invalid slug' });
     const email = String(req.body?.email || '').trim().toLowerCase();
     if (!isValidEmail(email)) return res.status(400).json({ error: 'valid email is required' });
     const report = await loadReportJson(slug);
@@ -286,7 +296,10 @@ router.post('/reports/:slug/email', async (req, res) => {
 
 router.get('/jobs/:id', (req, res) => {
   ensureDirs();
-  const job = readJsonSafe(path.join(JOBS_DIR, `${req.params.id}.json`));
+  if (!isSafeResearchJobId(req.params.id)) {
+    return res.status(400).json({ error: 'invalid job id' });
+  }
+  const job = readJsonSafe(containedJoin(JOBS_DIR, `${req.params.id}.json`));
   if (!job) return res.status(404).json({ error: 'job not found' });
   return res.json(job);
 });
@@ -300,6 +313,9 @@ router.get('/reports', async (_req, res) => {
 });
 
 router.get('/reports/:slug', async (req, res) => {
+  if (!isSafeResearchSlug(req.params.slug)) {
+    return res.status(400).json({ error: 'invalid slug' });
+  }
   const report = await loadReportJson(req.params.slug);
   if (!report) return res.status(404).json({ error: 'report not found' });
   return res.json({
@@ -310,6 +326,9 @@ router.get('/reports/:slug', async (req, res) => {
 });
 
 router.get('/reports/:slug/html', async (req, res) => {
+  if (!isSafeResearchSlug(req.params.slug)) {
+    return res.status(400).send('Invalid slug');
+  }
   const pack = await loadReportHtml(req.params.slug);
   if (!pack?.html) return res.status(404).send('Report HTML not found');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -319,6 +338,9 @@ router.get('/reports/:slug/html', async (req, res) => {
 
 router.get('/reports/:slug/pdf', async (req, res) => {
   try {
+    if (!isSafeResearchSlug(req.params.slug)) {
+      return res.status(400).send('Invalid slug');
+    }
     const pack = await loadReportPdf(req.params.slug);
     if (!pack?.buffer) return res.status(404).send('Report PDF not found');
     res.setHeader('Content-Type', 'application/pdf');
@@ -331,6 +353,9 @@ router.get('/reports/:slug/pdf', async (req, res) => {
 });
 
 router.get('/reports/:slug/stocks', async (req, res) => {
+  if (!isSafeResearchSlug(req.params.slug)) {
+    return res.status(400).json({ error: 'invalid slug' });
+  }
   const report = await loadReportJson(req.params.slug);
   if (!report) return res.status(404).json({ error: 'report not found' });
   return res.json(report.stocks || { symbols_requested: [], resolved: [], note: 'missing' });

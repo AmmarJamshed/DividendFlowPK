@@ -4,6 +4,11 @@ const { pathToFileURL } = require('url');
 const Module = require('module');
 const PDFDocument = require('pdfkit');
 const { getSupabase } = require('../db/supabaseClient');
+const {
+  isSafeResearchSlug,
+  assertSafeResearchSlug,
+  containedJoin,
+} = require('../utils/researchPaths');
 
 const ROOT = path.join(__dirname, '..', '..');
 const DATA_RESEARCH = path.join(ROOT, 'data', 'research');
@@ -49,15 +54,18 @@ function ensureDirs() {
 }
 
 function localJsonPath(slug) {
-  return path.join(DATA_RESEARCH, `${slug}.json`);
+  assertSafeResearchSlug(slug);
+  return containedJoin(DATA_RESEARCH, `${slug}.json`);
 }
 
 function localHtmlPath(slug) {
-  return path.join(DOCS_RESEARCH, `${slug}-report.html`);
+  assertSafeResearchSlug(slug);
+  return containedJoin(DOCS_RESEARCH, `${slug}-report.html`);
 }
 
 async function persistResearchReport({ slug, report, html }) {
   if (!slug || !html) return { ok: false, error: 'missing slug or html' };
+  if (!isSafeResearchSlug(slug)) return { ok: false, error: 'invalid slug' };
   ensureDirs();
   try {
     if (report) {
@@ -145,6 +153,7 @@ async function ensureFullReport(report) {
 }
 
 async function loadReportJsonRaw(slug) {
+  if (!isSafeResearchSlug(slug)) return null;
   let localReport = null;
   const local = localJsonPath(slug);
   if (fs.existsSync(local)) {
@@ -188,6 +197,7 @@ async function loadReportJson(slug) {
 }
 
 async function loadReportHtml(slug) {
+  if (!isSafeResearchSlug(slug)) return null;
   const report = await loadReportJson(slug);
   if (report) {
     const agent = await loadAgentMod();
@@ -217,9 +227,11 @@ async function listResearchReports() {
   if (fs.existsSync(DATA_RESEARCH)) {
     for (const f of fs.readdirSync(DATA_RESEARCH)) {
       if (!f.endsWith('.json') || f === '_freshness.json' || f === 'research-subscribers.json') continue;
+      const fileSlug = f.slice(0, -'.json'.length);
+      if (!isSafeResearchSlug(fileSlug)) continue;
       try {
-        const r = JSON.parse(fs.readFileSync(path.join(DATA_RESEARCH, f), 'utf8'));
-        if (!r?.slug) continue;
+        const r = JSON.parse(fs.readFileSync(containedJoin(DATA_RESEARCH, f), 'utf8'));
+        if (!r?.slug || !isSafeResearchSlug(r.slug)) continue;
         bySlug.set(r.slug, {
           slug: r.slug,
           topic: r.topic,
