@@ -5,7 +5,8 @@ const crypto = require('crypto');
 const { pathToFileURL } = require('url');
 const {
   isValidEmail,
-  isEmailConfigured,
+  isEmailConfiguredAsync,
+  resolveResendApiKey,
   sendResearchReportEmail,
 } = require('../../services/researchMail');
 
@@ -173,20 +174,26 @@ function enqueueResearchJob(payload) {
   return { jobId, jobPath };
 }
 
-router.get('/status', (_req, res) => {
+router.get('/status', async (_req, res) => {
+  await resolveResendApiKey();
+  const emailOk = await isEmailConfiguredAsync();
   res.json({
     ok: true,
-    email_configured: isEmailConfigured(),
-    email_from: process.env.CONTACT_EMAIL_FROM || process.env.AUTH_EMAIL_FROM || null,
+    email_configured: emailOk,
+    email_from:
+      process.env.RESEND_FROM ||
+      process.env.CONTACT_EMAIL_FROM ||
+      process.env.AUTH_EMAIL_FROM ||
+      'DividendFlow PK <noreply@dividendflow.pk>',
     public_site_url: process.env.PUBLIC_SITE_URL || null,
     worker: 'in-process',
-    note: isEmailConfigured()
+    note: emailOk
       ? 'Reports are generated on the server and emailed when ready — you can close the tab.'
-      : 'Set RESEND_API_KEY (or SMTP_HOST) on the backend service so reports can be emailed.',
+      : 'Set RESEND_API_KEY on the backend (or private.app_secrets) so reports can be emailed.',
   });
 });
 
-router.post('/jobs', (req, res) => {
+router.post('/jobs', async (req, res) => {
   try {
     const topic = String(req.body?.topic || '').trim();
     if (!topic) return res.status(400).json({ error: 'topic is required' });
@@ -203,6 +210,7 @@ router.post('/jobs', (req, res) => {
           .map((s) => s.trim().toUpperCase())
           .filter(Boolean);
     const offline = Boolean(req.body?.offline);
+    const emailReady = await isEmailConfiguredAsync();
     const { jobId } = enqueueResearchJob({
       topic,
       audience,
@@ -215,13 +223,13 @@ router.post('/jobs', (req, res) => {
       id: jobId,
       status: 'queued',
       email: emailRaw,
-      email_delivery: isEmailConfigured()
+      email_delivery: emailReady
         ? 'will_send_when_ready'
         : 'queued_but_server_email_not_configured',
       browser_required: false,
-      message: isEmailConfigured()
+      message: emailReady
         ? 'Job queued on the server. You can close this page — we will email the report when it is ready.'
-        : 'Job queued on the server, but email is not configured yet (RESEND_API_KEY). Report will still be generated; email may fail until configured.',
+        : 'Job queued on the server, but email is not configured yet. Report will still be generated; email may fail until configured.',
       poll: `/api/v1/research/jobs/${jobId}`,
     });
   } catch (err) {

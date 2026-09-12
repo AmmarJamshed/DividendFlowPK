@@ -18,6 +18,7 @@ const aiPipeline = require('./services/aiPipeline');
 const exchangeService = require('./services/exchangeService');
 const exchangeNews = require('./services/exchangeNews');
 const contactMail = require('./services/contactMail');
+const { resolveResendApiKey } = require('./services/researchMail');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -1986,7 +1987,17 @@ app.get('/api/public-config', (_req, res) => {
 
 app.get('/api/health', async (req, res) => {
   const supabase = await dataStore.checkSupabaseHealth();
-  const emailOk = Boolean(process.env.RESEND_API_KEY || process.env.SMTP_HOST);
+  let emailOk = Boolean(process.env.RESEND_API_KEY || process.env.SMTP_HOST);
+  let emailProvider = process.env.RESEND_API_KEY ? 'resend' : process.env.SMTP_HOST ? 'smtp' : 'none';
+  try {
+    const key = await resolveResendApiKey();
+    if (key) {
+      emailOk = true;
+      emailProvider = process.env.RESEND_API_KEY ? 'resend' : 'resend-via-supabase-secret';
+    }
+  } catch {
+    /* ignore */
+  }
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -1994,7 +2005,7 @@ app.get('/api/health', async (req, res) => {
     supabase: supabase,
     email: {
       configured: emailOk,
-      provider: process.env.RESEND_API_KEY ? 'resend' : process.env.SMTP_HOST ? 'smtp' : 'none',
+      provider: emailProvider,
     },
     research: {
       worker: 'in-process',
