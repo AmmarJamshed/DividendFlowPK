@@ -20,11 +20,9 @@ function supabaseEmailUrl() {
 }
 
 function isEmailConfigured() {
-  return Boolean(
-    process.env.RESEND_API_KEY ||
-      process.env.SMTP_HOST ||
-      (supabaseEmailUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY)
-  );
+  // Prefer direct Resend/SMTP on the backend. Supabase edge is a send fallback only
+  // when those are set there too — do not treat SERVICE_ROLE alone as “configured”.
+  return Boolean(process.env.RESEND_API_KEY || process.env.SMTP_HOST);
 }
 
 function isValidEmail(email) {
