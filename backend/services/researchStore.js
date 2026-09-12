@@ -126,6 +126,9 @@ async function ensureFullReport(report) {
   const full = agent.mergeWithOfflineBase(report, offlineBase);
   full.slug = report.slug;
   full.generated_at = new Date().toISOString();
+  if (!Array.isArray(full.interest_sections) || !full.interest_sections.length) {
+    full.interest_sections = offlineBase.interest_sections;
+  }
   full.crawl_meta = {
     ...(full.crawl_meta || {}),
     repaired_at: new Date().toISOString(),
@@ -360,13 +363,23 @@ function buildPdfBuffer(report) {
       });
     }
 
-    if (report?.interest_extras?.length) {
-      section('If this isn’t quite what you wanted');
+    if (report?.interest_sections?.length) {
+      section('Deep-dives on your interests');
       if (report.reader_interests) {
-        para(`Reader interests noted: ${report.reader_interests}`);
-      } else {
-        para('Extra angles when the core brief may not match every reader’s interest.');
+        para(`You asked about: ${report.reader_interests}`);
       }
+      for (const sec of report.interest_sections.slice(0, 4)) {
+        doc.fontSize(11).fillColor('#0a0e14').text(sec.title || 'Interest section');
+        if (sec.related_to) {
+          doc.fontSize(9).fillColor('#64748b').text(`Related to: ${sec.related_to}`);
+        }
+        if (sec.summary) para(sec.summary);
+        bullets(sec.points || [], (p) => `${p.text || ''}${p.year ? ` [${p.year}]` : ''}`);
+      }
+    }
+
+    if (report?.interest_extras?.length) {
+      section('If this still isn’t quite what you wanted');
       bullets(report.interest_extras, (x) => {
         const bits = [x.angle, x.why_it_matters, x.who_cares ? `who cares: ${x.who_cares}` : null, x.hook]
           .filter(Boolean);

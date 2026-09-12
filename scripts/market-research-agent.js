@@ -305,57 +305,157 @@ async function collectEvidence(topic, geo) {
   return evidence;
 }
 
+function splitInterestThemes(interests) {
+  return String(interests || '')
+    .split(/[,;/]|\band\b/i)
+    .map((s) => s.trim().replace(/^to\s+/i, '').replace(/\s+/g, ' '))
+    .filter((s) => s.length > 3)
+    .slice(0, 4);
+}
+
 function buildInterestExtras({ topic, geo, audience, interests }) {
   const focus = String(interests || '').trim();
-  const base = [
+  const themes = splitInterestThemes(focus);
+  const base = themes.length
+    ? themes.map((theme) => ({
+      angle: theme.slice(0, 90),
+      why_it_matters: `You asked about this — the main “${topic}” brief alone may not cover it deeply enough.`,
+      who_cares: audience === 'demand_planner' ? 'Demand & supply planners' : audience === 'analyst' ? 'Research analysts' : 'Market researchers',
+      hook: `See the dedicated deep-dive section on “${theme.slice(0, 50)}” in this report.`,
+    }))
+    : [
+      {
+        angle: 'Narrower sub-segment brief',
+        why_it_matters: `If this ${topic} overview feels too broad, pick one sub-segment and regenerate.`,
+        who_cares: 'Anyone who bounced off the main narrative',
+        hook: 'Use the interests box: e.g. “supply chain” or “supporting agriculture”.',
+      },
+    ];
+
+  base.push(
     {
       angle: 'Digital / q-commerce channel',
-      why_it_matters: `Even if you care less about the core “${topic}” sizing story, delivery and app shelves change who wins shelf space.`,
+      why_it_matters: `Delivery and app shelves change who wins even when the core “${topic}” story is about offline demand.`,
       who_cares: 'Growth / digital / category managers',
       hook: 'Ask: which SKUs actually convert on apps vs kiryana?',
     },
     {
-      angle: 'B2B / institutional demand',
-      why_it_matters: 'Hotels, canteens, offices, and modern trade often buy differently than retail households.',
-      who_cares: 'Demand planners / key-account sales',
-      hook: 'Map weekly volume contracts separately from retail offtake.',
-    },
-    {
       angle: 'Listed supplier / peer watch',
-      why_it_matters: 'If the sector brief feels abstract, listed PSX peers turn it into price, yield, and margin signals.',
+      why_it_matters: `In ${geo}, listed PSX peers turn a sector story into price, yield, and margin signals.`,
       who_cares: 'Analysts / procurement / treasury',
       hook: 'Use the stock join section as a live dashboard, not a static appendix.',
+    }
+  );
+  return base.slice(0, 6);
+}
+
+function buildInterestSections({ topic, geo, interests, primary, stocks }) {
+  const themes = splitInterestThemes(interests);
+  const src = primary || {
+    year: String(new Date().getFullYear()),
+    url: 'https://invest.gov.pk/food-processing',
+    title: 'BOI — Food Processing',
+  };
+  const peerNote = (stocks?.resolved || []).map((s) => s.symbol).filter(Boolean).slice(0, 4).join(', ') || 'listed food peers';
+
+  const catalog = [
+    {
+      re: /supply\s*chain|logistics|cold\s*chain|distribution|wholesale|procurement/i,
+      title: 'Supply chain of bakery / food items',
+      summary: `How flour, sugar, oils, packaging, and finished bakery goods move from farm/mill to factory to kiryana and modern trade in ${geo}.`,
+      points: [
+        { text: 'Map tiers: agri input → mill/processor → bakery plant → distributor → retail / HORECA.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Watch cost spikes in wheat, sugar, edible oil, and packaging film — they dominate bakery COGS.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Cold / ambient mix: bread and cakes need shorter cycles than biscuits; plan separate SLAs.', year: '2022', url: 'https://pide.org.pk/research/hotel-and-restaurant-industries-of-pakistan-opportunities-and-market-dynamics/', source_title: 'PIDE' },
+        { text: `Tie supplier risk to listed names (${peerNote}) for flour, dairy, and FMCG packaging cues.`, year: src.year, url: src.url, source_title: 'DividendFlow PSX join' },
+        { text: 'Ask for weekly fill-rate and OTIF by channel (kiryana vs modern trade vs HORECA).', year: src.year, url: src.url, source_title: src.title },
+      ],
     },
     {
-      angle: 'Export / FX-sensitive niche',
-      why_it_matters: `A ${geo} domestic brief may miss readers who care about export packs, remittance corridors, or imported inputs.`,
-      who_cares: 'Exporters / FX-aware operators',
-      hook: 'Track freight + duty before celebrating volume growth.',
+      re: /agri|agricultur|farm|wheat|flour|crop|dairy|livestock|supporting/i,
+      title: 'Agriculture that supports bakery demand',
+      summary: `Upstream crops and farm practices that feed bakery manufacturing in ${geo} — wheat/flour quality, sugar, oils, dairy, and eggs.`,
+      points: [
+        { text: 'Bakery volumes inherit wheat and flour quality/price cycles; track provincial crop outlooks before capacity bets.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Food-processing incentives (BOI) matter more for mills and plants than for single retail bakeries.', year: '2020', url: 'https://invest.gov.pk/node/1312', source_title: 'BOI incentives' },
+        { text: 'SEZ / capital-goods relief can support flour, mixing, and packaging capex for integrated players.', year: '2020', url: 'http://www.invest.gov.pk/node/1263', source_title: 'BOI SEZ' },
+        { text: 'Supporting practices: moisture specs, storage losses, and farm-gate to mill logistics reduce waste before dough.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Contract farming / preferred grower programs stabilize ash content and protein for industrial bakers.', year: src.year, url: src.url, source_title: src.title },
+      ],
     },
     {
-      angle: 'Health / premium / trust niche',
-      why_it_matters: 'Mass-market numbers can hide the premium lane (clean label, fortified, gift packs) that some teams actually want.',
-      who_cares: 'Brand / innovation / urban retail',
-      hook: 'Score willingness-to-pay in 2–3 cities before national rollout.',
+      re: /export|fx|foreign|gulf|neighbor/i,
+      title: 'Export and FX-sensitive bakery lanes',
+      summary: 'When readers care about cross-border bakery packs or imported inputs, domestic sizing alone is not enough.',
+      points: [
+        { text: 'Separate domestic offtake from export SKUs; freight and duty can erase thin biscuit margins.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Imported packaging and specialty ingredients create FX exposure even for local bakery brands.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Use listed peers as a proxy for input cost pressure when customs data is slow.', year: src.year, url: src.url, source_title: 'DividendFlow PSX join' },
+      ],
+    },
+    {
+      re: /digital|delivery|q-?commerce|app|ecommerce|online/i,
+      title: 'Digital / delivery channel for bakery',
+      summary: 'App shelves and quick-commerce change assortment, returns, and promo intensity versus traditional retail.',
+      points: [
+        { text: 'Track which bakery SKUs win on apps vs kiryana — pack size and freshness windows differ.', year: '2025', url: 'https://propakistani.pk/perspective/gastronomy-growth-pakistans-emerging-food-economy/', source_title: 'ProPakistani' },
+        { text: 'Plan separate promo calendars; platform fees compress bakery margins faster than offline.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Use daypart demand (breakfast bread vs evening cake) to set dark-store replenishment.', year: src.year, url: src.url, source_title: src.title },
+      ],
+    },
+    {
+      re: /health|gluten|sugar|premium|organic|fortif/i,
+      title: 'Health / premium bakery niche',
+      summary: 'Mass bakery volumes can hide the premium lane that some teams actually want to build.',
+      points: [
+        { text: 'Score willingness-to-pay in 2–3 cities before national health-bakery rollout.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Label claims (low-sugar, fortified) need specialty flours and dairy — link back to agri inputs.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Keep a separate P&L; premium SKUs rarely share the same distributor incentives as mass rusk.', year: src.year, url: src.url, source_title: src.title },
+      ],
     },
   ];
 
-  if (focus) {
-    base.unshift({
-      angle: `Reader focus: ${focus.slice(0, 80)}`,
-      why_it_matters: `You flagged this interest — treat the main “${topic}” pack as context, then dig here first.`,
-      who_cares: audience === 'demand_planner' ? 'Demand & supply planners' : audience === 'analyst' ? 'Research analysts' : 'Market researchers',
-      hook: `Next brief should start from “${focus.slice(0, 60)}” and only borrow sizing from the core topic.`,
-    });
-  } else {
-    base.unshift({
-      angle: 'Narrower sub-segment brief',
-      why_it_matters: `If this ${topic} overview feels too broad, pick one sub-segment (channel, city tier, or SKU family) and regenerate.`,
-      who_cares: 'Anyone who bounced off the main narrative',
-      hook: 'Use the interests box next run: e.g. “wholesale biscuits only” or “Lahore modern trade”.',
+  const sections = [];
+  const used = new Set();
+
+  for (const theme of themes) {
+    const match = catalog.find((c) => c.re.test(theme));
+    if (match && !used.has(match.title)) {
+      used.add(match.title);
+      sections.push({
+        title: match.title,
+        summary: match.summary,
+        related_to: theme,
+        points: match.points,
+      });
+    } else {
+      sections.push({
+        title: `Deep-dive: ${theme.slice(0, 80)}`,
+        summary: `Dedicated coverage for your interest (“${theme}”) inside the broader “${topic}” brief for ${geo}.`,
+        related_to: theme,
+        points: [
+          { text: `Start from the reader interest “${theme}” and only borrow market sizing from the core topic.`, year: src.year, url: src.url, source_title: src.title },
+          { text: 'List the decisions this interest unlocks (buy, build, partner, or wait) before more desk research.', year: src.year, url: src.url, source_title: src.title },
+          { text: `Connect the interest to listed peers (${peerNote}) where price or dividend signals exist.`, year: src.year, url: src.url, source_title: 'DividendFlow PSX join' },
+          { text: 'Write the next brief with this interest as the title, not an appendix.', year: src.year, url: src.url, source_title: src.title },
+        ],
+      });
+    }
+  }
+
+  if (!sections.length) {
+    sections.push({
+      title: 'Adjacent deep-dive suggestions',
+      summary: `No extra interests were typed — here is a starter deep-dive you can request next for “${topic}”.`,
+      related_to: topic,
+      points: [
+        { text: 'Add interests like “supply chain”, “supporting agriculture”, “exports”, or “q-commerce” to force full sections.', year: src.year, url: src.url, source_title: src.title },
+        { text: 'Each interest becomes its own titled section with actionable points, not only a tip row.', year: src.year, url: src.url, source_title: src.title },
+      ],
     });
   }
-  return base.slice(0, 5);
+
+  return sections.slice(0, 4);
 }
 
 function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence, interests }) {
@@ -440,6 +540,13 @@ function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence, i
   ];
 
   const interest_extras = buildInterestExtras({ topic, geo, audience, interests });
+  const interest_sections = buildInterestSections({
+    topic,
+    geo,
+    interests,
+    primary: { year: primary.year, url: primary.url, title: primary.title },
+    stocks,
+  });
 
   return {
     slug,
@@ -481,6 +588,7 @@ function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence, i
     menu_or_product_scores: productScores,
     smart_gaps,
     interest_extras,
+    interest_sections,
     stocks,
     sources,
     charts: {
@@ -512,7 +620,7 @@ async function synthesizeWithGroq({ topic, geo, audience, stocks, evidence, symb
     stocks,
     reader_interests: String(interests || '').trim() || null,
     evidence: evidence.slice(0, 12),
-    instruction: 'Emit one JSON object matching research/schema/report.schema.json. Include interest_extras. No markdown fences.',
+    instruction: 'Emit one JSON object matching research/schema/report.schema.json. Include interest_extras AND full interest_sections for each reader interest theme. No markdown fences.',
   });
 
   const ctrl = new AbortController();
@@ -559,6 +667,9 @@ function isReportComplete(report) {
   if (!Array.isArray(report.menu_or_product_scores) || !report.menu_or_product_scores.length) return false;
   if (!Array.isArray(report.smart_gaps) || !report.smart_gaps.length) return false;
   if (!Array.isArray(report.interest_extras) || report.interest_extras.length < 2) return false;
+  if (String(report.reader_interests || '').trim() && (!Array.isArray(report.interest_sections) || !report.interest_sections.length)) {
+    return false;
+  }
   if (!report.economics || !Array.isArray(report.economics.drivers) || !report.economics.drivers.length) return false;
   if (!Array.isArray(report.sources) || !report.sources.length) return false;
   return true;
@@ -580,6 +691,7 @@ function mergeWithOfflineBase(partial, offlineBase) {
   out.menu_or_product_scores = takeArr('menu_or_product_scores');
   out.smart_gaps = takeArr('smart_gaps');
   out.interest_extras = takeArr('interest_extras');
+  out.interest_sections = takeArr('interest_sections');
   out.reader_interests = partial?.reader_interests || offlineBase.reader_interests || null;
   out.sources = takeArr('sources');
   out.economics = {
@@ -689,6 +801,15 @@ function renderHtml(report) {
     '{{INTERESTS_NOTE}}': report.reader_interests
       ? ` (you asked about: ${escapeHtml(report.reader_interests)})`
       : '',
+    '{{INTEREST_SECTIONS_HTML}}': (report.interest_sections || []).length
+      ? (report.interest_sections || []).map((sec, idx) => `
+        <div style="margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fffaf6">
+          <h3 style="margin:0 0 6px;color:var(--navy);font-size:1.05rem">${idx + 1}. ${escapeHtml(sec.title)}</h3>
+          ${sec.related_to ? `<p style="margin:0 0 8px;font-size:.82rem;color:var(--muted)">Related to your interest: <em>${escapeHtml(sec.related_to)}</em></p>` : ''}
+          <p style="margin:0 0 8px">${escapeHtml(sec.summary || '')}</p>
+          <ul>${(sec.points || []).map((p) => citeLi({ text: p.text, year: p.year, url: p.url, source_title: p.source_title })).join('')}</ul>
+        </div>`).join('')
+      : '<p style="color:var(--muted)">No interest deep-dives yet — add interests when generating the next report.</p>',
     '{{INTEREST_EXTRA_ROWS}}': (report.interest_extras || []).map((x) =>
       `<tr><td>${escapeHtml(x.angle)}</td><td>${escapeHtml(x.why_it_matters)}</td><td>${escapeHtml(x.who_cares)}</td><td>${escapeHtml(x.hook || '')}</td></tr>`
     ).join('') || '<tr><td colspan="4">No extra angles generated.</td></tr>',
@@ -758,6 +879,9 @@ export async function runMarketResearch(options = {}) {
   if (!Array.isArray(report.interest_extras) || report.interest_extras.length < 2) {
     report.interest_extras = offlineBase.interest_extras;
   }
+  if (!Array.isArray(report.interest_sections) || !report.interest_sections.length) {
+    report.interest_sections = offlineBase.interest_sections;
+  }
   if (interests) report.reader_interests = interests;
 
   const problems = validateCitations(report);
@@ -826,6 +950,7 @@ export function readJob(jobId) {
 export {
   buildOfflineReport,
   buildInterestExtras,
+  buildInterestSections,
   isReportComplete,
   mergeWithOfflineBase,
   renderHtml,

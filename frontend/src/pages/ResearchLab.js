@@ -218,16 +218,16 @@ export default function ResearchLab() {
           </label>
           <label className="block md:col-span-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              What else are you interested in? (optional)
+              Extra interests to cover in the report (optional)
             </span>
             <input
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               value={interests}
               onChange={(e) => setInterests(e.target.value)}
-              placeholder="e.g. wholesale biscuits only, Lahore modern trade, export packs, health bakery"
+              placeholder="e.g. supply chain of bakery items, supporting agricultural practices"
             />
             <span className="mt-1 block text-[11px] text-slate-500">
-              We add an “If this isn’t quite what you wanted” section with extra angles tailored to this.
+              Each interest becomes a full deep-dive section in the report (plus a short angles table).
             </span>
           </label>
           <label className="block md:col-span-2">

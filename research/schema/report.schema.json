@@ -96,6 +96,32 @@
         }
       }
     },
+    "interest_sections": {
+      "type": "array",
+      "description": "Full report sections that cover reader_interests in depth",
+      "items": {
+        "type": "object",
+        "required": ["title", "summary", "points"],
+        "properties": {
+          "title": { "type": "string" },
+          "summary": { "type": "string" },
+          "related_to": { "type": "string" },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["text"],
+              "properties": {
+                "text": { "type": "string" },
+                "year": { "type": ["string", "number"] },
+                "url": { "type": "string" },
+                "source_title": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
     "stocks": {
       "type": "object",
       "required": ["symbols_requested", "resolved", "note"],
