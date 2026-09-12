@@ -158,73 +158,141 @@ async function listResearchReports() {
 
 function buildPdfBuffer(report) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: 'A4', info: { Title: report?.topic || 'Research report' } });
+    const doc = new PDFDocument({ margin: 48, size: 'A4', info: { Title: report?.topic || 'Research report' } });
     const chunks = [];
     doc.on('data', (c) => chunks.push(c));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
+    const section = (title) => {
+      doc.moveDown(0.6);
+      doc.fontSize(13).fillColor('#0a0e14').text(title, { underline: true });
+      doc.moveDown(0.25);
+    };
+    const para = (text) => {
+      if (!text) return;
+      doc.fontSize(10).fillColor('#1e293b').text(String(text), { align: 'left', lineGap: 2 });
+      doc.moveDown(0.35);
+    };
+    const bullets = (items, fmt) => {
+      for (const item of items || []) {
+        const line = fmt(item);
+        if (!line) continue;
+        doc.fontSize(10).fillColor('#1e293b').text(`• ${line}`, { align: 'left', lineGap: 1 });
+      }
+      doc.moveDown(0.25);
+    };
+
     const title = report?.topic || 'DividendFlow research report';
-    doc.fontSize(20).fillColor('#0a0e14').text('DividendFlow PK', { align: 'left' });
-    doc.moveDown(0.3);
-    doc.fontSize(16).text(title);
-    doc.moveDown(0.5);
-    doc.fontSize(10).fillColor('#334155').text(
+    doc.fontSize(18).fillColor('#0a0e14').text('DividendFlow PK — Research Lab');
+    doc.moveDown(0.25);
+    doc.fontSize(15).text(title);
+    doc.moveDown(0.35);
+    doc.fontSize(9).fillColor('#64748b').text(
       [
         `Audience: ${report?.audience || '—'}`,
         `Geo: ${report?.geo || '—'}`,
         `Generated: ${report?.generated_at || new Date().toISOString()}`,
-        `Slug: ${report?.slug || '—'}`,
-      ].join('\n')
+        `Report id: ${report?.slug || '—'}`,
+      ].join('  ·  ')
     );
-    doc.moveDown();
 
-    const swa = report?.simple_word_answer || report?.executive_summary || '';
-    if (swa) {
-      doc.fontSize(12).fillColor('#0a0e14').text('Simple Word answer', { underline: true });
-      doc.moveDown(0.3);
-      doc.fontSize(10).fillColor('#1e293b').text(String(swa), { align: 'left' });
-      doc.moveDown();
+    const snap =
+      report?.executive_snapshot ||
+      report?.simple_word_answer ||
+      report?.executive_summary ||
+      '';
+    if (snap) {
+      section('Simple Word answer');
+      para(snap);
     }
 
     const layers = report?.market_layers || report?.key_stats || [];
     if (Array.isArray(layers) && layers.length) {
-      doc.fontSize(12).fillColor('#0a0e14').text('Key figures', { underline: true });
-      doc.moveDown(0.3);
-      for (const layer of layers.slice(0, 12)) {
+      section('Market layers / key figures');
+      bullets(layers.slice(0, 16), (layer) => {
         const label = layer.label || layer.title || 'Fact';
         const value = layer.value || layer.stat || '';
         const year = layer.year ? ` (${layer.year})` : '';
-        doc.fontSize(10).fillColor('#1e293b').text(`• ${label}: ${value}${year}`);
+        return `${label}: ${value}${year}`;
+      });
+    }
+
+    if (report?.economics) {
+      section('Economics');
+      if (report.economics.drivers?.length) {
+        doc.fontSize(10).fillColor('#0a0e14').text('Drivers');
+        bullets(report.economics.drivers, (x) => `${x.text || ''}${x.year ? ` [${x.year}]` : ''}`);
       }
-      doc.moveDown();
+      if (report.economics.restraints?.length) {
+        doc.fontSize(10).fillColor('#0a0e14').text('Restraints');
+        bullets(report.economics.restraints, (x) => `${x.text || ''}${x.year ? ` [${x.year}]` : ''}`);
+      }
+      if (report.economics.cost_split_pct?.length) {
+        doc.fontSize(10).fillColor('#0a0e14').text('Illustrative cost split');
+        bullets(report.economics.cost_split_pct, (x) => `${x.label}: ${x.value}%`);
+      }
+    }
+
+    if (report?.barriers?.length) {
+      section('Barriers');
+      bullets(report.barriers, (x) => `${x.text || ''}${x.year ? ` [${x.year}]` : ''}`);
+    }
+    if (report?.incentives?.length) {
+      section('Incentives');
+      bullets(report.incentives, (x) => `${x.text || ''}${x.year ? ` [${x.year}]` : ''}`);
+    }
+
+    if (report?.menu_or_product_scores?.length) {
+      section('Product / menu scores');
+      bullets(report.menu_or_product_scores, (p) => {
+        const bits = [p.name, p.score != null ? `score ${p.score}` : null, p.verdict, p.rationale]
+          .filter(Boolean);
+        return bits.join(' — ');
+      });
+    }
+
+    if (report?.smart_gaps?.length) {
+      section('Smart gaps');
+      bullets(report.smart_gaps, (g) => {
+        const score = g.opportunity_score != null ? ` (opportunity ${g.opportunity_score})` : '';
+        return `${g.gap || g.idea || 'Gap'}${score}${g.who_pays ? ` · who pays: ${g.who_pays}` : ''}`;
+      });
     }
 
     const stocks = report?.stocks?.resolved || [];
     if (stocks.length) {
-      doc.fontSize(12).fillColor('#0a0e14').text('PSX stock join', { underline: true });
-      doc.moveDown(0.3);
-      for (const s of stocks.slice(0, 20)) {
+      section('PSX stock join');
+      if (report?.stocks?.note) para(report.stocks.note);
+      bullets(stocks.slice(0, 24), (s) => {
         const price = s.price != null ? `Rs ${s.price}` : '—';
         const ch = s.change_pct != null ? ` (${s.change_pct}%)` : '';
-        doc.fontSize(10).fillColor('#1e293b').text(`• ${s.symbol}: ${price}${ch}`);
-      }
-      doc.moveDown();
+        const yld = s.dividend_yield != null ? ` · yield ${s.dividend_yield}%` : '';
+        return `${s.symbol}${s.name ? ` (${s.name})` : ''}: ${price}${ch}${yld}`;
+      });
     }
 
     const sources = report?.sources || [];
-    if (Array.isArray(sources) && sources.length) {
-      doc.fontSize(12).fillColor('#0a0e14').text('Sources', { underline: true });
-      doc.moveDown(0.3);
-      for (const src of sources.slice(0, 15)) {
+    if (sources.length) {
+      section('Sources');
+      for (const src of sources.slice(0, 20)) {
         doc.fontSize(9).fillColor('#334155').text(
           `• ${src.title || src.url || 'Source'}${src.year ? ` (${src.year})` : ''}`
         );
         if (src.url) doc.fillColor('#1E3A8A').text(`  ${src.url}`, { link: src.url });
+        if (src.excerpt) {
+          doc.fontSize(8).fillColor('#64748b').text(`  ${String(src.excerpt).slice(0, 220)}`);
+        }
       }
-      doc.moveDown();
+      doc.moveDown(0.3);
     }
 
+    if (report?.ml_notes) {
+      section('Notes');
+      para(report.ml_notes);
+    }
+
+    doc.moveDown(0.5);
     doc.fontSize(8).fillColor('#64748b').text(
       'Educational only — not investment advice. Generated by DividendFlow.pk Research Lab.',
       { align: 'left' }

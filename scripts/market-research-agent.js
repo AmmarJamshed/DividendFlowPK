@@ -33,7 +33,7 @@ const ALLOWLIST = [
 ];
 
 const TOPIC_SYMBOL_HEURISTICS = [
-  { re: /fast\s*food|restaurant|qsr|fmcg|food|dairy|beverage/i, symbols: ['NESTLE', 'UNITY', 'COLG', 'NATF'] },
+  { re: /fast\s*food|restaurant|qsr|fmcg|food|dairy|beverage|bakery|baked|bread|confection|snack|biscuit/i, symbols: ['NESTLE', 'UNITY', 'COLG', 'NATF'] },
   { re: /cement|construction|housing/i, symbols: ['LUCK', 'MLCF', 'DGKC', 'CHCC'] },
   { re: /fertilizer|agri|urea/i, symbols: ['FFC', 'EFERT', 'FATIMA'] },
   { re: /bank|financ|insurance/i, symbols: ['HBL', 'MCB', 'UBL', 'MEBL'] },
@@ -275,7 +275,7 @@ function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence })
     });
   }
   const primary = sources[0];
-  const isFood = /food|restaurant|qsr|franchise/i.test(topic);
+  const isFood = /food|restaurant|qsr|franchise|bakery|baked|bread|confection|snack|biscuit|dairy|beverage/i.test(topic);
   const isCement = /cement/i.test(topic);
 
   const market_layers = isFood
@@ -296,7 +296,15 @@ function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence })
           { label: 'Listed peer coverage', value: `${stocks.resolved.length} PSX names`, year, url: primary.url, source_title: 'DividendFlow PSX store' },
         ];
 
-  const productScores = isFood
+  const productScores = /bakery|baked|bread|biscuit|confection/i.test(topic)
+    ? [
+        { name: 'Packaged biscuits / cookies', score: 90, verdict: 'Core demand', rationale: 'Everyday FMCG staple' },
+        { name: 'Bread / bun / rusk', score: 88, verdict: 'Strong', rationale: 'Daily household + tea culture' },
+        { name: 'Cakes / celebration bakery', score: 84, verdict: 'Strong', rationale: 'Occasions + urban retail' },
+        { name: 'Savory snacks / namkeen bakery', score: 80, verdict: 'High volume', rationale: 'Impulse + kiryana reach' },
+        { name: 'Premium / health bakery', score: 66, verdict: 'Growing niche', rationale: 'Urban willingness to pay' },
+      ]
+    : isFood
     ? [
         { name: 'Fried chicken / broast', score: 92, verdict: 'Core demand', rationale: 'High cultural fit' },
         { name: 'Burgers', score: 90, verdict: 'Strong', rationale: 'Global + local love' },
@@ -426,6 +434,62 @@ async function synthesizeWithGroq({ topic, geo, audience, stocks, evidence, symb
   return report;
 }
 
+function isReportComplete(report) {
+  if (!report || typeof report !== 'object') return false;
+  const snap = String(report.executive_snapshot || '').trim();
+  if (snap.length < 40) return false;
+  if (!Array.isArray(report.market_layers) || report.market_layers.length < 2) return false;
+  if (!Array.isArray(report.barriers) || !report.barriers.length) return false;
+  if (!Array.isArray(report.incentives) || !report.incentives.length) return false;
+  if (!Array.isArray(report.menu_or_product_scores) || !report.menu_or_product_scores.length) return false;
+  if (!Array.isArray(report.smart_gaps) || !report.smart_gaps.length) return false;
+  if (!report.economics || !Array.isArray(report.economics.drivers) || !report.economics.drivers.length) return false;
+  if (!Array.isArray(report.sources) || !report.sources.length) return false;
+  return true;
+}
+
+function mergeWithOfflineBase(partial, offlineBase) {
+  const out = { ...offlineBase, ...(partial || {}) };
+  const takeArr = (key) =>
+    Array.isArray(partial?.[key]) && partial[key].length ? partial[key] : offlineBase[key];
+  out.executive_snapshot =
+    String(partial?.executive_snapshot || '').trim().length >= 40
+      ? partial.executive_snapshot
+      : offlineBase.executive_snapshot;
+  out.market_layers = takeArr('market_layers');
+  out.barriers = takeArr('barriers');
+  out.incentives = takeArr('incentives');
+  out.menu_or_product_scores = takeArr('menu_or_product_scores');
+  out.smart_gaps = takeArr('smart_gaps');
+  out.sources = takeArr('sources');
+  out.economics = {
+    ...(offlineBase.economics || {}),
+    ...(partial?.economics || {}),
+    drivers:
+      Array.isArray(partial?.economics?.drivers) && partial.economics.drivers.length
+        ? partial.economics.drivers
+        : offlineBase.economics?.drivers || [],
+    restraints:
+      Array.isArray(partial?.economics?.restraints) && partial.economics.restraints.length
+        ? partial.economics.restraints
+        : offlineBase.economics?.restraints || [],
+    cost_split_pct:
+      Array.isArray(partial?.economics?.cost_split_pct) && partial.economics.cost_split_pct.length
+        ? partial.economics.cost_split_pct
+        : offlineBase.economics?.cost_split_pct || [],
+  };
+  out.charts = partial?.charts && (partial.charts.layers || partial.charts.product_scores)
+    ? partial.charts
+    : offlineBase.charts;
+  out.stocks = partial?.stocks?.resolved?.length ? partial.stocks : offlineBase.stocks;
+  out.crawl_meta = {
+    ...(offlineBase.crawl_meta || {}),
+    ...(partial?.crawl_meta || {}),
+    completed_with: isReportComplete(partial) ? 'groq' : 'groq+offline-fill',
+  };
+  return out;
+}
+
 function validateCitations(report) {
   const problems = [];
   const check = (item, path) => {
@@ -543,6 +607,7 @@ export async function runMarketResearch(options = {}) {
   writeJob(jobId, { status: 'crawling_done', evidence_count: evidence.length });
 
   const stocks = loadStockSnapshot(symbols);
+  const offlineBase = buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence });
   let report = null;
   if (!offline) {
     try {
@@ -552,7 +617,10 @@ export async function runMarketResearch(options = {}) {
     }
   }
   if (!report) {
-    report = buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence });
+    report = offlineBase;
+  } else if (!isReportComplete(report)) {
+    console.warn('[research-agent] Groq report incomplete — merging offline sections');
+    report = mergeWithOfflineBase(report, offlineBase);
   }
 
   const problems = validateCitations(report);
