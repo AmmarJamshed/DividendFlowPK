@@ -1,8 +1,8 @@
 const express = require('express');
-const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { pathToFileURL } = require('url');
 const {
   isValidEmail,
   isEmailConfigured,
@@ -16,6 +16,9 @@ const DATA_RESEARCH = path.join(ROOT, 'data', 'research');
 const JOBS_DIR = path.join(DATA_RESEARCH, 'jobs');
 const DOCS_RESEARCH = path.join(ROOT, 'docs', 'research');
 const AGENT = path.join(ROOT, 'scripts', 'market-research-agent.js');
+
+/** In-flight jobs on this process (survives browser close; cleared on dyno restart). */
+const runningJobs = new Set();
 
 function ensureDirs() {
   for (const d of [DATA_RESEARCH, JOBS_DIR, DOCS_RESEARCH]) {
@@ -61,45 +64,81 @@ function listReports() {
     .sort((a, b) => String(b.generated_at || '').localeCompare(String(a.generated_at || '')));
 }
 
-function watchJobAndEmail(jobId) {
-  const started = Date.now();
-  const maxMs = 8 * 60 * 1000;
-  const timer = setInterval(async () => {
-    const job = readJsonSafe(path.join(JOBS_DIR, `${jobId}.json`));
-    if (!job) return;
-    if (Date.now() - started > maxMs) {
-      clearInterval(timer);
-      if (job.status !== 'completed') {
-        writeJobPatch(jobId, { status: 'failed', error: 'timeout waiting for research worker' });
-      }
-      return;
-    }
-    if (job.status === 'completed') {
-      clearInterval(timer);
-      if (job.email && !job.email_sent) {
-        const mail = await sendResearchReportEmail({
-          email: job.email,
-          topic: job.topic,
-          slug: job.slug,
-          audience: job.audience,
-        });
-        writeJobPatch(jobId, {
-          email_sent: Boolean(mail.ok),
-          email_channel: mail.channel,
-          email_error: mail.error || null,
-          report_url: mail.url || null,
-        });
-      }
-      return;
-    }
-    if (job.status === 'failed') {
-      clearInterval(timer);
-    }
-  }, 2500);
+async function loadAgent() {
+  return import(pathToFileURL(AGENT).href);
 }
 
-function spawnResearchJob({ jobId, topic, audience, symbols, geo, offline, email }) {
+/**
+ * Runs fully on the server (no browser required). Completes crawl → HTML/JSON → email.
+ */
+async function executeResearchJob(jobId) {
+  if (runningJobs.has(jobId)) return;
+  runningJobs.add(jobId);
+  const jobPath = path.join(JOBS_DIR, `${jobId}.json`);
+  const job = readJsonSafe(jobPath);
+  if (!job) {
+    runningJobs.delete(jobId);
+    return;
+  }
+
+  writeJobPatch(jobId, {
+    status: 'running',
+    worker: 'in-process',
+    started_at: new Date().toISOString(),
+  });
+
+  try {
+    const agent = await loadAgent();
+    const result = await agent.runMarketResearch({
+      topic: job.topic,
+      audience: job.audience || 'market_researcher',
+      geo: job.geo || 'Pakistan',
+      symbols: job.symbols || [],
+      offline: Boolean(job.offline),
+      jobId,
+    });
+
+    const slug = result.slug || result.report?.slug;
+    writeJobPatch(jobId, {
+      status: 'completed',
+      slug,
+      html_url: result.html_url || (slug ? `/api/v1/research/reports/${slug}/html` : null),
+      evidence_count: result.evidence_count,
+      stocks_resolved: result.stocks_resolved,
+      completed_at: new Date().toISOString(),
+    });
+
+    const latest = readJsonSafe(jobPath);
+    if (latest?.email && !latest.email_sent && slug) {
+      const mail = await sendResearchReportEmail({
+        email: latest.email,
+        topic: latest.topic,
+        slug,
+        audience: latest.audience,
+      });
+      writeJobPatch(jobId, {
+        email_sent: Boolean(mail.ok),
+        email_channel: mail.channel,
+        email_error: mail.error || null,
+        report_url: mail.url || null,
+        emailed_at: mail.ok ? new Date().toISOString() : null,
+      });
+    }
+  } catch (err) {
+    console.error('[research] job failed', jobId, err);
+    writeJobPatch(jobId, {
+      status: 'failed',
+      error: err.message || String(err),
+      failed_at: new Date().toISOString(),
+    });
+  } finally {
+    runningJobs.delete(jobId);
+  }
+}
+
+function enqueueResearchJob(payload) {
   ensureDirs();
+  const jobId = payload.jobId || crypto.randomBytes(8).toString('hex');
   const jobPath = path.join(JOBS_DIR, `${jobId}.json`);
   fs.writeFileSync(
     jobPath,
@@ -107,12 +146,14 @@ function spawnResearchJob({ jobId, topic, audience, symbols, geo, offline, email
       {
         id: jobId,
         status: 'queued',
-        topic,
-        audience,
-        symbols,
-        geo,
-        email: email || null,
+        topic: payload.topic,
+        audience: payload.audience,
+        symbols: payload.symbols || [],
+        geo: payload.geo,
+        offline: Boolean(payload.offline),
+        email: payload.email || null,
         email_sent: false,
+        worker: 'in-process',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
@@ -121,34 +162,29 @@ function spawnResearchJob({ jobId, topic, audience, symbols, geo, offline, email
     )
   );
 
-  const args = [
-    AGENT,
-    '--topic',
-    topic,
-    '--audience',
-    audience || 'market_researcher',
-    '--geo',
-    geo || 'Pakistan',
-    '--job-id',
-    jobId,
-  ];
-  if (symbols?.length) {
-    args.push('--symbols', symbols.join(','));
-  }
-  if (offline) args.push('--offline');
-
-  const child = spawn(process.execPath, args, {
-    cwd: path.join(ROOT, 'scripts'),
-    env: process.env,
-    detached: true,
-    stdio: 'ignore',
+  // Fire-and-forget: HTTP returns immediately; work continues after the client leaves.
+  setImmediate(() => {
+    executeResearchJob(jobId).catch((err) => {
+      console.error('[research] unhandled job error', jobId, err);
+      writeJobPatch(jobId, { status: 'failed', error: err.message || String(err) });
+    });
   });
-  child.unref();
 
-  if (email) watchJobAndEmail(jobId);
-
-  return jobPath;
+  return { jobId, jobPath };
 }
+
+router.get('/status', (_req, res) => {
+  res.json({
+    ok: true,
+    email_configured: isEmailConfigured(),
+    email_from: process.env.CONTACT_EMAIL_FROM || process.env.AUTH_EMAIL_FROM || null,
+    public_site_url: process.env.PUBLIC_SITE_URL || null,
+    worker: 'in-process',
+    note: isEmailConfigured()
+      ? 'Reports are generated on the server and emailed when ready — you can close the tab.'
+      : 'Set RESEND_API_KEY (or SMTP_HOST) on the backend service so reports can be emailed.',
+  });
+});
 
 router.post('/jobs', (req, res) => {
   try {
@@ -157,8 +193,7 @@ router.post('/jobs', (req, res) => {
     const audience = String(req.body?.audience || 'market_researcher').trim();
     const geo = String(req.body?.geo || 'Pakistan').trim();
     const emailRaw = String(req.body?.email || '').trim().toLowerCase();
-    const email = emailRaw ? emailRaw : null;
-    if (email && !isValidEmail(email)) {
+    if (!emailRaw || !isValidEmail(emailRaw)) {
       return res.status(400).json({ error: 'valid email is required to receive the report' });
     }
     const symbols = Array.isArray(req.body?.symbols)
@@ -168,17 +203,25 @@ router.post('/jobs', (req, res) => {
           .map((s) => s.trim().toUpperCase())
           .filter(Boolean);
     const offline = Boolean(req.body?.offline);
-    const jobId = crypto.randomBytes(8).toString('hex');
-    spawnResearchJob({ jobId, topic, audience, symbols, geo, offline, email });
+    const { jobId } = enqueueResearchJob({
+      topic,
+      audience,
+      symbols,
+      geo,
+      offline,
+      email: emailRaw,
+    });
     return res.status(202).json({
       id: jobId,
       status: 'queued',
-      email: email || null,
-      email_delivery: email
-        ? isEmailConfigured()
-          ? 'will_send_when_ready'
-          : 'queued_but_server_email_not_configured'
-        : 'skipped',
+      email: emailRaw,
+      email_delivery: isEmailConfigured()
+        ? 'will_send_when_ready'
+        : 'queued_but_server_email_not_configured',
+      browser_required: false,
+      message: isEmailConfigured()
+        ? 'Job queued on the server. You can close this page — we will email the report when it is ready.'
+        : 'Job queued on the server, but email is not configured yet (RESEND_API_KEY). Report will still be generated; email may fail until configured.',
       poll: `/api/v1/research/jobs/${jobId}`,
     });
   } catch (err) {

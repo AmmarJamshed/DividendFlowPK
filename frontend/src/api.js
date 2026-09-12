@@ -13,6 +13,7 @@ export const api = {
   getMonthCoverage: () => axios.get(`${API_BASE}/month-coverage`),
   getRiskScore: (companyName) => axios.post(`${API_BASE}/risk-score`, { companyName }),
   getForecast: (company, asOf) => axios.get(`${API_BASE}/forecast`, { params: { company, asOf } }),
+  getResearchStatus: () => axios.get(`${API_BASE}/v1/research/status`),
   createResearchJob: (body) => axios.post(`${API_BASE}/v1/research/jobs`, body, { timeout: 30000 }),
   getResearchJob: (id) => axios.get(`${API_BASE}/v1/research/jobs/${id}`),
   getResearchReports: () => axios.get(`${API_BASE}/v1/research/reports`),

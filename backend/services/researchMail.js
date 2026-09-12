@@ -4,12 +4,27 @@ const fs = require('fs');
 const path = require('path');
 const { BRAND, buildBrandedEmailHtml, escapeHtml } = require('./emailBrand');
 
-const FROM = process.env.CONTACT_EMAIL_FROM || process.env.AUTH_EMAIL_FROM || 'DividendFlow PK <noreply@dividendflow.pk>';
+// Prefer RESEND_FROM so we can send from a verified Resend domain (dividendflow.pk must be verified in Resend).
+const FROM =
+  process.env.RESEND_FROM ||
+  process.env.CONTACT_EMAIL_FROM ||
+  process.env.AUTH_EMAIL_FROM ||
+  'DividendFlow PK <noreply@psxbluechips.com>';
 const SITE = process.env.PUBLIC_SITE_URL || BRAND.siteUrl || 'https://dividendflow.pk';
 const API_PUBLIC = (process.env.PUBLIC_API_URL || process.env.REACT_APP_API_URL || `${SITE}/api`).replace(/\/$/, '');
 
+function supabaseEmailUrl() {
+  const base = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  if (!base) return null;
+  return `${base}/functions/v1/send-app-email`;
+}
+
 function isEmailConfigured() {
-  return Boolean(process.env.RESEND_API_KEY || process.env.SMTP_HOST);
+  return Boolean(
+    process.env.RESEND_API_KEY ||
+      process.env.SMTP_HOST ||
+      (supabaseEmailUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY)
+  );
 }
 
 function isValidEmail(email) {
@@ -108,6 +123,29 @@ async function sendViaSmtp({ to, subject, html, text }) {
   return true;
 }
 
+/** Fallback when Render lacks RESEND_API_KEY but Supabase Edge has it. */
+async function sendViaSupabaseEdge({ to, subject, html, text }) {
+  const url = supabaseEmailUrl();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return false;
+  const { data } = await axios.post(
+    url,
+    { to, subject, html, text, from: FROM },
+    {
+      headers: {
+        Authorization: `Bearer ${key}`,
+        apikey: key,
+        'Content-Type': 'application/json',
+      },
+      timeout: 25000,
+    }
+  );
+  if (!data?.ok) {
+    throw new Error(data?.error || 'supabase send-app-email failed');
+  }
+  return true;
+}
+
 async function sendResearchReportEmail({ email, topic, slug, audience }) {
   const to = String(email || '').trim().toLowerCase();
   if (!isValidEmail(to)) return { ok: false, channel: 'none', error: 'invalid email' };
@@ -129,7 +167,11 @@ async function sendResearchReportEmail({ email, topic, slug, audience }) {
       await sendViaSmtp({ to, subject: built.subject, html: built.html, text: built.text });
       return { ok: true, channel: 'smtp', url: built.url };
     }
-    console.warn('[researchMail] No RESEND_API_KEY or SMTP_HOST — report email not sent');
+    if (supabaseEmailUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      await sendViaSupabaseEdge({ to, subject: built.subject, html: built.html, text: built.text });
+      return { ok: true, channel: 'supabase-edge', url: built.url };
+    }
+    console.warn('[researchMail] No RESEND_API_KEY, SMTP_HOST, or Supabase edge mail — report email not sent');
     return { ok: false, channel: 'none', error: 'email not configured', url: built.url };
   } catch (err) {
     console.error('[researchMail] send failed', err.message);

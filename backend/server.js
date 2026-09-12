@@ -1986,11 +1986,20 @@ app.get('/api/public-config', (_req, res) => {
 
 app.get('/api/health', async (req, res) => {
   const supabase = await dataStore.checkSupabaseHealth();
+  const emailOk = Boolean(process.env.RESEND_API_KEY || process.env.SMTP_HOST);
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     storage: dataStore.isSupabaseConfigured() ? (supabase.ok ? 'supabase' : 'csv_fallback') : 'csv',
     supabase: supabase,
+    email: {
+      configured: emailOk,
+      provider: process.env.RESEND_API_KEY ? 'resend' : process.env.SMTP_HOST ? 'smtp' : 'none',
+    },
+    research: {
+      worker: 'in-process',
+      email_configured: emailOk,
+    },
   });
 });
 

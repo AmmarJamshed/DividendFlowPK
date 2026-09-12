@@ -17,6 +17,7 @@ export default function ResearchLab() {
   const [offline, setOffline] = useState(true);
   const [email, setEmail] = useState('');
   const [emailNote, setEmailNote] = useState('');
+  const [serverEmailOk, setServerEmailOk] = useState(null);
   const [jobId, setJobId] = useState(null);
   const [job, setJob] = useState(null);
   const [reports, setReports] = useState([]);
@@ -36,6 +37,9 @@ export default function ResearchLab() {
 
   useEffect(() => {
     refreshReports();
+    api.getResearchStatus()
+      .then(({ data }) => setServerEmailOk(Boolean(data.email_configured)))
+      .catch(() => setServerEmailOk(null));
   }, [refreshReports]);
 
   useEffect(() => {
@@ -105,9 +109,14 @@ export default function ResearchLab() {
       setJobId(data.id);
       setJob(data);
       if (data.email_delivery === 'queued_but_server_email_not_configured') {
-        setEmailNote('Job started. Server email is not configured yet — you can still open the report here and use “Email me this report” after deploy.');
+        setEmailNote(
+          'Job is running on the server (you can close this tab). Email delivery is not configured on the server yet — open the report here when status is completed, or ask an admin to set RESEND_API_KEY.'
+        );
       } else {
-        setEmailNote('Job started. We will email the report when it is ready.');
+        setEmailNote(
+          data.message ||
+            'Job is running on the server. You can close this tab — we will email the report when it is ready.'
+        );
       }
     } catch (err) {
       setBusy(false);
@@ -151,7 +160,18 @@ export default function ResearchLab() {
       <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <p className="text-sm text-slate-600 mb-4">
           “I scan. You decide.” — crawl allowlisted public sources, synthesize a Simple Word answer report, and attach live DividendFlow price/dividend peers.
+          Jobs run on our servers: enter your email, start a report, and you can leave the site — we email the link when it is ready.
         </p>
+        {serverEmailOk === false && (
+          <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Server email is not configured yet (missing RESEND_API_KEY on the backend). Reports still generate on the server; delivery may fail until that is set.
+          </p>
+        )}
+        {serverEmailOk === true && (
+          <p className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+            Email delivery is on — close the tab anytime after you start a job; we send the report link when it is ready.
+          </p>
+        )}
         <form onSubmit={startJob} className="grid gap-3 md:grid-cols-2">
           <label className="block md:col-span-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Topic</span>
