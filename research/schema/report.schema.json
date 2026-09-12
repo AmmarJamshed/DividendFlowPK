@@ -81,6 +81,21 @@
         }
       }
     },
+    "reader_interests": { "type": "string" },
+    "interest_extras": {
+      "type": "array",
+      "description": "Extra angles if the core brief is not what the reader cares about",
+      "items": {
+        "type": "object",
+        "required": ["angle", "why_it_matters", "who_cares"],
+        "properties": {
+          "angle": { "type": "string" },
+          "why_it_matters": { "type": "string" },
+          "who_cares": { "type": "string" },
+          "hook": { "type": "string" }
+        }
+      }
+    },
     "stocks": {
       "type": "object",
       "required": ["symbols_requested", "resolved", "note"],

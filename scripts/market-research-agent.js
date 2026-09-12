@@ -90,6 +90,7 @@ function parseArgs(argv) {
     geo: 'Pakistan',
     offline: false,
     jobId: null,
+    interests: '',
   };
   for (let i = 2; i < argv.length; i += 1) {
     const a = argv[i];
@@ -102,6 +103,7 @@ function parseArgs(argv) {
     } else if (a === '--geo' && next) { out.geo = next; i += 1; }
     else if (a === '--offline') out.offline = true;
     else if (a === '--job-id' && next) { out.jobId = next; i += 1; }
+    else if (a === '--interests' && next) { out.interests = next; i += 1; }
   }
   if (!['analyst', 'market_researcher', 'demand_planner'].includes(out.audience)) {
     out.audience = 'market_researcher';
@@ -303,7 +305,60 @@ async function collectEvidence(topic, geo) {
   return evidence;
 }
 
-function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence }) {
+function buildInterestExtras({ topic, geo, audience, interests }) {
+  const focus = String(interests || '').trim();
+  const base = [
+    {
+      angle: 'Digital / q-commerce channel',
+      why_it_matters: `Even if you care less about the core “${topic}” sizing story, delivery and app shelves change who wins shelf space.`,
+      who_cares: 'Growth / digital / category managers',
+      hook: 'Ask: which SKUs actually convert on apps vs kiryana?',
+    },
+    {
+      angle: 'B2B / institutional demand',
+      why_it_matters: 'Hotels, canteens, offices, and modern trade often buy differently than retail households.',
+      who_cares: 'Demand planners / key-account sales',
+      hook: 'Map weekly volume contracts separately from retail offtake.',
+    },
+    {
+      angle: 'Listed supplier / peer watch',
+      why_it_matters: 'If the sector brief feels abstract, listed PSX peers turn it into price, yield, and margin signals.',
+      who_cares: 'Analysts / procurement / treasury',
+      hook: 'Use the stock join section as a live dashboard, not a static appendix.',
+    },
+    {
+      angle: 'Export / FX-sensitive niche',
+      why_it_matters: `A ${geo} domestic brief may miss readers who care about export packs, remittance corridors, or imported inputs.`,
+      who_cares: 'Exporters / FX-aware operators',
+      hook: 'Track freight + duty before celebrating volume growth.',
+    },
+    {
+      angle: 'Health / premium / trust niche',
+      why_it_matters: 'Mass-market numbers can hide the premium lane (clean label, fortified, gift packs) that some teams actually want.',
+      who_cares: 'Brand / innovation / urban retail',
+      hook: 'Score willingness-to-pay in 2–3 cities before national rollout.',
+    },
+  ];
+
+  if (focus) {
+    base.unshift({
+      angle: `Reader focus: ${focus.slice(0, 80)}`,
+      why_it_matters: `You flagged this interest — treat the main “${topic}” pack as context, then dig here first.`,
+      who_cares: audience === 'demand_planner' ? 'Demand & supply planners' : audience === 'analyst' ? 'Research analysts' : 'Market researchers',
+      hook: `Next brief should start from “${focus.slice(0, 60)}” and only borrow sizing from the core topic.`,
+    });
+  } else {
+    base.unshift({
+      angle: 'Narrower sub-segment brief',
+      why_it_matters: `If this ${topic} overview feels too broad, pick one sub-segment (channel, city tier, or SKU family) and regenerate.`,
+      who_cares: 'Anyone who bounced off the main narrative',
+      hook: 'Use the interests box next run: e.g. “wholesale biscuits only” or “Lahore modern trade”.',
+    });
+  }
+  return base.slice(0, 5);
+}
+
+function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence, interests }) {
   const slug = slugify(topic, geo);
   const year = String(new Date().getFullYear());
   const sources = evidence
@@ -384,12 +439,15 @@ function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence })
     { gap: 'Listed-supplier risk watch', why_missed: 'Sector notes rarely join live tickers', idea: 'Auto stock join for peers', opportunity_score: 82, who_pays: 'Analysts / procurement' },
   ];
 
+  const interest_extras = buildInterestExtras({ topic, geo, audience, interests });
+
   return {
     slug,
     topic,
     geo,
     audience,
     generated_at: new Date().toISOString(),
+    reader_interests: String(interests || '').trim() || null,
     executive_snapshot: isFood
       ? 'Simple Word answer: Pakistan already has a large eating-out market (about $6–9 bn/year in public Trade.gov citations). Local + international brands share demand. Hard doors are licenses, rent, and delivery fees. Factory/SEZ incentives help processors more than single shops. Best familiar foods score high; smart gaps sit in planned nutrition and trust meals.'
       : `Simple Word answer: Research pack for “${topic}” in ${geo}. Evidence items: ${evidence.length}. Listed peers resolved: ${stocks.resolved.length}. Use sources below for sizing; treat thin evidence as a signal to dig deeper — not as a finished market size.`,
@@ -422,6 +480,7 @@ function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence })
     ],
     menu_or_product_scores: productScores,
     smart_gaps,
+    interest_extras,
     stocks,
     sources,
     charts: {
@@ -434,11 +493,12 @@ function buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence })
       evidence_count: evidence.length,
       mode: 'offline',
       symbols,
+      interests: String(interests || '').trim() || null,
     },
   };
 }
 
-async function synthesizeWithGroq({ topic, geo, audience, stocks, evidence, symbols }) {
+async function synthesizeWithGroq({ topic, geo, audience, stocks, evidence, symbols, interests }) {
   const key = (process.env.GROQ_API_KEY || '').trim();
   if (!key) return null;
   const model = (process.env.GROQ_MODEL || 'openai/gpt-oss-20b').trim();
@@ -450,8 +510,9 @@ async function synthesizeWithGroq({ topic, geo, audience, stocks, evidence, symb
     audience,
     symbols,
     stocks,
+    reader_interests: String(interests || '').trim() || null,
     evidence: evidence.slice(0, 12),
-    instruction: 'Emit one JSON object matching research/schema/report.schema.json. No markdown fences.',
+    instruction: 'Emit one JSON object matching research/schema/report.schema.json. Include interest_extras. No markdown fences.',
   });
 
   const ctrl = new AbortController();
@@ -497,6 +558,7 @@ function isReportComplete(report) {
   if (!Array.isArray(report.incentives) || !report.incentives.length) return false;
   if (!Array.isArray(report.menu_or_product_scores) || !report.menu_or_product_scores.length) return false;
   if (!Array.isArray(report.smart_gaps) || !report.smart_gaps.length) return false;
+  if (!Array.isArray(report.interest_extras) || report.interest_extras.length < 2) return false;
   if (!report.economics || !Array.isArray(report.economics.drivers) || !report.economics.drivers.length) return false;
   if (!Array.isArray(report.sources) || !report.sources.length) return false;
   return true;
@@ -517,6 +579,8 @@ function mergeWithOfflineBase(partial, offlineBase) {
   out.incentives = takeArr('incentives');
   out.menu_or_product_scores = takeArr('menu_or_product_scores');
   out.smart_gaps = takeArr('smart_gaps');
+  out.interest_extras = takeArr('interest_extras');
+  out.reader_interests = partial?.reader_interests || offlineBase.reader_interests || null;
   out.sources = takeArr('sources');
   out.economics = {
     ...(offlineBase.economics || {}),
@@ -622,6 +686,12 @@ function renderHtml(report) {
     '{{SCORE_ROWS}}': (report.menu_or_product_scores || []).map((r) => `<tr><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.score)}</td><td>${escapeHtml(r.verdict)}</td></tr>`).join(''),
     '{{ML_NOTES}}': escapeHtml(report.ml_notes || ''),
     '{{GAP_ROWS}}': (report.smart_gaps || []).map((g) => `<tr><td>${escapeHtml(g.gap)}</td><td>${escapeHtml(g.opportunity_score)}</td><td>${escapeHtml(g.who_pays)}</td><td>${escapeHtml(g.idea || g.why_missed || '')}</td></tr>`).join(''),
+    '{{INTERESTS_NOTE}}': report.reader_interests
+      ? ` (you asked about: ${escapeHtml(report.reader_interests)})`
+      : '',
+    '{{INTEREST_EXTRA_ROWS}}': (report.interest_extras || []).map((x) =>
+      `<tr><td>${escapeHtml(x.angle)}</td><td>${escapeHtml(x.why_it_matters)}</td><td>${escapeHtml(x.who_cares)}</td><td>${escapeHtml(x.hook || '')}</td></tr>`
+    ).join('') || '<tr><td colspan="4">No extra angles generated.</td></tr>',
     '{{STOCKS_NOTE}}': escapeHtml(report.stocks?.note || ''),
     '{{STOCK_CARDS}}': stockCards,
     '{{SOURCES_LIST}}': (report.sources || []).map((s) => {
@@ -658,22 +728,23 @@ export async function runMarketResearch(options = {}) {
   if (!topic.trim()) throw new Error('--topic is required');
   const audience = options.audience || 'market_researcher';
   const geo = options.geo || 'Pakistan';
+  const interests = String(options.interests || '').trim();
   const offline = Boolean(options.offline) || !(process.env.GROQ_API_KEY || '').trim();
   const jobId = options.jobId || null;
   const symbols = heuristicSymbols(topic, options.symbols || []);
 
   ensureDirs();
-  writeJob(jobId, { id: jobId, status: 'running', topic, audience, geo, symbols });
+  writeJob(jobId, { id: jobId, status: 'running', topic, audience, geo, symbols, interests: interests || null });
 
   const evidence = await collectEvidence(topic, geo);
   writeJob(jobId, { status: 'crawling_done', evidence_count: evidence.length });
 
   const stocks = loadStockSnapshot(symbols);
-  const offlineBase = buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence });
+  const offlineBase = buildOfflineReport({ topic, geo, audience, symbols, stocks, evidence, interests });
   let report = null;
   if (!offline) {
     try {
-      report = await synthesizeWithGroq({ topic, geo, audience, stocks, evidence, symbols });
+      report = await synthesizeWithGroq({ topic, geo, audience, stocks, evidence, symbols, interests });
     } catch (err) {
       console.warn('[research-agent] Groq failed, falling back offline:', err.message);
     }
@@ -684,6 +755,10 @@ export async function runMarketResearch(options = {}) {
     console.warn('[research-agent] Groq report incomplete — merging offline sections');
     report = mergeWithOfflineBase(report, offlineBase);
   }
+  if (!Array.isArray(report.interest_extras) || report.interest_extras.length < 2) {
+    report.interest_extras = offlineBase.interest_extras;
+  }
+  if (interests) report.reader_interests = interests;
 
   const problems = validateCitations(report);
   if (problems.length) {
@@ -750,6 +825,7 @@ export function readJob(jobId) {
 
 export {
   buildOfflineReport,
+  buildInterestExtras,
   isReportComplete,
   mergeWithOfflineBase,
   renderHtml,

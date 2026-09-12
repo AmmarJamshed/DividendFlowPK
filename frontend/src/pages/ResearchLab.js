@@ -14,6 +14,7 @@ export default function ResearchLab() {
   const [audience, setAudience] = useState('market_researcher');
   const [symbols, setSymbols] = useState('NESTLE,UNITY');
   const [geo, setGeo] = useState('Pakistan');
+  const [interests, setInterests] = useState('');
   const [email, setEmail] = useState('');
   const [emailNote, setEmailNote] = useState('');
   const [serverEmailOk, setServerEmailOk] = useState(null);
@@ -103,6 +104,7 @@ export default function ResearchLab() {
         audience,
         geo,
         email: trimmedEmail,
+        interests: interests.trim() || undefined,
         symbols: symbols.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean),
       });
       setJobId(data.id);
@@ -213,6 +215,20 @@ export default function ResearchLab() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@company.com"
             />
+          </label>
+          <label className="block md:col-span-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              What else are you interested in? (optional)
+            </span>
+            <input
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              value={interests}
+              onChange={(e) => setInterests(e.target.value)}
+              placeholder="e.g. wholesale biscuits only, Lahore modern trade, export packs, health bakery"
+            />
+            <span className="mt-1 block text-[11px] text-slate-500">
+              We add an “If this isn’t quite what you wanted” section with extra angles tailored to this.
+            </span>
           </label>
           <label className="block md:col-span-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">PSX symbols (optional)</span>

@@ -121,6 +121,7 @@ async function ensureFullReport(report) {
     symbols,
     stocks,
     evidence,
+    interests: report.reader_interests || report.crawl_meta?.interests || '',
   });
   const full = agent.mergeWithOfflineBase(report, offlineBase);
   full.slug = report.slug;
@@ -356,6 +357,20 @@ function buildPdfBuffer(report) {
       bullets(report.smart_gaps, (g) => {
         const score = g.opportunity_score != null ? ` (opportunity ${g.opportunity_score})` : '';
         return `${g.gap || g.idea || 'Gap'}${score}${g.who_pays ? ` · who pays: ${g.who_pays}` : ''}`;
+      });
+    }
+
+    if (report?.interest_extras?.length) {
+      section('If this isn’t quite what you wanted');
+      if (report.reader_interests) {
+        para(`Reader interests noted: ${report.reader_interests}`);
+      } else {
+        para('Extra angles when the core brief may not match every reader’s interest.');
+      }
+      bullets(report.interest_extras, (x) => {
+        const bits = [x.angle, x.why_it_matters, x.who_cares ? `who cares: ${x.who_cares}` : null, x.hook]
+          .filter(Boolean);
+        return bits.join(' — ');
       });
     }
 

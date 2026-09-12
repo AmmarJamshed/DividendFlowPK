@@ -91,6 +91,7 @@ async function executeResearchJob(jobId) {
       geo: job.geo || 'Pakistan',
       symbols: job.symbols || [],
       offline: Boolean(job.offline),
+      interests: job.interests || '',
       jobId,
     });
 
@@ -160,6 +161,7 @@ function enqueueResearchJob(payload) {
         symbols: payload.symbols || [],
         geo: payload.geo,
         offline: Boolean(payload.offline),
+        interests: payload.interests || null,
         email: payload.email || null,
         email_sent: false,
         worker: 'in-process',
@@ -207,6 +209,7 @@ router.post('/jobs', async (req, res) => {
     if (!topic) return res.status(400).json({ error: 'topic is required' });
     const audience = String(req.body?.audience || 'market_researcher').trim();
     const geo = String(req.body?.geo || 'Pakistan').trim();
+    const interests = String(req.body?.interests || '').trim();
     const emailRaw = String(req.body?.email || '').trim().toLowerCase();
     if (!emailRaw || !isValidEmail(emailRaw)) {
       return res.status(400).json({ error: 'valid email is required to receive the report' });
@@ -225,6 +228,7 @@ router.post('/jobs', async (req, res) => {
       symbols,
       geo,
       offline,
+      interests,
       email: emailRaw,
     });
     return res.status(202).json({
