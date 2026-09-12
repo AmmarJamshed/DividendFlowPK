@@ -7,7 +7,6 @@
  *   node market-research-agent.js --topic "Pakistan fast food market" --audience market_researcher --symbols NESTLE,UNITY
  *   node market-research-agent.js --topic "Pakistan cement demand" --audience demand_planner --symbols LUCK,MLCF,DGKC --offline
  */
-import axios from 'axios';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -169,14 +168,21 @@ function loadStockSnapshot(symbols) {
 }
 
 async function fetchText(url, timeout = 12000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
   try {
-    const { data, status } = await axios.get(url, {
-      timeout,
-      headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' },
-      maxRedirects: 3,
-      validateStatus: (s) => s >= 200 && s < 400,
-      responseType: 'text',
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
     });
+    if (!res.ok) {
+      return { ok: false, status: res.status, text: '', error: `HTTP ${res.status}` };
+    }
+    const data = await res.text();
     const text = String(data || '')
       .replace(/<script[\s\S]*?<\/script>/gi, ' ')
       .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -184,9 +190,11 @@ async function fetchText(url, timeout = 12000) {
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 4000);
-    return { ok: true, status, text };
+    return { ok: true, status: res.status, text };
   } catch (err) {
     return { ok: false, status: 0, text: '', error: err.message };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
