@@ -1,0 +1,8 @@
+{
+  "name": "dividendflow-pk",
+  "private": true,
+  "description": "Root deps so Render can resolve packages used by scripts/ when imported from the backend",
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}

@@ -69,6 +69,7 @@ export default function ResearchLab() {
           }
         } else if (data.status === 'failed') {
           setBusy(false);
+          setEmailNote('');
           setError(data.error || 'Research job failed');
         }
       } catch (err) {

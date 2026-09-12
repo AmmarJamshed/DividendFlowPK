@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { pathToFileURL } = require('url');
+const Module = require('module');
 const {
   isValidEmail,
   isEmailConfiguredAsync,
@@ -17,6 +18,19 @@ const DATA_RESEARCH = path.join(ROOT, 'data', 'research');
 const JOBS_DIR = path.join(DATA_RESEARCH, 'jobs');
 const DOCS_RESEARCH = path.join(ROOT, 'docs', 'research');
 const AGENT = path.join(ROOT, 'scripts', 'market-research-agent.js');
+
+/** Let the ESM research agent resolve deps from backend + scripts node_modules (Render layout). */
+(function ensureAgentModulePaths() {
+  const extras = [
+    path.join(ROOT, 'backend', 'node_modules'),
+    path.join(ROOT, 'scripts', 'node_modules'),
+    path.join(ROOT, 'node_modules'),
+  ].filter((p) => fs.existsSync(p));
+  if (!extras.length) return;
+  const merged = [...extras, ...(process.env.NODE_PATH || '').split(path.delimiter).filter(Boolean)];
+  process.env.NODE_PATH = [...new Set(merged)].join(path.delimiter);
+  Module._initPaths();
+})();
 
 /** In-flight jobs on this process (survives browser close; cleared on dyno restart). */
 const runningJobs = new Set();

@@ -9,7 +9,7 @@ services:
     plan: starter
     region: oregon
     rootDir: .
-    buildCommand: cd backend && npm install && cd ../scripts && npm install
+    buildCommand: npm install && npm install --prefix backend && npm install --prefix scripts
     startCommand: cd backend && node server.js
     healthCheckPath: /api/health
     envVars:
