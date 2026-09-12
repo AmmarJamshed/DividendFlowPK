@@ -453,7 +453,9 @@ function mergeWithOfflineBase(partial, offlineBase) {
   const takeArr = (key) =>
     Array.isArray(partial?.[key]) && partial[key].length ? partial[key] : offlineBase[key];
   out.executive_snapshot =
-    String(partial?.executive_snapshot || '').trim().length >= 40
+    String(partial?.executive_snapshot || '').trim().length >= 40 &&
+    Array.isArray(partial?.market_layers) &&
+    partial.market_layers.length >= 2
       ? partial.executive_snapshot
       : offlineBase.executive_snapshot;
   out.market_layers = takeArr('market_layers');
@@ -685,6 +687,15 @@ export function readJob(jobId) {
   if (!existsSync(path)) return null;
   return JSON.parse(readFileSync(path, 'utf8'));
 }
+
+export {
+  buildOfflineReport,
+  isReportComplete,
+  mergeWithOfflineBase,
+  renderHtml,
+  heuristicSymbols,
+  loadStockSnapshot,
+};
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 if (isMain) {

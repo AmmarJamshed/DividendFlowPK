@@ -1,11 +1,46 @@
 const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
+const Module = require('module');
 const PDFDocument = require('pdfkit');
 const { getSupabase } = require('../db/supabaseClient');
 
 const ROOT = path.join(__dirname, '..', '..');
 const DATA_RESEARCH = path.join(ROOT, 'data', 'research');
 const DOCS_RESEARCH = path.join(ROOT, 'docs', 'research');
+const AGENT = path.join(ROOT, 'scripts', 'market-research-agent.js');
+
+(function ensureAgentModulePaths() {
+  const extras = [
+    path.join(ROOT, 'backend', 'node_modules'),
+    path.join(ROOT, 'scripts', 'node_modules'),
+    path.join(ROOT, 'node_modules'),
+  ].filter((p) => fs.existsSync(p));
+  if (!extras.length) return;
+  const merged = [...extras, ...(process.env.NODE_PATH || '').split(path.delimiter).filter(Boolean)];
+  process.env.NODE_PATH = [...new Set(merged)].join(path.delimiter);
+  Module._initPaths();
+})();
+
+let agentModPromise = null;
+function loadAgentMod() {
+  if (!agentModPromise) agentModPromise = import(pathToFileURL(AGENT).href);
+  return agentModPromise;
+}
+
+function reportRichness(report) {
+  if (!report) return 0;
+  let score = 0;
+  if (String(report.executive_snapshot || '').length >= 40) score += 2;
+  score += Math.min(4, (report.market_layers || []).length);
+  score += Math.min(3, (report.barriers || []).length);
+  score += Math.min(3, (report.incentives || []).length);
+  score += Math.min(4, (report.menu_or_product_scores || []).length);
+  score += Math.min(3, (report.smart_gaps || []).length);
+  score += Math.min(2, (report.economics?.drivers || []).length);
+  score += Math.min(4, (report.sources || []).length);
+  return score;
+}
 
 function ensureDirs() {
   for (const d of [DATA_RESEARCH, DOCS_RESEARCH]) {
@@ -57,7 +92,104 @@ async function persistResearchReport({ slug, report, html }) {
   return { ok: true, channel: 'supabase' };
 }
 
+/** Thin Groq stubs get expanded into a full research pack before PDF/HTML delivery. */
+async function ensureFullReport(report) {
+  if (!report?.slug) return report;
+  const agent = await loadAgentMod();
+  if (agent.isReportComplete(report)) return report;
+
+  const topic = report.topic || report.slug;
+  const geo = report.geo || 'Pakistan';
+  const audience = report.audience || 'market_researcher';
+  const symbols = agent.heuristicSymbols(
+    topic,
+    report.stocks?.symbols_requested || report.symbols || []
+  );
+  const stocks = report.stocks?.resolved?.length
+    ? report.stocks
+    : agent.loadStockSnapshot(symbols);
+  const evidence = (report.sources || []).map((s) => ({
+    title: s.title,
+    url: s.url,
+    year: s.year,
+    excerpt: s.excerpt || '',
+  }));
+  const offlineBase = agent.buildOfflineReport({
+    topic,
+    geo,
+    audience,
+    symbols,
+    stocks,
+    evidence,
+  });
+  const full = agent.mergeWithOfflineBase(report, offlineBase);
+  full.slug = report.slug;
+  full.generated_at = new Date().toISOString();
+  full.crawl_meta = {
+    ...(full.crawl_meta || {}),
+    repaired_at: new Date().toISOString(),
+    repaired_from: 'thin-stored-report',
+  };
+
+  try {
+    const html = agent.renderHtml(full);
+    await persistResearchReport({ slug: full.slug, report: full, html });
+  } catch (err) {
+    console.warn('[researchStore] repair persist failed', err.message);
+  }
+  return full;
+}
+
+async function loadReportJsonRaw(slug) {
+  let localReport = null;
+  const local = localJsonPath(slug);
+  if (fs.existsSync(local)) {
+    try {
+      localReport = JSON.parse(fs.readFileSync(local, 'utf8'));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  let remoteReport = null;
+  const supabase = getSupabase();
+  if (supabase && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const { data, error } = await supabase
+      .from('research_reports')
+      .select('report_json, topic, geo, audience, generated_at, slug')
+      .eq('slug', slug)
+      .maybeSingle();
+    if (!error && data) {
+      remoteReport = {
+        ...(data.report_json || {}),
+        slug: data.slug,
+        topic: data.topic,
+        geo: data.geo,
+        audience: data.audience,
+        generated_at: data.generated_at,
+      };
+    }
+  }
+
+  if (localReport && remoteReport) {
+    return reportRichness(localReport) >= reportRichness(remoteReport) ? localReport : remoteReport;
+  }
+  return localReport || remoteReport;
+}
+
+async function loadReportJson(slug) {
+  const raw = await loadReportJsonRaw(slug);
+  if (!raw) return null;
+  return ensureFullReport(raw);
+}
+
 async function loadReportHtml(slug) {
+  const report = await loadReportJson(slug);
+  if (report) {
+    const agent = await loadAgentMod();
+    return { html: agent.renderHtml(report), source: 'ensured' };
+  }
+
   const local = localHtmlPath(slug);
   if (fs.existsSync(local)) {
     return { html: fs.readFileSync(local, 'utf8'), source: 'local' };
@@ -71,40 +203,7 @@ async function loadReportHtml(slug) {
     .eq('slug', slug)
     .maybeSingle();
   if (error || !data?.html) return null;
-  ensureDirs();
-  try {
-    fs.writeFileSync(local, data.html, 'utf8');
-  } catch {
-    /* ignore cache write */
-  }
   return { html: data.html, source: 'supabase' };
-}
-
-async function loadReportJson(slug) {
-  const local = localJsonPath(slug);
-  if (fs.existsSync(local)) {
-    try {
-      return JSON.parse(fs.readFileSync(local, 'utf8'));
-    } catch {
-      /* fall through */
-    }
-  }
-  const supabase = getSupabase();
-  if (!supabase || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
-  const { data, error } = await supabase
-    .from('research_reports')
-    .select('report_json, topic, geo, audience, generated_at, slug')
-    .eq('slug', slug)
-    .maybeSingle();
-  if (error || !data) return null;
-  return {
-    ...(data.report_json || {}),
-    slug: data.slug,
-    topic: data.topic,
-    geo: data.geo,
-    audience: data.audience,
-    generated_at: data.generated_at,
-  };
 }
 
 async function listResearchReports() {
@@ -281,7 +380,7 @@ function buildPdfBuffer(report) {
         );
         if (src.url) doc.fillColor('#1E3A8A').text(`  ${src.url}`, { link: src.url });
         if (src.excerpt) {
-          doc.fontSize(8).fillColor('#64748b').text(`  ${String(src.excerpt).slice(0, 220)}`);
+          doc.fontSize(8).fillColor('#64748b').text(`  ${String(src.excerpt).slice(0, 180)}`);
         }
       }
       doc.moveDown(0.3);
@@ -317,6 +416,7 @@ module.exports = {
   listResearchReports,
   loadReportPdf,
   buildPdfBuffer,
+  ensureFullReport,
   localHtmlPath,
   localJsonPath,
 };
