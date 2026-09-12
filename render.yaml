@@ -32,7 +32,7 @@ services:
       - key: CONTACT_EMAIL_FROM
         value: DividendFlow PK <noreply@dividendflow.pk>
       - key: RESEND_FROM
-        value: DividendFlow PK <noreply@psxbluechips.com>
+        value: DividendFlow PK <noreply@dividendflow.pk>
       - key: SUPPORT_EMAIL
         value: adminsupport@dividendflow.pk
       - key: CONTACT_EMAIL_TO

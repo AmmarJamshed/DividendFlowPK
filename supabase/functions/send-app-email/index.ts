@@ -7,7 +7,7 @@ const FROM =
   Deno.env.get('RESEND_FROM') ||
   Deno.env.get('AUTH_EMAIL_FROM') ||
   Deno.env.get('CONTACT_EMAIL_FROM') ||
-  'DividendFlow PK <noreply@psxbluechips.com>';
+  'DividendFlow PK <noreply@dividendflow.pk>';
 const SUPPORT = Deno.env.get('SUPPORT_EMAIL') || 'adminsupport@dividendflow.pk';
 
 Deno.serve(async (req) => {

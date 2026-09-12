@@ -10,7 +10,7 @@
 param(
   [string]$ResendApiKey = '',
   [string]$ServiceName = 'dividendflow-backend',
-  [string]$ResendFrom = 'DividendFlow PK <noreply@psxbluechips.com>'
+  [string]$ResendFrom = 'DividendFlow PK <noreply@dividendflow.pk>'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -78,11 +78,8 @@ try {
 
 Write-Host @"
 
-Render email env configured.
+Render email env configured (from: $ResendFrom).
 
 Also set RESEND_API_KEY on Supabase Edge secrets (fallback path):
   https://supabase.com/dashboard/project/dbkytlsejpxmclpznudk/settings/functions
-
-Note: noreply@dividendflow.pk is not verified on this Resend account.
-Using RESEND_FROM=$ResendFrom until you verify dividendflow.pk in Resend.
 "@

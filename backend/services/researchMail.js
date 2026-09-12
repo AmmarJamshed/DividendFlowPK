@@ -4,12 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const { BRAND, buildBrandedEmailHtml, escapeHtml } = require('./emailBrand');
 
-// Prefer RESEND_FROM so we can send from a verified Resend domain (dividendflow.pk must be verified in Resend).
 const FROM =
   process.env.RESEND_FROM ||
   process.env.CONTACT_EMAIL_FROM ||
   process.env.AUTH_EMAIL_FROM ||
-  'DividendFlow PK <noreply@psxbluechips.com>';
+  'DividendFlow PK <noreply@dividendflow.pk>';
 const SITE = process.env.PUBLIC_SITE_URL || BRAND.siteUrl || 'https://dividendflow.pk';
 const API_PUBLIC = (process.env.PUBLIC_API_URL || process.env.REACT_APP_API_URL || `${SITE}/api`).replace(/\/$/, '');
 
