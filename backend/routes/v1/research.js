@@ -9,14 +9,23 @@ const {
   isEmailConfiguredAsync,
   resolveResendApiKey,
   sendResearchReportEmail,
+  reportPublicUrl,
+  reportPdfPublicUrl,
 } = require('../../services/researchMail');
+const {
+  persistResearchReport,
+  loadReportHtml,
+  loadReportJson,
+  listResearchReports,
+  loadReportPdf,
+  localHtmlPath,
+} = require('../../services/researchStore');
 
 const router = express.Router();
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const DATA_RESEARCH = path.join(ROOT, 'data', 'research');
 const JOBS_DIR = path.join(DATA_RESEARCH, 'jobs');
-const DOCS_RESEARCH = path.join(ROOT, 'docs', 'research');
 const AGENT = path.join(ROOT, 'scripts', 'market-research-agent.js');
 
 /** Let the ESM research agent resolve deps from backend + scripts node_modules (Render layout). */
@@ -32,13 +41,10 @@ const AGENT = path.join(ROOT, 'scripts', 'market-research-agent.js');
   Module._initPaths();
 })();
 
-/** In-flight jobs on this process (survives browser close; cleared on dyno restart). */
 const runningJobs = new Set();
 
 function ensureDirs() {
-  for (const d of [DATA_RESEARCH, JOBS_DIR, DOCS_RESEARCH]) {
-    if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
-  }
+  if (!fs.existsSync(JOBS_DIR)) fs.mkdirSync(JOBS_DIR, { recursive: true });
 }
 
 function readJsonSafe(filePath) {
@@ -57,35 +63,10 @@ function writeJobPatch(jobId, patch) {
   return next;
 }
 
-function listReports() {
-  ensureDirs();
-  if (!fs.existsSync(DATA_RESEARCH)) return [];
-  return fs
-    .readdirSync(DATA_RESEARCH)
-    .filter((f) => f.endsWith('.json') && f !== '_freshness.json' && f !== 'research-subscribers.json')
-    .map((f) => {
-      const r = readJsonSafe(path.join(DATA_RESEARCH, f));
-      if (!r?.slug) return null;
-      return {
-        slug: r.slug,
-        topic: r.topic,
-        geo: r.geo,
-        audience: r.audience,
-        generated_at: r.generated_at,
-        stocks_count: r.stocks?.resolved?.length || 0,
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => String(b.generated_at || '').localeCompare(String(a.generated_at || '')));
-}
-
 async function loadAgent() {
   return import(pathToFileURL(AGENT).href);
 }
 
-/**
- * Runs fully on the server (no browser required). Completes crawl → HTML/JSON → email.
- */
 async function executeResearchJob(jobId) {
   if (runningJobs.has(jobId)) return;
   runningJobs.add(jobId);
@@ -114,10 +95,20 @@ async function executeResearchJob(jobId) {
     });
 
     const slug = result.slug || result.report?.slug;
+    const report = result.report || (slug ? await loadReportJson(slug) : null);
+    let html = null;
+    if (slug && fs.existsSync(localHtmlPath(slug))) {
+      html = fs.readFileSync(localHtmlPath(slug), 'utf8');
+    }
+    if (slug && html) {
+      await persistResearchReport({ slug, report, html });
+    }
+
     writeJobPatch(jobId, {
       status: 'completed',
       slug,
-      html_url: result.html_url || (slug ? `/api/v1/research/reports/${slug}/html` : null),
+      html_url: slug ? reportPublicUrl(slug) : null,
+      pdf_url: slug ? reportPdfPublicUrl(slug) : null,
       evidence_count: result.evidence_count,
       stocks_resolved: result.stocks_resolved,
       completed_at: new Date().toISOString(),
@@ -130,12 +121,15 @@ async function executeResearchJob(jobId) {
         topic: latest.topic,
         slug,
         audience: latest.audience,
+        report,
+        html,
       });
       writeJobPatch(jobId, {
         email_sent: Boolean(mail.ok),
         email_channel: mail.channel,
         email_error: mail.error || null,
         report_url: mail.url || null,
+        pdf_url: mail.pdf_url || null,
         emailed_at: mail.ok ? new Date().toISOString() : null,
       });
     }
@@ -177,7 +171,6 @@ function enqueueResearchJob(payload) {
     )
   );
 
-  // Fire-and-forget: HTTP returns immediately; work continues after the client leaves.
   setImmediate(() => {
     executeResearchJob(jobId).catch((err) => {
       console.error('[research] unhandled job error', jobId, err);
@@ -199,7 +192,8 @@ router.get('/status', async (_req, res) => {
       process.env.CONTACT_EMAIL_FROM ||
       process.env.AUTH_EMAIL_FROM ||
       'DividendFlow PK <noreply@dividendflow.pk>',
-    public_site_url: process.env.PUBLIC_SITE_URL || null,
+    public_site_url: process.env.PUBLIC_SITE_URL || 'https://dividendflow.pk',
+    public_api_url: process.env.PUBLIC_API_URL || 'https://dividendflow-backend.onrender.com/api',
     worker: 'in-process',
     note: emailOk
       ? 'Reports are generated on the server and emailed when ready — you can close the tab.'
@@ -242,7 +236,7 @@ router.post('/jobs', async (req, res) => {
         : 'queued_but_server_email_not_configured',
       browser_required: false,
       message: emailReady
-        ? 'Job queued on the server. You can close this page — we will email the report when it is ready.'
+        ? 'Job queued on the server. You can close this page — we will email the PDF/report when it is ready.'
         : 'Job queued on the server, but email is not configured yet. Report will still be generated; email may fail until configured.',
       poll: `/api/v1/research/jobs/${jobId}`,
     });
@@ -256,22 +250,31 @@ router.post('/reports/:slug/email', async (req, res) => {
     const slug = req.params.slug;
     const email = String(req.body?.email || '').trim().toLowerCase();
     if (!isValidEmail(email)) return res.status(400).json({ error: 'valid email is required' });
-    const report = readJsonSafe(path.join(DATA_RESEARCH, `${slug}.json`));
+    const report = await loadReportJson(slug);
     if (!report) return res.status(404).json({ error: 'report not found' });
+    const htmlPack = await loadReportHtml(slug);
     const mail = await sendResearchReportEmail({
       email,
       topic: report.topic,
       slug: report.slug,
       audience: report.audience,
+      report,
+      html: htmlPack?.html,
     });
     if (!mail.ok) {
       return res.status(503).json({
         error: mail.error || 'email not sent',
         channel: mail.channel,
         report_url: mail.url,
+        pdf_url: mail.pdf_url,
       });
     }
-    return res.json({ ok: true, channel: mail.channel, report_url: mail.url });
+    return res.json({
+      ok: true,
+      channel: mail.channel,
+      report_url: mail.url,
+      pdf_url: mail.pdf_url,
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -284,34 +287,47 @@ router.get('/jobs/:id', (req, res) => {
   return res.json(job);
 });
 
-router.get('/reports', (_req, res) => {
+router.get('/reports', async (_req, res) => {
   try {
-    return res.json({ reports: listReports() });
+    return res.json({ reports: await listResearchReports() });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-router.get('/reports/:slug', (req, res) => {
-  ensureDirs();
-  const report = readJsonSafe(path.join(DATA_RESEARCH, `${req.params.slug}.json`));
+router.get('/reports/:slug', async (req, res) => {
+  const report = await loadReportJson(req.params.slug);
   if (!report) return res.status(404).json({ error: 'report not found' });
   return res.json({
     report,
-    html_path: path.join(DOCS_RESEARCH, `${req.params.slug}-report.html`),
-    html_url: `/api/v1/research/reports/${req.params.slug}/html`,
+    html_url: reportPublicUrl(report.slug),
+    pdf_url: reportPdfPublicUrl(report.slug),
   });
 });
 
-router.get('/reports/:slug/html', (req, res) => {
-  const file = path.join(DOCS_RESEARCH, `${req.params.slug}-report.html`);
-  if (!fs.existsSync(file)) return res.status(404).send('Report HTML not found');
+router.get('/reports/:slug/html', async (req, res) => {
+  const pack = await loadReportHtml(req.params.slug);
+  if (!pack?.html) return res.status(404).send('Report HTML not found');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  return res.send(fs.readFileSync(file, 'utf8'));
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  return res.send(pack.html);
 });
 
-router.get('/reports/:slug/stocks', (req, res) => {
-  const report = readJsonSafe(path.join(DATA_RESEARCH, `${req.params.slug}.json`));
+router.get('/reports/:slug/pdf', async (req, res) => {
+  try {
+    const pack = await loadReportPdf(req.params.slug);
+    if (!pack?.buffer) return res.status(404).send('Report PDF not found');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${pack.filename}"`);
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.send(pack.buffer);
+  } catch (err) {
+    return res.status(500).send(err.message || 'PDF failed');
+  }
+});
+
+router.get('/reports/:slug/stocks', async (req, res) => {
+  const report = await loadReportJson(req.params.slug);
   if (!report) return res.status(404).json({ error: 'report not found' });
   return res.json(report.stocks || { symbols_requested: [], resolved: [], note: 'missing' });
 });

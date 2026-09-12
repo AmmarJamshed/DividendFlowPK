@@ -22,6 +22,7 @@ export const api = {
   emailResearchReport: (slug, email) =>
     axios.post(`${API_BASE}/v1/research/reports/${slug}/email`, { email }, { timeout: 30000 }),
   researchReportHtmlUrl: (slug) => `${API_BASE}/v1/research/reports/${slug}/html`,
+  researchReportPdfUrl: (slug) => `${API_BASE}/v1/research/reports/${slug}/pdf`,
   getSalarySimulator: (targetMonthlyIncome, expectedDividendYield) =>
     axios.post(`${API_BASE}/salary-simulator`, { targetMonthlyIncome, expectedDividendYield }),
   postSalaryAiRecommendations: (body) =>

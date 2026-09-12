@@ -148,6 +148,7 @@ export default function ResearchLab() {
   }
 
   const htmlSrc = activeSlug ? api.researchReportHtmlUrl(activeSlug) : null;
+  const pdfSrc = activeSlug ? api.researchReportPdfUrl(activeSlug) : null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -278,10 +279,19 @@ export default function ResearchLab() {
         <div className="rounded-xl border border-slate-200 bg-white p-4 lg:col-span-2">
           <div className="flex items-center justify-between gap-2 mb-3">
             <h2 className="text-sm font-semibold text-slate-900">Report viewer</h2>
-            {htmlSrc && (
-              <a href={htmlSrc} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#1E3A8A]">
-                Open full HTML
-              </a>
+            {activeSlug && (
+              <div className="flex items-center gap-3">
+                {pdfSrc && (
+                  <a href={pdfSrc} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#1E3A8A]">
+                    Download PDF
+                  </a>
+                )}
+                {htmlSrc && (
+                  <a href={htmlSrc} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#1E3A8A]">
+                    Open HTML
+                  </a>
+                )}
+              </div>
             )}
           </div>
           {htmlSrc ? (

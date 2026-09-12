@@ -4,9 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const { BRAND, buildBrandedEmailHtml, escapeHtml } = require('./emailBrand');
 const { getSupabase } = require('../db/supabaseClient');
+const { loadReportPdf } = require('./researchStore');
 
 const SITE = process.env.PUBLIC_SITE_URL || BRAND.siteUrl || 'https://dividendflow.pk';
-const API_PUBLIC = (process.env.PUBLIC_API_URL || process.env.REACT_APP_API_URL || `${SITE}/api`).replace(/\/$/, '');
+// Never use dividendflow.pk/api — that hits the static SPA rewrite and looks "blank".
+const API_PUBLIC = (
+  process.env.PUBLIC_API_URL ||
+  process.env.REACT_APP_API_URL ||
+  'https://dividendflow-backend.onrender.com/api'
+).replace(/\/$/, '');
 
 const secretCache = { loadedAt: 0, resendKey: null, resendFrom: null };
 
@@ -63,7 +69,6 @@ async function isEmailConfiguredAsync() {
 }
 
 function isEmailConfigured() {
-  // Sync check used by routes; true if env set OR we already cached a Supabase-backed key.
   return Boolean(process.env.RESEND_API_KEY || process.env.SMTP_HOST || secretCache.resendKey);
 }
 
@@ -73,6 +78,10 @@ function isValidEmail(email) {
 
 function reportPublicUrl(slug) {
   return `${API_PUBLIC}/v1/research/reports/${encodeURIComponent(slug)}/html`;
+}
+
+function reportPdfPublicUrl(slug) {
+  return `${API_PUBLIC}/v1/research/reports/${encodeURIComponent(slug)}/pdf`;
 }
 
 function labUrl() {
@@ -101,8 +110,9 @@ function appendResearchSubscriber(email, slug, topic) {
   fs.writeFileSync(file, JSON.stringify(list, null, 2));
 }
 
-function buildReportReadyEmail({ email, topic, slug, audience, fromAddress }) {
-  const url = reportPublicUrl(slug);
+function buildReportReadyEmail({ email, topic, slug, audience }) {
+  const htmlUrl = reportPublicUrl(slug);
+  const pdfUrl = reportPdfPublicUrl(slug);
   const html = buildBrandedEmailHtml({
     preheader: `Your DividendFlow research report is ready: ${topic}`,
     headline: 'Your market research report is ready',
@@ -113,43 +123,42 @@ function buildReportReadyEmail({ email, topic, slug, audience, fromAddress }) {
         <strong>Audience:</strong> ${escapeHtml(audience || 'market_researcher')}<br/>
         <strong>Report id:</strong> ${escapeHtml(slug)}
       </p>
-      <p>Open the full HTML report (charts + citations + PSX stock join) with the button below. You can also start another brief anytime in Research Lab.</p>`,
-    ctaUrl: url,
-    ctaLabel: 'Open my research report',
+      <p>Download the <strong>PDF</strong> with the button below (also attached when available). You can open the interactive HTML version anytime.</p>
+      <p style="font-size:13px;color:#64748b"><a href="${escapeHtml(htmlUrl)}" style="color:#1E3A8A">Open HTML report</a></p>`,
+    ctaUrl: pdfUrl,
+    ctaLabel: 'Download PDF report',
     footerNote: `Sent to ${email}. Research Lab: ${labUrl()}. Educational only — not investment advice. Support: ${process.env.SUPPORT_EMAIL || 'adminsupport@dividendflow.pk'}`,
   });
   return {
     subject: `Your DividendFlow research report — ${topic}`.slice(0, 110),
     html,
-    text: `Your research report is ready.\nTopic: ${topic}\nOpen: ${url}\nLab: ${labUrl()}`,
-    url,
-    from: fromAddress || defaultFrom(),
+    text: `Your research report is ready.\nTopic: ${topic}\nPDF: ${pdfUrl}\nHTML: ${htmlUrl}\nLab: ${labUrl()}`,
+    url: htmlUrl,
+    pdf_url: pdfUrl,
   };
 }
 
-async function sendViaResend({ apiKey, from, to, subject, html, text }) {
+async function sendViaResend({ apiKey, from, to, subject, html, text, attachments }) {
   if (!apiKey) return false;
-  await axios.post(
-    'https://api.resend.com/emails',
-    {
-      from: from || defaultFrom(),
-      to: [to],
-      subject,
-      html,
-      text,
+  const body = {
+    from: from || defaultFrom(),
+    to: [to],
+    subject,
+    html,
+    text,
+  };
+  if (attachments?.length) body.attachments = attachments;
+  await axios.post('https://api.resend.com/emails', body, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
     },
-    {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 25000,
-    }
-  );
+    timeout: 45000,
+  });
   return true;
 }
 
-async function sendViaSmtp({ to, subject, html, text, from }) {
+async function sendViaSmtp({ to, subject, html, text, from, attachments }) {
   if (!process.env.SMTP_HOST) return false;
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -159,11 +168,21 @@ async function sendViaSmtp({ to, subject, html, text, from }) {
       ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
       : undefined,
   });
-  await transporter.sendMail({ from: from || defaultFrom(), to, subject, html, text });
+  await transporter.sendMail({
+    from: from || defaultFrom(),
+    to,
+    subject,
+    html,
+    text,
+    attachments: attachments?.map((a) => ({
+      filename: a.filename,
+      content: Buffer.from(a.content, 'base64'),
+      contentType: a.contentType || 'application/pdf',
+    })),
+  });
   return true;
 }
 
-/** Fallback when Render lacks RESEND_API_KEY but Supabase Edge has it. */
 async function sendViaSupabaseEdge({ to, subject, html, text, from }) {
   const url = supabaseEmailUrl();
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -186,7 +205,7 @@ async function sendViaSupabaseEdge({ to, subject, html, text, from }) {
   return true;
 }
 
-async function sendResearchReportEmail({ email, topic, slug, audience }) {
+async function sendResearchReportEmail({ email, topic, slug, audience, report }) {
   const to = String(email || '').trim().toLowerCase();
   if (!isValidEmail(to)) return { ok: false, channel: 'none', error: 'invalid email' };
   if (!slug) return { ok: false, channel: 'none', error: 'missing slug' };
@@ -194,6 +213,23 @@ async function sendResearchReportEmail({ email, topic, slug, audience }) {
   const apiKey = await resolveResendApiKey();
   const fromAddress = defaultFrom();
   const built = buildReportReadyEmail({ email: to, topic, slug, audience, fromAddress });
+
+  let attachments = [];
+  try {
+    const pdf = await loadReportPdf(slug);
+    if (pdf?.buffer) {
+      attachments = [
+        {
+          filename: pdf.filename,
+          content: pdf.buffer.toString('base64'),
+          contentType: 'application/pdf',
+        },
+      ];
+    }
+  } catch (err) {
+    console.warn('[researchMail] pdf attach skipped', err.message);
+  }
+
   try {
     appendResearchSubscriber(to, slug, topic);
   } catch (err) {
@@ -209,8 +245,9 @@ async function sendResearchReportEmail({ email, topic, slug, audience }) {
         subject: built.subject,
         html: built.html,
         text: built.text,
+        attachments,
       });
-      return { ok: true, channel: 'resend', url: built.url };
+      return { ok: true, channel: 'resend', url: built.url, pdf_url: built.pdf_url };
     }
     if (process.env.SMTP_HOST) {
       await sendViaSmtp({
@@ -219,8 +256,9 @@ async function sendResearchReportEmail({ email, topic, slug, audience }) {
         html: built.html,
         text: built.text,
         from: fromAddress,
+        attachments,
       });
-      return { ok: true, channel: 'smtp', url: built.url };
+      return { ok: true, channel: 'smtp', url: built.url, pdf_url: built.pdf_url };
     }
     if (supabaseEmailUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       await sendViaSupabaseEdge({
@@ -230,13 +268,13 @@ async function sendResearchReportEmail({ email, topic, slug, audience }) {
         text: built.text,
         from: fromAddress,
       });
-      return { ok: true, channel: 'supabase-edge', url: built.url };
+      return { ok: true, channel: 'supabase-edge', url: built.url, pdf_url: built.pdf_url };
     }
     console.warn('[researchMail] No RESEND_API_KEY (env or private.app_secrets), SMTP, or edge mail');
-    return { ok: false, channel: 'none', error: 'email not configured', url: built.url };
+    return { ok: false, channel: 'none', error: 'email not configured', url: built.url, pdf_url: built.pdf_url };
   } catch (err) {
     console.error('[researchMail] send failed', err.message);
-    return { ok: false, channel: 'error', error: err.message, url: built.url };
+    return { ok: false, channel: 'error', error: err.message, url: built.url, pdf_url: built.pdf_url };
   }
 }
 
@@ -246,6 +284,7 @@ module.exports = {
   resolveResendApiKey,
   isValidEmail,
   reportPublicUrl,
+  reportPdfPublicUrl,
   labUrl,
   sendResearchReportEmail,
   buildReportReadyEmail,
