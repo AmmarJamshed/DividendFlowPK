@@ -392,22 +392,31 @@ async function synthesizeWithGroq({ topic, geo, audience, stocks, evidence, symb
     instruction: 'Emit one JSON object matching research/schema/report.schema.json. No markdown fences.',
   });
 
-  const { data } = await axios.post(
-    'https://api.groq.com/openai/v1/chat/completions',
-    {
-      model,
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-    },
-    {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 90000);
+  let data;
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      signal: ctrl.signal,
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      timeout: 90000,
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`Groq HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
     }
-  );
+    data = await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
   const raw = data?.choices?.[0]?.message?.content || '{}';
   const report = JSON.parse(raw);
   report.slug = report.slug || slugify(topic, geo);
