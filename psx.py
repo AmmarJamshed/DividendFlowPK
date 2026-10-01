@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
 """
-Daily PSX price scraper - fetches from dps.psx.com.pk/historical
-Payouts scraper - fetches current dividend dates from dps.psx.com.pk/payouts
+Daily PSX price scraper.
+
+Primary: official market summary ZIP from dps.psx.com.pk/download/mkt_summary/YYYY-MM-DD.Z
+Fallback: Playwright scrape of dps.psx.com.pk/historical (#historicalTable)
+
+Payouts: dps.psx.com.pk/payouts → data/dividends/psx_payouts.csv
+
 Outputs: data/prices/psx_full_dataset.csv, daily_prices.csv, price_changes.csv
-        data/dividends/psx_payouts.csv (current payout dates from PSX)
 """
 from playwright.sync_api import sync_playwright
 import pandas as pd
 import os
 import time
 import csv
+import io
 import json
 import base64
+import urllib.error
 import urllib.request
 import re
 import calendar
+import zipfile
 from datetime import datetime, timedelta
 try:
     from zoneinfo import ZoneInfo
@@ -23,10 +30,20 @@ except ImportError:
 
 URL = "https://dps.psx.com.pk/historical"
 PAYOUTS_URL = "https://dps.psx.com.pk/payouts"
+DOWNLOADS_URL = "https://dps.psx.com.pk/downloads"
+MKT_SUMMARY_URL = "https://dps.psx.com.pk/download/mkt_summary/{date}.Z"
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "prices")
 DIVIDEND_DIR = os.path.join(os.path.dirname(__file__), "data", "dividends")
 DIVIDEND_CSV = os.path.join(DIVIDEND_DIR, "psx_dividend_calendar.csv")
 PAYOUTS_CSV = os.path.join(DIVIDEND_DIR, "psx_payouts.csv")
+HTTP_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+_FUTURE_SUFFIX = re.compile(
+    r"-(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)$",
+    re.IGNORECASE,
+)
 
 
 def _karachi_today():
@@ -331,21 +348,179 @@ def _click_historical_next(page):
     return False
 
 
-def scrape_psx():
+def _http_get_bytes(url, referer=DOWNLOADS_URL, timeout=90):
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": HTTP_UA,
+            "Accept": "*/*",
+            "Referer": referer,
+        },
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read()
+
+
+def _clean_num(s):
+    if s is None or (isinstance(s, float) and pd.isna(s)):
+        return 0.0
+    text = str(s).replace(",", "").replace("%", "").strip()
+    if not text:
+        return 0.0
+    try:
+        return float(text)
+    except ValueError:
+        return 0.0
+
+
+def _is_ready_equity_symbol(symbol, board_code=""):
+    sym = (symbol or "").strip().upper()
+    if not sym or len(sym) > 24:
+        return False
+    if _FUTURE_SUFFIX.search(sym):
+        return False
+    if str(board_code).strip() == "40":
+        return False
+    return True
+
+
+def _prior_closes_from_daily_prices(before_date):
+    """Map symbol -> most recent close before before_date from daily_prices.csv."""
+    daily_path = os.path.join(DATA_DIR, "daily_prices.csv")
+    best = {}
+    if not os.path.exists(daily_path):
+        return best
+    with open(daily_path, "r", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            sym = (row.get("Company") or row.get("symbol") or "").strip().upper()
+            rd = row.get("Date") or row.get("date")
+            if not sym or not rd or rd >= before_date:
+                continue
+            try:
+                px = float(str(row.get("Price") or row.get("price") or "0").replace(",", ""))
+            except ValueError:
+                continue
+            if px <= 0:
+                continue
+            prev = best.get(sym)
+            if not prev or rd > prev[0]:
+                best[sym] = (rd, px)
+    return {sym: px for sym, (_d, px) in best.items()}
+
+
+def _parse_mkt_summary_zip(raw_bytes, trade_date):
+    """Parse official PSX mkt_summary .Z (zip) → list of price dicts."""
+    dataset = []
+    with zipfile.ZipFile(io.BytesIO(raw_bytes)) as zf:
+        names = zf.namelist()
+        lis_name = next((n for n in names if n.lower().endswith(".lis")), None)
+        if not lis_name:
+            raise RuntimeError(f"No .lis in mkt_summary archive ({names})")
+        text = zf.read(lis_name).decode("utf-8", "ignore")
+
+    prior = _prior_closes_from_daily_prices(trade_date)
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or "|" not in line:
+            continue
+        parts = line.split("|")
+        if len(parts) < 9:
+            continue
+        symbol = parts[1].strip().upper()
+        board = parts[2].strip()
+        if not _is_ready_equity_symbol(symbol, board):
+            continue
+        open_px = _clean_num(parts[4])
+        high = _clean_num(parts[5])
+        low = _clean_num(parts[6])
+        close = _clean_num(parts[7])
+        volume = parts[8].strip().replace(",", "")
+        if close <= 0:
+            continue
+        ldcp = prior.get(symbol) or open_px or close
+        change = close - ldcp
+        change_pct = (change / ldcp * 100.0) if ldcp else 0.0
+        dataset.append(
+            {
+                "date": trade_date,
+                "symbol": symbol,
+                "ldcp": f"{ldcp:.2f}",
+                "open": f"{open_px:.2f}",
+                "high": f"{high:.2f}",
+                "low": f"{low:.2f}",
+                "close": f"{close:.2f}",
+                "change": f"{change:.2f}",
+                "change_pct": f"{change_pct:.2f}%",
+                "volume": volume,
+            }
+        )
+    return dataset
+
+
+def scrape_psx_from_mkt_summary(trade_date=None, lookback_days=5):
+    """
+    Primary path: official daily market summary download (no Playwright).
+    URL: https://dps.psx.com.pk/download/mkt_summary/YYYY-MM-DD.Z
+    """
+    base = trade_date or _karachi_today()
+    last_err = None
+    for offset in range(lookback_days):
+        d = datetime.strptime(base, "%Y-%m-%d") - timedelta(days=offset)
+        day = d.strftime("%Y-%m-%d")
+        # Skip weekends quickly
+        if d.weekday() >= 5:
+            continue
+        url = MKT_SUMMARY_URL.format(date=day)
+        print(f"Downloading PSX mkt_summary {day} ...")
+        try:
+            raw = _http_get_bytes(url)
+        except urllib.error.HTTPError as e:
+            last_err = e
+            print(f"[WARN] mkt_summary {day}: HTTP {e.code}")
+            continue
+        except Exception as e:
+            last_err = e
+            print(f"[WARN] mkt_summary {day}: {e}")
+            continue
+        if not raw or raw[:2] != b"PK":
+            last_err = RuntimeError(f"Unexpected archive for {day} (len={len(raw) if raw else 0})")
+            print(f"[WARN] {last_err}")
+            continue
+        dataset = _parse_mkt_summary_zip(raw, day)
+        if len(dataset) < 200:
+            last_err = RuntimeError(f"Too few rows in mkt_summary {day}: {len(dataset)}")
+            print(f"[WARN] {last_err}")
+            continue
+        print(f"Parsed mkt_summary {day}: {len(dataset)} ready equities")
+        return dataset, day
+    raise RuntimeError(f"mkt_summary download failed for {base} (±{lookback_days}d): {last_err}")
+
+
+def scrape_psx_from_historical_browser():
+    """Fallback: Playwright scrape of dps.psx.com.pk/historical DataTable."""
     dataset = []
     seen = set()
     with sync_playwright() as p:
         browser = _launch_chromium(p)
-        page = browser.new_page()
+        page = browser.new_page(
+            user_agent=HTTP_UA,
+            extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
+        )
 
-        print("Opening PSX historical page...")
+        print("Opening PSX historical page (Playwright fallback)...")
         _goto_with_retries(page, URL, attempts=4, timeout=90000)
         try:
             page.wait_for_load_state("networkidle", timeout=20000)
         except Exception:
             pass
 
-        page.wait_for_selector("#historicalTable", timeout=30000)
+        page.wait_for_selector("#historicalTable tbody tr", timeout=60000)
+        try:
+            page.click("#historicalSearchBtn", timeout=5000)
+            time.sleep(2)
+            page.wait_for_selector("#historicalTable tbody tr", timeout=30000)
+        except Exception:
+            pass
         _set_historical_page_size(page)
 
         total_expected = _historical_total_entries(page)
@@ -386,34 +561,29 @@ def scrape_psx():
 
         browser.close()
 
+    return dataset
+
+
+def _write_price_outputs(dataset):
+    """Persist psx_full_dataset / daily_prices / price_changes and optional GitHub push."""
     min_expected = 350
-    if len(seen) < min_expected:
+    if len(dataset) < min_expected:
         print(
-            f"[WARN] Only {len(seen)} symbols scraped (< {min_expected}); "
-            "pagination or page layout may have changed"
+            f"[WARN] Only {len(dataset)} symbols scraped (< {min_expected}); "
+            "source may be incomplete"
         )
     else:
-        print(f"Scraped full PSX board: {len(seen)} symbols")
+        print(f"Scraped full PSX board: {len(dataset)} symbols")
 
     df = pd.DataFrame(dataset)
+    if df.empty:
+        raise RuntimeError("No price rows to write")
     os.makedirs(DATA_DIR, exist_ok=True)
     full_path = os.path.join(DATA_DIR, "psx_full_dataset.csv")
     df.to_csv(full_path, index=False)
     print(f"Saved {len(df)} rows to {full_path}")
 
-    # Full market board — all symbols from historical scrape (not dividend-calendar subset)
-    df_tracked = df.copy()
-
-    def clean_num(s):
-        if pd.isna(s):
-            return 0.0
-        s = str(s).replace(",", "").replace("%", "").strip()
-        try:
-            return float(s)
-        except ValueError:
-            return 0.0
-
-    today = _karachi_today()
+    today = str(df.iloc[0].get("date") or _karachi_today())
     if ZoneInfo is not None:
         now_khi = datetime.now(ZoneInfo("Asia/Karachi"))
         yesterday = (now_khi - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -421,30 +591,31 @@ def scrape_psx():
     else:
         yesterday = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
         cutoff = (datetime.today() - timedelta(days=14)).strftime("%Y-%m-%d")
+
     daily_prices = []
     price_changes = []
-
-    for _, r in df_tracked.iterrows():
+    for _, r in df.iterrows():
         sym = r["symbol"]
-        close = clean_num(r["close"])
-        prev = clean_num(r["ldcp"])
-        chg = clean_num(r["change"])
-        chg_pct = clean_num(r["change_pct"])
+        close = _clean_num(r["close"])
+        prev = _clean_num(r["ldcp"])
+        chg = _clean_num(r["change"])
+        chg_pct = _clean_num(r["change_pct"])
         if close > 0:
             daily_prices.append({"Company": sym, "Date": today, "Price": close})
         if prev > 0:
             daily_prices.append({"Company": sym, "Date": yesterday, "Price": prev})
         if prev > 0 and close > 0:
-            price_changes.append({
-                "Company": sym,
-                "Price": round(close, 2),
-                "PreviousPrice": round(prev, 2),
-                "Change": round(chg, 2),
-                "ChangePct": round(chg_pct, 2),
-                "Date": today,
-            })
+            price_changes.append(
+                {
+                    "Company": sym,
+                    "Price": round(close, 2),
+                    "PreviousPrice": round(prev, 2),
+                    "Change": round(chg, 2),
+                    "ChangePct": round(chg_pct, 2),
+                    "Date": today,
+                }
+            )
 
-    # Merge into existing daily_prices history (keep last 14 days)
     daily_path = os.path.join(DATA_DIR, "daily_prices.csv")
     existing = []
     if os.path.exists(daily_path):
@@ -452,9 +623,8 @@ def scrape_psx():
             reader = csv.DictReader(f)
             for row in reader:
                 rd = row.get("Date") or row.get("date")
-                if rd and rd != today:
-                    if rd >= cutoff:
-                        existing.append(row)
+                if rd and rd != today and rd >= cutoff:
+                    existing.append(row)
     today_rows = [{"Company": d["Company"], "Date": d["Date"], "Price": d["Price"]} for d in daily_prices]
     by_key = {f"{r['Company']}|{r['Date']}": r for r in existing}
     for r in today_rows:
@@ -465,15 +635,20 @@ def scrape_psx():
         w.writeheader()
         w.writerows(merged)
 
-    # Write price_changes
     changes_path = os.path.join(DATA_DIR, "price_changes.csv")
     price_changes.sort(key=lambda x: abs(x["ChangePct"]), reverse=True)
     with open(changes_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["Company", "Price", "PreviousPrice", "Change", "ChangePct", "Date"])
+        w = csv.DictWriter(
+            f,
+            fieldnames=["Company", "Price", "PreviousPrice", "Change", "ChangePct", "Date"],
+        )
         w.writeheader()
         w.writerows(price_changes)
 
-    print(f"Updated daily_prices ({len(daily_prices)} companies), price_changes ({len(price_changes)} with change)")
+    print(
+        f"Updated daily_prices ({len(daily_prices)} rows written), "
+        f"price_changes ({len(price_changes)} with change) for {today}"
+    )
 
     token = os.environ.get("GITHUB_TOKEN")
     repo = os.environ.get("GITHUB_REPO", "AmmarJamshed/DividendFlowPK")
@@ -481,6 +656,19 @@ def scrape_psx():
         push_to_github(token, repo)
 
     return len(df)
+
+
+def scrape_psx():
+    """Fetch PSX closing board — prefer official mkt_summary download, else Playwright."""
+    dataset = None
+    try:
+        dataset, used_day = scrape_psx_from_mkt_summary()
+        print(f"[ok] Primary source mkt_summary ({used_day})")
+    except Exception as e:
+        print(f"[WARN] mkt_summary path failed: {e}")
+        print("[WARN] Falling back to Playwright historical scrape...")
+        dataset = scrape_psx_from_historical_browser()
+    return _write_price_outputs(dataset)
 
 
 def push_to_github(token, repo):
