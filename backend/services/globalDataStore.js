@@ -5,6 +5,28 @@ const { ensureExchangeUniverse, FULL_UNIVERSE } = require('./universeSync');
 
 const CURATED_ENRICH_MAX = 40;
 
+/** PSX cash equities only — monthly futures look like WTL-NOV / CNERGY-JUL. */
+function isPsxCashBoardSymbol(symbol) {
+  const sym = String(symbol || '').trim().toUpperCase();
+  if (!sym) return false;
+  if (sym.includes('-')) return false;
+  return true;
+}
+
+/**
+ * Drop stub/futures prints that inflate top-gainer boards
+ * (zero OHLC + huge % from a stale prior close).
+ */
+function isTrustworthySessionRow(row) {
+  if (row?.close == null || !(Number(row.close) > 0)) return false;
+  const open = Number(row.open) || 0;
+  const high = Number(row.high) || 0;
+  const low = Number(row.low) || 0;
+  const pct = Math.abs(Number(row.changePct) || 0);
+  if (open === 0 && high === 0 && low === 0 && pct > 50) return false;
+  return true;
+}
+
 function dedupeRowsBySymbol(rows) {
   const bySymbol = new Map();
   for (const row of rows) {
@@ -32,10 +54,14 @@ async function supplementCuratedFromSeeds(code, displayRows) {
 }
 
 async function finalizeClosingRows(code, displayRows) {
-  const rows = dedupeRowsBySymbol(displayRows).map((row) => ({
+  let rows = dedupeRowsBySymbol(displayRows).map((row) => ({
     ...row,
     company: exchangeService.resolveCompanyName(row.symbol, code, row.company),
   }));
+
+  if (code === 'PSX') {
+    rows = rows.filter((r) => isPsxCashBoardSymbol(r.symbol) && isTrustworthySessionRow(r));
+  }
 
   const yahooEnrich = process.env.ENRICH_CLOSING_YAHOO === '1';
   if (yahooEnrich && !FULL_UNIVERSE.has(code) && rows.length > 0 && rows.length <= CURATED_ENRICH_MAX) {
