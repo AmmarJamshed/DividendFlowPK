@@ -1,7 +1,7 @@
 # Market Closing Prices scraper - runs psx.py daily after PSX market close
 # Schedule: 12:00 UTC (5pm PKT) Mon–Fri only — PSX closed weekends
 # Primary source: official mkt_summary download (dps.psx.com.pk/download/mkt_summary/YYYY-MM-DD.Z)
-# Fallback: Playwright scrape of /historical
+# Fallback: Playwright scrape of /historical (only when mkt_summary fails)
 # Outputs: psx_full_dataset.csv, daily_prices.csv, price_changes.csv → pushed to GitHub
 
 name: PSX Market Closing Prices
@@ -14,12 +14,12 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
     permissions:
       contents: write
     concurrency:
       group: psx-market-prices-${{ github.ref }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
 
@@ -30,18 +30,29 @@ jobs:
           cache: "pip"
           cache-dependency-path: requirements.txt
 
-      - name: Install dependencies
+      - name: Install dependencies (mkt_summary path — no Playwright)
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          playwright install chromium
-          playwright install-deps chromium
+          pip install pandas
 
-      - name: Run PSX scraper
+      - name: Run PSX closing board scraper
         env:
           CI: "true"
+          PSX_SKIP_PAYOUTS: "1"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SCRAPER_EMAIL_TO: ${{ secrets.SCRAPER_EMAIL_TO }}
         run: python psx.py
+
+      - name: Commit and push price CSVs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/prices/psx_full_dataset.csv data/prices/daily_prices.csv data/prices/price_changes.csv
+          if git diff --staged --quiet; then
+            echo "No price CSV changes to commit"
+            exit 0
+          fi
+          git commit -m "PSX price scraped: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push

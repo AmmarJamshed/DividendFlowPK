@@ -29,6 +29,21 @@ jobs:
         working-directory: scripts
         run: npm install
 
+      - name: Set up Python for PSX closing board
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps (PSX mkt_summary)
+        run: pip install pandas
+
+      - name: PSX closing board (mkt_summary)
+        env:
+          PSX_SKIP_PAYOUTS: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: python psx.py
+
       - name: Run scraper pipeline
         uses: nick-fields/retry@v3
         env:

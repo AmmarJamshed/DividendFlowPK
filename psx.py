@@ -722,10 +722,14 @@ if __name__ == "__main__":
     from send_email import send_email
     try:
         payouts_count = 0
-        try:
-            payouts_count = len(scrape_psx_payouts())
-        except Exception as pe:
-            print(f"[WARN] Payout scrape failed (continuing with historical prices): {pe}")
+        skip_payouts = os.environ.get("PSX_SKIP_PAYOUTS", "").lower() in ("1", "true", "yes")
+        if skip_payouts:
+            print("[INFO] PSX_SKIP_PAYOUTS set — skipping Playwright payouts scrape")
+        else:
+            try:
+                payouts_count = len(scrape_psx_payouts())
+            except Exception as pe:
+                print(f"[WARN] Payout scrape failed (continuing with historical prices): {pe}")
         prices_count = scrape_psx()
         summary = f"{payouts_count} payouts, {prices_count} prices scraped"
         send_email(success=True, summary=summary)
