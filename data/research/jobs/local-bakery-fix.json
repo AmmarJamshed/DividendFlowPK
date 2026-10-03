@@ -1,0 +1,19 @@
+{
+  "id": "local-bakery-fix",
+  "status": "completed",
+  "topic": "Bakery products",
+  "audience": "market_researcher",
+  "geo": "Pakistan",
+  "symbols": [
+    "NESTLE",
+    "UNITY"
+  ],
+  "updated_at": "2026-09-12T20:00:12.370Z",
+  "evidence_count": 6,
+  "slug": "pakistan-bakery-products",
+  "json_path": "D:\\DividendFlowPK\\data\\research\\pakistan-bakery-products.json",
+  "html_path": "D:\\DividendFlowPK\\docs\\research\\pakistan-bakery-products-report.html",
+  "html_url": "/docs/research/pakistan-bakery-products-report.html",
+  "stocks_resolved": 2,
+  "warnings": []
+}

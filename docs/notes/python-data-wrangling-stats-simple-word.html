@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Python Data Notes (Simple Word) — DividendFlow.pk</title>
+  <style>
+    :root {
+      --navy: #0b1f3a;
+      --blue: #1a3a6b;
+      --orange: #f05a22;
+      --sky: #e8f2ff;
+      --cream: #fff8f2;
+      --ink: #152033;
+      --muted: #5a6a7e;
+      --line: #d6e0ef;
+      --green: #0f9d58;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.55;
+    }
+    a { color: var(--blue); font-weight: 600; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 0 18px 64px; }
+    .cover {
+      background: var(--navy);
+      border-radius: 0 0 18px 18px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .cover img, .scene img {
+      width: 100%;
+      display: block;
+      max-height: 420px;
+      object-fit: cover;
+      object-position: center top;
+    }
+    .scene {
+      border-radius: 16px;
+      overflow: hidden;
+      margin: 18px 0 10px;
+      border: 1px solid var(--line);
+      background: var(--navy);
+    }
+    .logo { font-weight: 800; color: var(--navy); margin: 14px 0 6px; letter-spacing: 0.02em; }
+    .logo span { color: var(--orange); }
+    .caption h1 {
+      margin: 8px 0 4px;
+      color: var(--navy);
+      font-size: clamp(1.35rem, 3vw, 2rem);
+    }
+    .caption p { margin: 0; color: var(--muted); }
+    .pill {
+      display: inline-block;
+      background: var(--sky);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--blue);
+      margin: 0 6px 6px 0;
+    }
+    .disclaimer {
+      background: #fff3e8;
+      border: 1px solid #ffd0b0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: .9rem;
+      margin: 14px 0;
+    }
+    .cheat {
+      background: var(--navy);
+      color: #fff;
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin: 16px 0;
+    }
+    .cheat h2 { margin: 0 0 8px; font-size: 1.15rem; color: #fff; }
+    .cheat p { margin: 0; color: rgba(255,255,255,.92); }
+    .toc {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      margin: 12px 0 18px;
+    }
+    .toc a {
+      text-decoration: none;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      color: var(--navy);
+      font-weight: 700;
+      font-size: .9rem;
+    }
+    .toc a span { display: block; color: var(--muted); font-weight: 500; font-size: .78rem; margin-top: 4px; }
+    section {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      margin: 0 0 16px;
+    }
+    section h2 { margin: 0 0 8px; color: var(--navy); font-size: 1.28rem; }
+    section h3 { margin: 16px 0 6px; color: var(--blue); font-size: 1.05rem; }
+    .guide {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 12px;
+      align-items: start;
+      background: linear-gradient(135deg, #fffaf6, #eef5ff);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 12px 0;
+    }
+    .guide .badge {
+      width: 92px;
+      height: 92px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid #ffd0b0;
+      background: var(--navy);
+    }
+    .guide .badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 18%;
+    }
+    .guide .who { font-size: .72rem; font-weight: 800; color: var(--orange); text-transform: uppercase; letter-spacing: .04em; }
+    .guide .say { margin: 2px 0 0; font-size: .95rem; color: var(--ink); }
+    .simple {
+      background: var(--sky);
+      border-left: 4px solid var(--orange);
+      border-radius: 0 12px 12px 0;
+      padding: 10px 12px;
+      margin: 10px 0;
+      font-size: .92rem;
+    }
+    .simple strong { color: var(--navy); }
+    pre, code {
+      font-family: Consolas, "Courier New", monospace;
+    }
+    pre {
+      background: #0b1f3a;
+      color: #e8f2ff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-size: .84rem;
+      line-height: 1.45;
+      margin: 10px 0;
+    }
+    code.inline {
+      background: #fff3e8;
+      color: var(--navy);
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: .86rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .88rem;
+      margin: 10px 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--sky); color: var(--navy); }
+    .step {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+      align-items: flex-start;
+    }
+    .step .n {
+      flex: 0 0 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--orange);
+      color: #fff;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      font-size: .85rem;
+    }
+    .checklist li { margin: 8px 0; }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .82rem;
+      padding: 16px 0 40px;
+    }
+    .finale-banner {
+      background: var(--navy);
+      color: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+      margin-top: 8px;
+    }
+    .finale-banner .big { color: #ff8a4c; font-weight: 800; font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <img src="../theme/dfpk-theme-01-title.png" alt="DividendFlow.pk team — Track Learn Grow" />
+  </div>
+
+  <div class="wrap">
+    <div class="logo">DIVIDEND <span>FLOW</span>.PK · Learn Lab Notes</div>
+    <div class="caption">
+      <h1>Python + Data Wrangling + Stats Checks</h1>
+      <p>Simple Word notes for beginners · DividendFlow.pk characters as your guides · Track · Learn · Grow</p>
+    </div>
+
+    <span class="pill">Simple Word answer</span>
+    <span class="pill">Zero Python needed to start</span>
+    <span class="pill">Clean data</span>
+    <span class="pill">Check with tests</span>
+
+    <div class="disclaimer">
+      <strong>Educational only.</strong> These notes teach code and data thinking for learning.
+      They are <em>not</em> investment advice. Always double-check real market numbers before money decisions.
+    </div>
+
+    <div class="cheat">
+      <h2>60-second Simple Word answer</h2>
+      <p>
+        Python is a friendly helper language. You give tiny clear steps. The computer follows them.
+        First you learn boxes (variables), choices (if), loops (repeat), and recipe cards (functions).
+        Then you clean messy tables (wrangling). Then you run small math checks (stats tests) to see if the data looks fair and useful.
+        Same idea as DividendFlow: <strong>seekho → samjho → badho</strong>.
+      </p>
+    </div>
+
+    <div class="toc">
+      <a href="#part1">1. Meet Python<span>Words, boxes, choices, loops</span></a>
+      <a href="#part2">2. Build programs<span>Functions + logic steps</span></a>
+      <a href="#part3">3. Data wrangling<span>Clean PSX-style tables</span></a>
+      <a href="#part4">4. Stats checks<span>Tests that check the data</span></a>
+      <a href="#part5">5. Practice path<span>Your first mini project</span></a>
+    </div>
+
+    <!-- ========== PART 1 ========== -->
+    <div class="scene" id="part1">
+      <img src="../theme/dfpk-theme-02-race.png" alt="Dividend Challengers race — Ride Catch Grow" />
+    </div>
+
+    <section>
+      <h2>1. Meet Python (from zero)</h2>
+
+      <div class="guide">
+        <div class="badge"><img src="../theme/dfpk-theme-01-title.png" alt="DividendFlow crew" /></div>
+        <div>
+          <div class="who">Title crew · Track · Learn · Grow</div>
+          <p class="say">
+            “Start slow. One clear step. Then another. Markets reward people who learn in order —
+            code does too.”
+          </p>
+        </div>
+      </div>
+
+      <div class="simple">
+        <strong>Simple Word:</strong> Python is a language people use to talk to computers.
+        You write short lines. The computer does the work. Like giving your AI Market Buddy a checklist.
+      </div>
+
+      <h3>1.1 Install feeling (no fear)</h3>
+      <p>On your computer you can use:</p>
+      <ul>
+        <li><strong>Python</strong> from python.org, or</li>
+        <li><strong>Google Colab</strong> in a browser (great for beginners)</li>
+      </ul>
+      <p>First win: print a hello.</p>
+<pre>print("Assalam o Alaikum, DividendFlow!")
+print("Track. Learn. Grow.")</pre>
+
+      <div class="guide">
+        <div class="badge"><img src="../theme/dfpk-theme-02-race.png" alt="Dividend Challengers" /></div>
+        <div>
+          <div class="who">Dividend Challengers · Ride. Catch. Grow.</div>
+          <p class="say">
+            “Think of each line of code like a hoverboard move. Small move. Clear move. Then speed comes.”
+          </p>
+        </div>
+      </div>
+
+      <h3>1.2 Variables = named boxes</h3>
+      <div class="simple">
+        <strong>Simple Word:</strong> A variable is a box with a sticky name. You put a value inside. Later you open the box by name.
+      </div>
+<pre>symbol = "NESTLE"
+price = 7200
+yield_pct = 2.5
+is_dividend_stock = True
+
+print(symbol, price, yield_pct, is_dividend_stock)</pre>
+
+      <table>
+        <thead><tr><th>Thing you store</th><th>Python type</th><th>Simple Word</th></tr></thead>
+        <tbody>
+          <tr><td><code class="inline">7200</code></td><td>int / float</td><td>Number (count or money)</td></tr>
+          <tr><td><code class="inline">"NESTLE"</code></td><td>str</td><td>Text / word</td></tr>
+          <tr><td><code class="inline">True</code></td><td>bool</td><td>Yes / No switch</td></tr>
+          <tr><td><code class="inline">[1, 2, 3]</code></td><td>list</td><td>Row of items</td></tr>
+          <tr><td><code class="inline">{"sym": "HBL"}</code></td><td>dict</td><td>Labeled boxes</td></tr>
+        </tbody>
+      </table>
+
+      <h3>1.3 Lists and dictionaries</h3>
+<pre># List = ordered row
+watchlist = ["HBL", "MCB", "OGDC", "LUCK"]
+print(watchlist[0])   # first item = HBL
+
+# Dict = labels
+stock = {"symbol": "HBL", "price": 180, "yield": 8.2}
+print(stock["symbol"])
+print(stock["yield"])</pre>
+      <div class="simple">
+        <strong>Simple Word:</strong> List = train cars in a line. Dict = locker tags (name → value).
+      </div>
+
+      <h3>1.4 Choices: if / else</h3>
+      <div class="simple">
+        <strong>Simple Word:</strong> “If this is true, do A. Else do B.” Like: if yield is high, smile. Else keep looking.
+      </div>
+<pre>yield_pct = 6.0
+
+if yield_pct >= 5:
+    print("Nice dividend signal to study further")
+elif yield_pct >= 2:
+    print("Okay yield — dig deeper")
+else:
+    print("Low yield — learn why before you judge")</pre>
+
+      <h3>1.5 Loops: repeat without copy-paste</h3>
+<pre>symbols = ["HBL", "MCB", "NESTLE"]
+
+for s in symbols:
+    print("Checking", s)
+
+# while = keep going until a stop rule
+n = 0
+while n &lt; 3:
+    print("Practice lap", n + 1)
+    n = n + 1</pre>
+      <div class="simple">
+        <strong>Simple Word:</strong> <code class="inline">for</code> = walk through every item. <code class="inline">while</code> = keep going until the stop light turns red.
+      </div>
+    </section>
+
+    <!-- ========== PART 2 ========== -->
+    <div class="scene" id="part2">
+      <img src="../theme/dfpk-theme-03-ipo.png" alt="IPO launch — Invest Today Prosper Tomorrow" />
+    </div>
+
+    <section>
+      <h2>2. Functions + how to build program logic</h2>
+
+      <div class="guide">
+        <div class="badge"><img src="../theme/dfpk-theme-03-ipo.png" alt="IPO guide" /></div>
+        <div>
+          <div class="who">IPO guide · Launch your code</div>
+          <p class="say">
+            “An IPO is a launch. A function is also a launch button.
+            Write the recipe once. Press the button many times.”
+          </p>
+        </div>
+      </div>
+
+      <h3>2.1 What is a function?</h3>
+      <div class="simple">
+        <strong>Simple Word:</strong> A function is a reusable recipe card.
+        You give ingredients (inputs). It gives you a dish (output).
+      </div>
+<pre>def dividend_income(shares, dividend_per_share):
+    """Simple Word: shares × cash per share = cash to you."""
+    return shares * dividend_per_share
+
+cash = dividend_income(100, 12.5)
+print("Estimated cash:", cash)</pre>
+
+      <h3>2.2 Program constructing logic (the DividendFlow way)</h3>
+      <p>Build every small program with these 5 steps:</p>
+      <div class="step"><div class="n">1</div><div><strong>Goal in one line.</strong> Example: “Find which watchlist names have yield above 5%.”</div></div>
+      <div class="step"><div class="n">2</div><div><strong>Inputs.</strong> What do you need? CSV file? list of prices? user number?</div></div>
+      <div class="step"><div class="n">3</div><div><strong>Steps in plain words first.</strong> Write Urdu/English notes before code.</div></div>
+      <div class="step"><div class="n">4</div><div><strong>Code tiny pieces.</strong> One function = one job.</div></div>
+      <div class="step"><div class="n">5</div><div><strong>Check.</strong> Print mid-results. Fix. Then celebrate like an IPO crowd.</div></div>
+
+<pre>def load_prices(rows):
+    return rows
+
+def filter_high_yield(rows, min_yield=5):
+    out = []
+    for r in rows:
+        if r["yield"] &gt;= min_yield:
+            out.append(r)
+    return out
+
+def show_names(rows):
+    for r in rows:
+        print(r["symbol"], "→", r["yield"], "%")
+
+# ---- main flow (the story of the program) ----
+data = [
+    {"symbol": "HBL", "yield": 8.1},
+    {"symbol": "NESTLE", "yield": 1.8},
+    {"symbol": "OGDC", "yield": 7.4},
+]
+clean = load_prices(data)
+picks = filter_high_yield(clean, 5)
+show_names(picks)</pre>
+
+      <div class="simple">
+        <strong>Simple Word logic rule:</strong> Big problem → cut into small jobs → each job becomes one function →
+        main script only calls the jobs in order (like a dividend calendar: find → pay → repeat).
+      </div>
+
+      <h3>2.3 Errors are teachers</h3>
+<pre>try:
+    price = float("not-a-number")
+except ValueError:
+    print("Simple Word: that text is not a number. Clean it first.")</pre>
+    </section>
+
+    <!-- ========== PART 3 ========== -->
+    <div class="scene" id="part3">
+      <img src="../theme/dfpk-theme-04-dividends.png" alt="AI Market Buddy and dividend calendar" />
+    </div>
+
+    <section>
+      <h2>3. Data wrangling techniques (Python)</h2>
+
+      <div class="guide">
+        <div class="badge"><img src="../theme/dfpk-theme-04-dividends.png" alt="AI Market Buddy" /></div>
+        <div>
+          <div class="who">AI Market Buddy · I scan. You earn.</div>
+          <p class="say">
+            “Raw market files are messy. I scan. You clean.
+            Clean table → clear mind → better study.”
+          </p>
+        </div>
+      </div>
+
+      <div class="simple">
+        <strong>Simple Word:</strong> Data wrangling = tidy the table before you trust it.
+        Fix missing cells, bad dates, weird symbols, and duplicate rows.
+      </div>
+
+      <h3>3.1 Tools you will use</h3>
+<pre>import pandas as pd
+import numpy as np</pre>
+      <p><code class="inline">pandas</code> = Excel power inside Python. <code class="inline">numpy</code> = fast number helper.</p>
+
+      <h3>3.2 Load and peek</h3>
+<pre>df = pd.read_csv("psx_sample.csv")   # or your file name
+print(df.head())      # first 5 rows
+print(df.shape)       # (rows, columns)
+print(df.dtypes)      # what kind of data each column is
+print(df.info())
+print(df.describe())  # simple number summary</pre>
+
+      <h3>3.3 Rename + select columns</h3>
+<pre>df = df.rename(columns={
+    "Symbol": "symbol",
+    "Close": "close",
+    "DivYield": "div_yield"
+})
+keep = df[["symbol", "close", "div_yield", "date"]]</pre>
+
+      <h3>3.4 Missing values</h3>
+      <div class="simple">
+        <strong>Simple Word:</strong> Empty cells are holes. Count holes. Then fill, drop, or flag them — never ignore forever.
+      </div>
+<pre>print(df.isna().sum())
+
+# drop rows missing the key field
+df = df.dropna(subset=["symbol", "close"])
+
+# or fill a number column with median (middle value)
+df["div_yield"] = df["div_yield"].fillna(df["div_yield"].median())</pre>
+
+      <h3>3.5 Clean text and types</h3>
+<pre>df["symbol"] = df["symbol"].astype(str).str.strip().str.upper()
+df["date"] = pd.to_datetime(df["date"], errors="coerce")
+df["close"] = pd.to_numeric(df["close"], errors="coerce")</pre>
+
+      <h3>3.6 Filter, sort, unique</h3>
+<pre># only PSX names with yield &gt;= 5
+hi = df[df["div_yield"] &gt;= 5].copy()
+hi = hi.sort_values("div_yield", ascending=False)
+print(hi["symbol"].nunique())
+print(hi.drop_duplicates(subset=["symbol"]).head())</pre>
+
+      <h3>3.7 Group by (team totals)</h3>
+<pre># average close by sector
+sector_avg = df.groupby("sector", as_index=False)["close"].mean()
+print(sector_avg.sort_values("close", ascending=False))</pre>
+      <div class="simple">
+        <strong>Simple Word:</strong> <code class="inline">groupby</code> = put same-team rows in one basket, then average / sum / count.
+      </div>
+
+      <h3>3.8 Merge tables (join)</h3>
+<pre>prices = pd.read_csv("prices.csv")
+divs = pd.read_csv("dividends.csv")
+
+# join on symbol like VLOOKUP, but stronger
+merged = prices.merge(divs, on="symbol", how="left")
+print(merged.head())</pre>
+
+      <h3>3.9 Outliers (wild numbers)</h3>
+<pre># Simple Word: a wild price jump may be a typing error — or real news.
+# Flag huge day moves for review
+df["ret"] = df.groupby("symbol")["close"].pct_change()
+wild = df[df["ret"].abs() &gt; 0.20]   # &gt; 20% in one day
+print(wild[["symbol", "date", "close", "ret"]])</pre>
+
+      <h3>3.10 Wrangling checklist</h3>
+      <ul class="checklist">
+        <li>Load file and print <code class="inline">head</code>, <code class="inline">shape</code>, <code class="inline">dtypes</code></li>
+        <li>Standardize column names</li>
+        <li>Fix types (dates, numbers, symbols)</li>
+        <li>Handle missing values on purpose</li>
+        <li>Remove exact duplicate rows</li>
+        <li>Filter to the market / symbols you care about</li>
+        <li>Save a clean file: <code class="inline">df.to_csv("clean_psx.csv", index=False)</code></li>
+      </ul>
+    </section>
+
+    <!-- ========== PART 4 ========== -->
+    <div class="scene" id="part4">
+      <img src="../theme/dfpk-theme-05-finale.png" alt="DividendFlow team overlooking PSX city — Stay Informed Stay Ahead" />
+    </div>
+
+    <section>
+      <h2>4. Statistical tests to check the data</h2>
+
+      <div class="guide">
+        <div class="badge"><img src="../theme/dfpk-theme-05-finale.png" alt="IPO Dividends Prices Forecast team" /></div>
+        <div>
+          <div class="who">Finale team · IPO · Dividends · Prices · Forecast</div>
+          <p class="say">
+            “Prices check the past. Forecast looks ahead. Stats tests ask:
+            is this pattern real, or just random noise?”
+          </p>
+        </div>
+      </div>
+
+      <div class="simple">
+        <strong>Simple Word:</strong> A statistical test is a fairness check for numbers.
+        It helps you ask: “Does this difference look real, or could luck make it?”
+      </div>
+
+      <h3>4.1 First: describe the data (no fancy test yet)</h3>
+<pre>import pandas as pd
+from scipy import stats
+
+s = df["div_yield"].dropna()
+print("mean (average):", s.mean())
+print("median (middle):", s.median())
+print("std (spread):", s.std())
+print("min/max:", s.min(), s.max())</pre>
+      <table>
+        <thead><tr><th>Word</th><th>Simple Word meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Mean</td><td>Typical average</td></tr>
+          <tr><td>Median</td><td>Middle value when sorted</td></tr>
+          <tr><td>Std / variance</td><td>How spread out the numbers are</td></tr>
+          <tr><td>Correlation</td><td>Do two columns move together?</td></tr>
+          <tr><td>p-value</td><td>“How surprising is this, if luck alone?” Smaller often means stronger surprise</td></tr>
+        </tbody>
+      </table>
+
+      <h3>4.2 Correlation check</h3>
+<pre># Do price and dividend yield move together?
+print(df[["close", "div_yield"]].corr())
+
+r, p = stats.pearsonr(
+    df["close"].dropna(),
+    df.loc[df["close"].notna(), "div_yield"].dropna()
+)
+# Better: align clean pairs
+pair = df[["close", "div_yield"]].dropna()
+r, p = stats.pearsonr(pair["close"], pair["div_yield"])
+print("r =", r, "p =", p)</pre>
+      <div class="simple">
+        <strong>Simple Word:</strong> <code class="inline">r</code> near +1 = move same way. Near −1 = move opposite. Near 0 = weak link.
+        Always look with a chart too — numbers alone can trick you.
+      </div>
+
+      <h3>4.3 Normal-ish shape? (Shapiro / visual)</h3>
+<pre># Small sample normality peek
+sample = df["div_yield"].dropna().sample(n=min(50, df["div_yield"].notna().sum()), random_state=42)
+stat, p = stats.shapiro(sample)
+print("Shapiro stat:", stat, "p:", p)
+if p &lt; 0.05:
+    print("Simple Word: shape may not be neat bell-curve. Prefer robust checks.")
+else:
+    print("Simple Word: shape is not screaming 'weird' on this sample.")</pre>
+
+      <h3>4.4 Compare two groups (t-test idea)</h3>
+      <div class="simple">
+        <strong>Simple Word question:</strong> “Do bank yields look different from fertilizer yields — for real?”
+      </div>
+<pre>banks = df.loc[df["sector"] == "Banks", "div_yield"].dropna()
+fert = df.loc[df["sector"] == "Fertilizer", "div_yield"].dropna()
+
+# Welch t-test (does not force equal spread)
+t_stat, p = stats.ttest_ind(banks, fert, equal_var=False)
+print("t =", t_stat, "p =", p)
+if p &lt; 0.05:
+    print("Simple Word: difference looks unlikely from pure luck alone — study why.")
+else:
+    print("Simple Word: no clear difference on this sample. Do not force a story.")</pre>
+
+      <h3>4.5 Before vs after (paired idea)</h3>
+<pre># Same symbols: yield this year vs last year
+before = df_old["div_yield"]
+after = df_new["div_yield"]
+t_stat, p = stats.ttest_rel(before, after)
+print(t_stat, p)</pre>
+
+      <h3>4.6 Categories: chi-square idea</h3>
+<pre># Are "high yield" labels linked to a sector?
+table = pd.crosstab(df["sector"], df["high_yield_flag"])
+chi2, p, dof, expected = stats.chi2_contingency(table)
+print("chi2:", chi2, "p:", p, "dof:", dof)</pre>
+      <div class="simple">
+        <strong>Simple Word:</strong> Chi-square checks if category mixes look uneven in a surprising way.
+      </div>
+
+      <h3>4.7 How to read results without drama</h3>
+      <ul>
+        <li><strong>p small (often &lt; 0.05):</strong> “Surprising under a luck-only story.” Still not automatic truth.</li>
+        <li><strong>p large:</strong> “No strong surprise.” Does not prove two things are identical forever.</li>
+        <li><strong>Sample size matters:</strong> Tiny data → weak tests. More clean rows → clearer picture.</li>
+        <li><strong>Bad wrangling → bad tests:</strong> Garbage in, fancy math out. Clean first.</li>
+      </ul>
+
+      <table>
+        <thead><tr><th>Test</th><th>When you use it</th><th>Simple Word</th></tr></thead>
+        <tbody>
+          <tr><td>Describe + plot</td><td>Always first</td><td>Look before you leap</td></tr>
+          <tr><td>Pearson / Spearman</td><td>Two number columns</td><td>Do they move together?</td></tr>
+          <tr><td>t-test (indep)</td><td>Two different groups</td><td>Are averages apart?</td></tr>
+          <tr><td>t-test (paired)</td><td>Same items, two times</td><td>Did it change?</td></tr>
+          <tr><td>Chi-square</td><td>Categories</td><td>Are labels mixed oddly?</td></tr>
+          <tr><td>Shapiro / QQ feel</td><td>Shape check</td><td>Is the pile bell-like?</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========== PART 5 ========== -->
+    <section id="part5">
+      <h2>5. Your practice path (mini project)</h2>
+
+      <div class="guide">
+        <div class="badge"><img src="../theme/dfpk-theme-01-title.png" alt="Full DividendFlow cast" /></div>
+        <div>
+          <div class="who">Full cast · Stocks Seekho Samjho Badho</div>
+          <p class="say">
+            “Open the book. Run the code. Check the chart. Then teach a friend.
+            That is how Pakistan learns markets — and Python.”
+          </p>
+        </div>
+      </div>
+
+      <div class="step"><div class="n">1</div><div>Make a tiny CSV with columns: <code class="inline">symbol, sector, close, div_yield, date</code> (10–30 rows is enough).</div></div>
+      <div class="step"><div class="n">2</div><div>Write functions: <code class="inline">load_data</code>, <code class="inline">clean_data</code>, <code class="inline">summarize</code>, <code class="inline">run_checks</code>.</div></div>
+      <div class="step"><div class="n">3</div><div>Wrangle: upper-case symbols, fix dates, fill/drop missing yields.</div></div>
+      <div class="step"><div class="n">4</div><div>Describe mean/median/std. Correlate close vs yield.</div></div>
+      <div class="step"><div class="n">5</div><div>Pick two sectors and run a t-test. Write 3 Simple Word lines about what you saw.</div></div>
+
+<pre>def clean_data(df):
+    df = df.copy()
+    df["symbol"] = df["symbol"].astype(str).str.strip().str.upper()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df["close"] = pd.to_numeric(df["close"], errors="coerce")
+    df["div_yield"] = pd.to_numeric(df["div_yield"], errors="coerce")
+    df = df.dropna(subset=["symbol", "close"])
+    return df
+
+def run_checks(df):
+    pair = df[["close", "div_yield"]].dropna()
+    r, p = stats.pearsonr(pair["close"], pair["div_yield"])
+    return {"corr_r": r, "corr_p": p, "n": len(pair)}</pre>
+
+      <div class="finale-banner">
+        <div class="big">Invest today. Build tomorrow.</div>
+        <p style="margin:8px 0 0;color:#ffd2b8">
+          We don’t only follow the market — we learn it with clean data and clear logic.<br />
+          <strong>This is our time.</strong>
+        </p>
+      </div>
+    </section>
+
+    <div class="scene">
+      <img src="../theme/dfpk-theme-05-finale.png" alt="Stay informed. Stay ahead." />
+    </div>
+
+    <footer>
+      DividendFlow.pk · Track · Learn · Grow · Simple Word Learn Lab Notes<br />
+      Characters from <code>docs/theme</code> · Educational content only · Not SECP-registered advice<br />
+      Open this file in a browser from the docs folder so theme images load.
+    </footer>
+  </div>
+</body>
+</html>

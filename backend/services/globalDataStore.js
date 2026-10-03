@@ -976,4 +976,6 @@ module.exports = {
   getStockDetail,
   getDividendsForExchange,
   retrieveForAi,
+  isPsxCashBoardSymbol,
+  isTrustworthySessionRow,
 };

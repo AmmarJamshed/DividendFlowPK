@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SE Fruits IPO (SFVL) — Simple Note | DividendFlow.pk</title>
+  <style>
+    :root {
+      --navy: #0b1f3a;
+      --blue: #1a3a6b;
+      --orange: #f05a22;
+      --orange-soft: #ff8a4c;
+      --green: #1f8a4c;
+      --sky: #e8f2ff;
+      --cream: #fff8f2;
+      --ink: #152033;
+      --muted: #5a6a7e;
+      --line: #d6e0ef;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    @page { size: A4; margin: 12mm 12mm 14mm; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.5;
+      font-size: 12.5pt;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 0 8px 24px; }
+    .brand-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 10px;
+      border-bottom: 3px solid var(--orange);
+      margin-bottom: 14px;
+    }
+    .logo { font-weight: 800; font-size: 1.15rem; color: var(--navy); letter-spacing: .02em; }
+    .logo span { color: var(--orange); }
+    .tag { color: var(--muted); font-size: .78rem; font-weight: 600; }
+    .cover {
+      background: var(--navy);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .cover img, .stage-art img {
+      width: 100%;
+      display: block;
+      max-height: 340px;
+      object-fit: cover;
+      object-position: center top;
+    }
+    .hero-box {
+      background: var(--navy);
+      color: #fff;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 0 0 18px;
+    }
+    .hero-box h1 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+      line-height: 1.2;
+    }
+    .hero-box .sub { margin: 0 0 12px; color: #c9d7ea; font-size: .92rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    .chip.orange { background: var(--orange); border-color: var(--orange); }
+    .chip.green { background: var(--green); border-color: var(--green); }
+    .chip.hot {
+      background: #c62828;
+      border-color: #c62828;
+      animation: none;
+    }
+    h2 { margin: 0 0 8px; color: var(--navy); font-size: 1.25rem; }
+    h3 { margin: 14px 0 6px; color: var(--blue); font-size: 1.02rem; }
+    p { margin: 0 0 10px; }
+    .stage {
+      page-break-inside: avoid;
+      margin: 0 0 22px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .stage-art { background: var(--navy); }
+    .stage-body { padding: 14px 16px 16px; }
+    .guide {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: var(--sky);
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--orange);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 0 0 12px;
+    }
+    .guide .bubble-title {
+      font-weight: 800;
+      color: var(--orange);
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin: 0 0 2px;
+    }
+    .guide p { margin: 0; font-size: .95rem; }
+    .step-label {
+      display: inline-block;
+      background: var(--navy);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .easy-box {
+      background: #fff8f2;
+      border: 1px dashed var(--orange-soft);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 10px 0;
+    }
+    .easy-box strong { color: var(--orange); }
+    ul, ol { margin: 6px 0 10px; padding-left: 1.15rem; }
+    li { margin: 0 0 6px; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .card {
+      background: var(--sky);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .card h4 { margin: 0 0 4px; color: var(--navy); font-size: .95rem; }
+    .card p { margin: 0; font-size: .9rem; color: var(--muted); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .86rem;
+      margin: 8px 0 12px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 8px;
+      text-align: left;
+    }
+    th { background: var(--navy); color: #fff; font-weight: 700; }
+    tr:nth-child(even) td { background: #f7faff; }
+    .good { color: var(--green); font-weight: 700; }
+    .warn { color: var(--orange); font-weight: 700; }
+    .disclaimer {
+      background: #fff3e8;
+      border: 1px solid #ffd0b0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: .85rem;
+      margin: 12px 0;
+    }
+    .deadline {
+      background: linear-gradient(90deg, #c62828, var(--orange));
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 0 0 16px;
+      font-weight: 700;
+    }
+    .finale {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      color: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 0 0 16px;
+    }
+    .finale h2 { color: #fff; }
+    .finale .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .finale .pill {
+      background: rgba(255,255,255,.14);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .78rem;
+      padding: 8px 0 4px;
+    }
+    .sources { font-size: .82rem; color: var(--muted); }
+    .sources a { color: var(--blue); word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand-bar">
+      <div class="logo">DIVIDEND<span>FLOW</span>.PK</div>
+      <div class="tag">Track · Learn · Grow · Hot IPO Note</div>
+    </div>
+
+    <div class="cover">
+      <img src="theme/dfpk-theme-01-title.png" alt="DividendFlow.pk cover crew" />
+    </div>
+
+    <div class="deadline">
+      ⏰ CLOSING TODAY (29 Sep 2026): Public subscription for SE Fruits ends today. Apply only via e-IPO (PSX / CDC). No paper forms at bank branches.
+    </div>
+
+    <div class="hero-box">
+      <h1>SE Fruits &amp; Vegetable Ltd — Baby-Simple IPO Note</h1>
+      <p class="sub">Fresh fruit exporter from Sargodha joins PSX. Same DividendFlow style as our Engro note — plain words, anime guides, no jargon fog.</p>
+      <div class="meta">
+        <span class="chip hot">Public window: 28–29 Sep 2026</span>
+        <span class="chip orange">Issue price PKR 40</span>
+        <span class="chip">Ticker path: SFVL / SE Fruits</span>
+        <span class="chip green">Illustrative: Participate (size carefully)</span>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Please read:</strong> Education only. Not a buy/sell order from DividendFlow.pk. IPOs can be oversubscribed (you may get fewer shares than you ask). Always read the official prospectus before applying.
+    </div>
+
+    <!-- STAGE 1 -->
+    <section class="stage">
+      <div class="stage-art">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="Stage 1 — IPO energy scene" />
+      </div>
+      <div class="stage-body">
+        <span class="step-label">Stage 1 · What is an IPO?</span>
+        <h2>SE Fruits is “opening the shop door” to the public</h2>
+        <div class="guide">
+          <div>
+            <p class="bubble-title">Anime guide says</p>
+            <p>“IPO = Initial Public Offering. The company sells new shares to people like you. Your money helps the company grow. You become a tiny owner.”</p>
+          </div>
+        </div>
+        <p><strong>SE Fruits and Vegetable Limited</strong> (formerly Shaheen Enterprises) packs and exports <strong>kinnow (oranges)</strong>, <strong>mangoes</strong>, and is building a <strong>potato</strong> line. Home base: Bhalwal / Sargodha, Punjab — Pakistan’s citrus heartland. Export markets include Middle East, Far East, Central Asia, Russia belt, and more. It is described as <strong>export-oriented</strong> and <strong>Shariah-compliant</strong>.</p>
+        <div class="easy-box">
+          <strong>Easy picture:</strong> A fruit-export factory needs cash to buy fruit from farmers, keep it cold, and ship it in refrigerated containers. The IPO is how they raise that cash from the stock market.
+        </div>
+        <div class="grid-2">
+          <div class="card"><h4>Almost 28 years old</h4><p>Started 1998 as a partnership; became a company in 2025–26 for listing.</p></div>
+          <div class="card"><h4>Public vs private</h4><p>Before IPO = mostly private owners. After IPO = anyone can buy on PSX (once listed).</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 2 -->
+    <section class="stage">
+      <div class="stage-art">
+        <img src="theme/dfpk-theme-02-race.png" alt="Stage 2 — Dividend Challengers race" />
+      </div>
+      <div class="stage-body">
+        <span class="step-label">Stage 2 · Today’s deal card</span>
+        <h2>The offer in one glance (ending today)</h2>
+        <div class="guide">
+          <div>
+            <p class="bubble-title">Anime guide says</p>
+            <p>“Big money already lined up in book-building. Now the last 25% is for the general public — that’s the race ending today.”</p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Item</th><th>Simple meaning</th><th>Number</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Issue size</td><td>New shares for sale</td><td><strong>30 million</strong> shares (~32% of company after IPO)</td></tr>
+            <tr><td>Strike / issue price</td><td>Price you pay</td><td><strong>PKR 40</strong> per share</td></tr>
+            <tr><td>Money raised (at PKR 40)</td><td>Cash into the company</td><td><strong>~PKR 1.20 billion</strong></td></tr>
+            <tr><td>Book-building (75%)</td><td>Institutions + HNIs first</td><td>22.5m shares · demand ~<strong>1.6×</strong> · strike fixed at 40</td></tr>
+            <tr><td>Public portion (25%)</td><td>Retail / general public</td><td><strong>7.5 million</strong> shares · <strong>28–29 Sep 2026</strong></td></tr>
+            <tr><td>Minimum apply</td><td>Smallest ticket</td><td><strong>500 shares = PKR 20,000</strong> (then +500 lots)</td></tr>
+            <tr><td>How to apply</td><td>Only electronic</td><td>PSX e-IPO / CDC e-IPO (no physical bank forms)</td></tr>
+            <tr><td>Lead managers</td><td>Banks that run the IPO</td><td>Topline Securities + Growth Securities</td></tr>
+          </tbody>
+        </table>
+        <div class="easy-box">
+          <strong>Baby tip:</strong> 1.6× in book-building means more demand than shares at floor. That is interest — not a guarantee the stock will jump on listing day.
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 3 -->
+    <section class="stage">
+      <div class="stage-art">
+        <img src="theme/dfpk-theme-04-dividends.png" alt="Stage 3 — Follow the money" />
+      </div>
+      <div class="stage-body">
+        <span class="step-label">Stage 3 · Follow the money</span>
+        <h2>Where does the PKR 1.2 bn go? + how big is the shop?</h2>
+        <div class="guide">
+          <div>
+            <p class="bubble-title">AI Market Buddy says</p>
+            <p>“I scan. You learn. Most of the cash buys inventory and working fuel — not fancy offices.”</p>
+          </div>
+        </div>
+        <h3>Use of IPO money (prospectus)</h3>
+        <table>
+          <thead><tr><th>Use</th><th>Share</th><th>Approx PKR</th></tr></thead>
+          <tbody>
+            <tr><td>Working capital (buy fruit, process, export)</td><td class="good">78%</td><td>~940 m</td></tr>
+            <tr><td>Cold chain &amp; processing expansion</td><td>13%</td><td>~154 m</td></tr>
+            <tr><td>UAE / Uzbekistan offices + reefer containers</td><td>4%</td><td>~50 m</td></tr>
+            <tr><td>ERP + asset tracking</td><td>3%</td><td>~30 m</td></tr>
+            <tr><td>Solar + grid</td><td>2%</td><td>~26 m</td></tr>
+          </tbody>
+        </table>
+        <h3>Recent shop scorecard (audited highlights)</h3>
+        <table>
+          <thead><tr><th>Year</th><th>Net revenue</th><th>Profit after tax</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>FY24</td><td>~PKR 1.43 bn</td><td>~PKR 173 m</td><td>Freight pain (Red Sea) hurt profit vs growth</td></tr>
+            <tr><td>FY25</td><td>~PKR 1.72 bn</td><td>~PKR 251 m</td><td>Kinnow quality hit by heat / late winter</td></tr>
+            <tr><td>FY26</td><td>~PKR <strong>2.13 bn</strong></td><td>~PKR <strong>304 m</strong></td><td>EPS ~4.77 · book value/share ~14.77 (pre-IPO base)</td></tr>
+          </tbody>
+        </table>
+        <div class="easy-box">
+          <strong>Price tag toy:</strong> At PKR 40 vs FY26 EPS ~4.77 → about <strong>8×</strong> earnings on the old share count. After IPO there are more shares (~94 m), so “same profit” would look closer to ~<strong>12×</strong>. Learning maths only — not a fair-value call.
+        </div>
+        <p>Debt is basically <strong>nil</strong> in recent years — growth has been equity-funded. Nice for risk. Working capital still eats cash every mango season (receivables / advances).</p>
+      </div>
+    </section>
+
+    <!-- STAGE 4 -->
+    <section class="stage">
+      <div class="stage-art">
+        <img src="theme/dfpk-theme-05-finale.png" alt="Stage 4 — Finale" />
+      </div>
+      <div class="stage-body">
+        <span class="step-label">Stage 4 · Boss fights &amp; final tip</span>
+        <h2>Risks, checklist for today, and the simple call</h2>
+        <div class="guide">
+          <div>
+            <p class="bubble-title">Anime guide says</p>
+            <p>“Fruit exports are real businesses — weather, freight, and foreign buyers can change the score overnight. Size your ticket like a snack, not your whole lunch.”</p>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h4 class="warn">Watch-outs</h4>
+            <p>Weather / crop quality · freight &amp; Red Sea style shocks · buyer concentration · seasonal cash squeeze · IPO allotment may be small if oversubscribed · listing price can go up or down</p>
+          </div>
+          <div class="card">
+            <h4 class="good">Nice-to-see</h4>
+            <p>~28-year export track · revenue rising to PKR 2.1 bn · low debt · 1.6× book demand · cash mostly for working capital &amp; cold chain · Shariah-compliant angle for some investors</p>
+          </div>
+        </div>
+        <h3>Today’s apply checklist (before window closes)</h3>
+        <ol>
+          <li>Open / use CDC account + bank that supports e-IPO.</li>
+          <li>Apply via <strong>PSX e-IPO</strong> or <strong>CDC Centralized e-IPO</strong> — electronic only.</li>
+          <li>Minimum <strong>500 shares × PKR 40 = PKR 20,000</strong>.</li>
+          <li>Keep cash ready; refunds come later if you get partial / no allotment.</li>
+          <li>Read the official prospectus PDF on PSX before you click submit.</li>
+        </ol>
+        <div class="finale">
+          <h2>Illustrative desk call: Participate (carefully)</h2>
+          <p style="margin:0;opacity:.95;">In baby words: the story is a real fruit-export shop raising cash to buy more fruit and keep it cold. Book-building interest was decent at the floor. For a beginner, a <strong>small, affordable</strong> application can be a learning ticket — not a “get rich today” bet. This is <strong>education</strong>, not an order to apply.</p>
+          <div class="pill-row">
+            <span class="pill">Ends today 29 Sep 2026</span>
+            <span class="pill">PKR 40 · min 500 shares</span>
+            <span class="pill">Track · Learn · Grow</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <h2>Sources</h2>
+    <div class="sources">
+      <ul>
+        <li>SE Fruits prospectus (PSX) — <a href="https://www.psx.com.pk/psx/themes/psx/uploads/SE-Fruits--Vegetable-Ltd.pdf">SE-Fruits--Vegetable-Ltd.pdf</a></li>
+        <li>Book-building result letter (strike PKR 40, 1.6×) — PSX attachment 283236-1</li>
+        <li>Nukta / Mettis / KSE.com.pk coverage of public subscription 28–29 Sep 2026</li>
+        <li>PSX LinkedIn notice on SFVL public subscription dates</li>
+      </ul>
+    </div>
+
+    <footer>
+      © DividendFlow.pk · Educational IPO note · Theme anime art · Not investment advice · Window closes 29 Sep 2026
+    </footer>
+  </div>
+</body>
+</html>

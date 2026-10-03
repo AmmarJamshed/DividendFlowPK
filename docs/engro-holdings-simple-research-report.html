@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Engro Holdings (ENGROH) — Simple Research Note | DividendFlow.pk</title>
+  <style>
+    :root {
+      --navy: #0b1f3a;
+      --blue: #1a3a6b;
+      --orange: #f05a22;
+      --orange-soft: #ff8a4c;
+      --green: #1f8a4c;
+      --sky: #e8f2ff;
+      --cream: #fff8f2;
+      --ink: #152033;
+      --muted: #5a6a7e;
+      --line: #d6e0ef;
+      --card: #ffffff;
+      --gold: #f0b429;
+    }
+    * { box-sizing: border-box; }
+    @page { size: A4; margin: 12mm 12mm 14mm; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background: var(--cream);
+      line-height: 1.5;
+      font-size: 12.5pt;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 0 8px 24px; }
+    .brand-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 10px;
+      border-bottom: 3px solid var(--orange);
+      margin-bottom: 14px;
+    }
+    .logo { font-weight: 800; font-size: 1.15rem; color: var(--navy); letter-spacing: .02em; }
+    .logo span { color: var(--orange); }
+    .tag { color: var(--muted); font-size: .78rem; font-weight: 600; }
+    .cover {
+      background: var(--navy);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .cover img, .stage-art img {
+      width: 100%;
+      display: block;
+      max-height: 340px;
+      object-fit: cover;
+      object-position: center top;
+    }
+    .hero-box {
+      background: var(--navy);
+      color: #fff;
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 0 0 18px;
+    }
+    .hero-box h1 {
+      margin: 0 0 6px;
+      font-size: 1.55rem;
+      line-height: 1.2;
+    }
+    .hero-box .sub { margin: 0 0 12px; color: #c9d7ea; font-size: .92rem; }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    .chip.orange { background: var(--orange); border-color: var(--orange); }
+    .chip.green { background: var(--green); border-color: var(--green); }
+    h2 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 1.25rem;
+    }
+    h3 {
+      margin: 14px 0 6px;
+      color: var(--blue);
+      font-size: 1.02rem;
+    }
+    p { margin: 0 0 10px; }
+    .stage {
+      page-break-inside: avoid;
+      margin: 0 0 22px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 2px 0 rgba(11,31,58,.04);
+    }
+    .stage-art { background: var(--navy); }
+    .stage-body { padding: 14px 16px 16px; }
+    .guide {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: var(--sky);
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--orange);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 0 0 12px;
+    }
+    .guide .bubble-title {
+      font-weight: 800;
+      color: var(--orange);
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin: 0 0 2px;
+    }
+    .guide p { margin: 0; font-size: .95rem; }
+    .step-label {
+      display: inline-block;
+      background: var(--navy);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .easy-box {
+      background: #fff8f2;
+      border: 1px dashed var(--orange-soft);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 10px 0;
+    }
+    .easy-box strong { color: var(--orange); }
+    ul { margin: 6px 0 10px; padding-left: 1.15rem; }
+    li { margin: 0 0 6px; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .card {
+      background: var(--sky);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .card h4 {
+      margin: 0 0 4px;
+      color: var(--navy);
+      font-size: .95rem;
+    }
+    .card p { margin: 0; font-size: .9rem; color: var(--muted); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .88rem;
+      margin: 8px 0 12px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 8px;
+      text-align: left;
+    }
+    th {
+      background: var(--navy);
+      color: #fff;
+      font-weight: 700;
+    }
+    tr:nth-child(even) td { background: #f7faff; }
+    .good { color: var(--green); font-weight: 700; }
+    .warn { color: var(--orange); font-weight: 700; }
+    .disclaimer {
+      background: #fff3e8;
+      border: 1px solid #ffd0b0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: .85rem;
+      margin: 12px 0;
+    }
+    .finale {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      color: #fff;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 0 0 16px;
+    }
+    .finale h2 { color: #fff; }
+    .finale .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .finale .pill {
+      background: rgba(255,255,255,.14);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .78rem;
+      padding: 8px 0 4px;
+    }
+    .sources { font-size: .82rem; color: var(--muted); }
+    .sources a { color: var(--blue); word-break: break-all; }
+    @media print {
+      body { background: #fff; }
+      .stage { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand-bar">
+      <div class="logo">DIVIDEND<span>FLOW</span>.PK</div>
+      <div class="tag">Track · Learn · Grow · Simple Research Note</div>
+    </div>
+
+    <!-- COVER -->
+    <div class="cover">
+      <img src="theme/dfpk-theme-01-title.png" alt="DividendFlow.pk anime team cover" />
+    </div>
+
+    <div class="hero-box">
+      <h1>Engro Holdings (ENGROH) — Baby-Simple Research Note</h1>
+      <p class="sub">A friendly walk-through of one big PSX company. Written like a brokerage research note… but in plain words.</p>
+      <div class="meta">
+        <span class="chip orange">Illustrative: Accumulate</span>
+        <span class="chip">PSX: ENGROH</span>
+        <span class="chip">Price ~ PKR 264.52</span>
+        <span class="chip green">Education only · Not buy/sell advice</span>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Please read:</strong> This is for learning. Numbers can change. It is <em>not</em> a buy or sell order from DividendFlow.pk. Always do your own homework (or ask a licensed advisor).
+    </div>
+
+    <!-- STAGE 1 -->
+    <section class="stage">
+      <div class="stage-art">
+        <img src="theme/dfpk-theme-02-race.png" alt="Stage 1 — Dividend Challengers race scene" />
+      </div>
+      <div class="stage-body">
+        <span class="step-label">Stage 1 · Meet the company</span>
+        <h2>Who is Engro Holdings?</h2>
+        <div class="guide">
+          <div>
+            <p class="bubble-title">Anime guide says</p>
+            <p>“Think of Engro Holdings as a <strong>big money backpack</strong>. Inside the backpack are many smaller businesses. The backpack’s stock code on PSX is <strong>ENGROH</strong>.”</p>
+          </div>
+        </div>
+        <p>Engro Holdings is an <strong>investment holding company</strong>. That means it owns and steers other companies more than it “makes one product” itself.</p>
+        <div class="easy-box">
+          <strong>Easy picture:</strong> Mom owns a shop group. One shop sells fertilizer. One makes plastic (PVC). One makes power. One owns phone towers. Mom’s name on the stock market = Engro Holdings.
+        </div>
+        <h3>What sits in the backpack?</h3>
+        <div class="grid-2">
+          <div class="card"><h4>Fertilizer</h4><p>Helps farms grow food crops.</p></div>
+          <div class="card"><h4>Power &amp; mining</h4><p>Makes electricity / digs energy fuel.</p></div>
+          <div class="card"><h4>Towers (new big move)</h4><p>Owns phone tower sites (Deodar deal).</p></div>
+          <div class="card"><h4>Polymer, terminals, trading</h4><p>Chemicals, gas/chemical storage, trading.</p></div>
+        </div>
+        <h3>Public company or private?</h3>
+        <p>Brokerage research like this is almost always for <strong>public / listed</strong> companies — because you can buy the share on PSX and the company must publish reports. Private companies usually do <em>not</em> get a public Buy/Sell note.</p>
+      </div>
+    </section>
+
+    <!-- STAGE 2 -->
+    <section class="stage">
+      <div class="stage-art">
+        <img src="theme/dfpk-theme-03-ipo.png" alt="Stage 2 — IPO and listing energy scene" />
+      </div>
+      <div class="stage-body">
+        <span class="step-label">Stage 2 · The big idea</span>
+        <h2>Why do analysts care about ENGROH?</h2>
+        <div class="guide">
+          <div>
+            <p class="bubble-title">Anime guide says</p>
+            <p>“Three simple reasons. One: cleaner ownership. Two: new tower cash machine. Three: headline profit can look scary — but ‘core’ profit (real day job) got stronger.”</p>
+          </div>
+        </div>
+        <ol>
+          <li><strong>Cleaner structure (2025):</strong> Engro Corporation became a fully owned child company of Engro Holdings. Owners now keep more of the group’s earnings (about 100% vs ~40% before).</li>
+          <li><strong>Towers bet:</strong> They bought a large phone-tower set (~10,600 towers, Deodar). Goal = steady rent-like cash over years.</li>
+          <li><strong>Don’t trust the scary headline alone:</strong> In 1H 2026, total profit fell vs last year because last year had big one-time gains. Underneath, core profit for owners rose a lot (~79%).</li>
+        </ol>
+        <div class="easy-box">
+          <strong>Baby tip:</strong> When profit “falls” after a one-time gift last year, ask: “Did the real shop get weaker… or did the gift just not repeat?”
+        </div>
+      </div>
+    </section>
+
+    <!-- STAGE 3 -->
+    <section class="stage">
+      <div class="stage-art">
+        <img src="theme/dfpk-theme-04-dividends.png" alt="Stage 3 — Dividends and AI Market Buddy scene" />
+      </div>
+      <div class="stage-body">
+        <span class="step-label">Stage 3 · Follow the money</span>
+        <h2>Numbers in plain English</h2>
+        <div class="guide">
+          <div>
+            <p class="bubble-title">AI Market Buddy says</p>
+            <p>“I scan. You learn. Together we grow! Here are the key coins — without spreadsheet panic.”</p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Thing</th><th>Simple meaning</th><th>Figure</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Share price</td>
+              <td>What one share costs lately</td>
+              <td>~ PKR <strong>264.52</strong></td>
+            </tr>
+            <tr>
+              <td>Market cap</td>
+              <td>Price × all shares ≈ company sticker price</td>
+              <td>~ PKR <strong>319 bn</strong></td>
+            </tr>
+            <tr>
+              <td>FY 2025 profit (owners, core)</td>
+              <td>Profit after removing one-time thermal gain</td>
+              <td>~ PKR <strong>29.1 bn</strong></td>
+            </tr>
+            <tr>
+              <td>1H 2026 profit (owners)</td>
+              <td>First 6 months of 2026</td>
+              <td>PKR <strong>18.6 bn</strong></td>
+            </tr>
+            <tr>
+              <td>Cash dividend lately</td>
+              <td>Cash mailed to shareholders</td>
+              <td class="warn">Mostly paused — using buybacks instead</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Where did 1H 2026 profit come from?</h3>
+        <ul>
+          <li>Power &amp; mining: about <strong>PKR 16.6 bn</strong> (strong helper)</li>
+          <li>Fertilizer: about <strong>PKR 7.1 bn</strong></li>
+          <li>Towers / connectivity: about <strong>PKR 3.9 bn</strong></li>
+          <li>Polymer: about <strong>PKR 1.6 bn</strong> (was very hard in 2025)</li>
+        </ul>
+        <div class="easy-box">
+          <strong>Dividend vs buyback:</strong> Dividend = company sends you cash. Buyback = company buys its own shares from the market. Engro recently preferred buybacks while funding towers. Same family idea: return value — different shape.
+        </div>
+        <h3>Rough valuation (learning toy, not truth)</h3>
+        <p>If you take FY25 <em>core</em> owners’ profit (~29 bn) and market cap (~319 bn), you get about <strong>11×</strong> earnings. That is a simple “price tag / yearly earning” toy — real brokers also build a sum-of-parts model.</p>
+      </div>
+    </section>
+
+    <!-- STAGE 4 -->
+    <section class="stage">
+      <div class="stage-art">
+        <img src="theme/dfpk-theme-05-finale.png" alt="Stage 4 — Finale celebration scene" />
+      </div>
+      <div class="stage-body">
+        <span class="step-label">Stage 4 · Risks &amp; final tip</span>
+        <h2>What can go wrong — and the simple takeaway</h2>
+        <div class="guide">
+          <div>
+            <p class="bubble-title">Anime guide says</p>
+            <p>“Every hero story has boss fights. Know the bosses before you cheer the win.”</p>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h4 class="warn">Watch-outs</h4>
+            <p>Fertilizer price wars · PVC cycle pain · Tower deal execution · Tax/policy changes · Confusing one-time accounting</p>
+          </div>
+          <div class="card">
+            <h4 class="good">Nice-to-see next</h4>
+            <p>More tenants on towers · Fertilizer margins heal · Polymer delta stays healthy · Clearer cash-return plan later</p>
+          </div>
+        </div>
+        <div class="finale">
+          <h2>Illustrative desk call: Accumulate</h2>
+          <p style="margin:0;opacity:.95;">In simple words: many analysts might <strong>like it on dips</strong> if they believe the tower cash and core businesses will compound — but they would ignore noisy headline EPS and wait for execution proof. This is <strong>education</strong>, not an order to buy.</p>
+          <div class="pill-row">
+            <span class="pill">Track · Learn · Grow</span>
+            <span class="pill">Public companies mainly</span>
+            <span class="pill">Core profit &gt; headline drama</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <h2>Sources (for curious readers)</h2>
+    <div class="sources">
+      <ul>
+        <li>PSX ENGROH page — <a href="https://dps.psx.com.pk/company/ENGROH">dps.psx.com.pk/company/ENGROH</a></li>
+        <li>Engro Holdings Directors’ Report FY 2025 — PSX PDF 271307</li>
+        <li>Engro Holdings Directors’ Report H1 2026 — PSX PDF 281548</li>
+        <li>Focus Pakistan coverage of 1H CY26 results</li>
+        <li>engro.com company overview &amp; press releases</li>
+      </ul>
+    </div>
+
+    <footer>
+      © DividendFlow.pk · Educational research note · Anime art from DFPK theme pack · Not investment advice
+    </footer>
+  </div>
+</body>
+</html>
