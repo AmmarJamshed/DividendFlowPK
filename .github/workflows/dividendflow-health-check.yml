@@ -1,12 +1,12 @@
-name: DividendFlow Health Check
+﻿name: DividendFlow Health Check
 
 on:
-  schedule:
-    - cron: "0 0,6,12,18 * * 1-5"
+  # PSX_BLUE_CHIPS_SHUTDOWN: schedule disabled — product moved to psxbluechips.com
   workflow_dispatch:
 
 jobs:
   health:
+    if: false # PSX_BLUE_CHIPS_SHUTDOWN — use PSX Blue Chips
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

@@ -1,3 +1,6 @@
+﻿# RETIRED — Oct 2026
+# DividendFlow PK Render services were deleted. Product focus is PSX Blue Chips (psxbluechips.com).
+# Do not deploy this blueprint. Keep for historical reference only.
 # DividendFlow PK - Render Blueprint
 # Deploy both backend and frontend from GitHub
 
@@ -129,3 +132,4 @@ services:
         value: https://dbkytlsejpxmclpznudk.supabase.co
       - key: REACT_APP_SUPABASE_ANON_KEY
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRia3l0bHNlanB4bWNscHpudWRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MzUzNzYsImV4cCI6MjA5NjQxMTM3Nn0.i1Ifuie53bp70rq_6cZKSo4AK8SnNy1WrtM2vchCA9Y
+

@@ -1,11 +1,10 @@
-name: PSX Workflow Monitor
+﻿name: PSX Workflow Monitor
 
 on:
   workflow_run:
     workflows: ["PSX Market Closing Prices"]
     types: [completed]
-  schedule:
-    - cron: "15 * * * *"
+  # PSX_BLUE_CHIPS_SHUTDOWN: schedule disabled — product moved to psxbluechips.com
   workflow_dispatch:
 
 permissions:
@@ -15,6 +14,7 @@ permissions:
 
 jobs:
   monitor:
+    if: false # PSX_BLUE_CHIPS_SHUTDOWN — use PSX Blue Chips
     runs-on: ubuntu-latest
     steps:
       - name: Check PSX workflow health and notify

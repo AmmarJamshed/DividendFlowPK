@@ -1,4 +1,4 @@
-# Deploys the React app to branch `gh-pages`. In the repo: Settings ? Pages ?
+﻿# Deploys the React app to branch `gh-pages`. In the repo: Settings ? Pages ?
 # Build and deployment ? Source: Deploy from a branch ? Branch: gh-pages / / (root).
 
 name: Frontend GitHub Pages
@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    if: false # PSX_BLUE_CHIPS_SHUTDOWN — use PSX Blue Chips
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

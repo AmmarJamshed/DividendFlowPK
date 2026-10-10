@@ -1,8 +1,7 @@
-name: DividendFlow News
+﻿name: DividendFlow News
 
 on:
-  schedule:
-    - cron: "0 12 * * 1-5"
+  # PSX_BLUE_CHIPS_SHUTDOWN: schedule disabled — product moved to psxbluechips.com
   workflow_dispatch:
 
 permissions:
@@ -10,6 +9,7 @@ permissions:
 
 jobs:
   news:
+    if: false # PSX_BLUE_CHIPS_SHUTDOWN — use PSX Blue Chips
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
